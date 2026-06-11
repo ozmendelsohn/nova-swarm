@@ -56,19 +56,19 @@ const Archetypes = (() => {
       }
     } },
 
-    nova: { fire: (G, w, s) => { // ring of bullets outward
+    nova: { fire: (G, w, s) => { // blooming ring: bursts out fast, stalls, fades
       const n = 8 + s.count * 3;
       for (let i = 0; i < n; i++) {
         const a = (i / n) * TAU;
-        Projectiles.fire({ x: G.player.x, y: G.player.y, vx: Math.cos(a) * s.speed * 0.8, vy: Math.sin(a) * s.speed * 0.8, dmg: s.dmg * 0.8, r: 5 * s.area, life: s.dur * 0.7, color: w.def.color, ownerW: w, effects: w.def.effects });
+        Projectiles.fire({ x: G.player.x, y: G.player.y, vx: Math.cos(a) * s.speed * 1.4, vy: Math.sin(a) * s.speed * 1.4, dmg: s.dmg * 0.8, r: 5 * s.area, life: s.dur * 0.7, color: w.def.color, ownerW: w, effects: w.def.effects, decel: 0.955 });
       }
     } },
 
-    spiral: { fire: (G, w, s) => { // continuous spiral emitter (cheap cd, rotating)
+    spiral: { fire: (G, w, s) => { // bullets curve into true spiral arms
       w._spA = (w._spA || 0) + 0.55;
       for (let i = 0; i < Math.max(1, s.count); i++) {
         const a = w._spA + (i * TAU) / Math.max(1, s.count);
-        Projectiles.fire({ x: G.player.x, y: G.player.y, vx: Math.cos(a) * s.speed * 0.7, vy: Math.sin(a) * s.speed * 0.7, dmg: s.dmg * 0.7, r: 4 * s.area, life: s.dur, color: w.def.color, ownerW: w, effects: w.def.effects });
+        Projectiles.fire({ x: G.player.x, y: G.player.y, vx: Math.cos(a) * s.speed * 0.7, vy: Math.sin(a) * s.speed * 0.7, dmg: s.dmg * 0.7, r: 4 * s.area, life: s.dur, color: w.def.color, ownerW: w, effects: w.def.effects, curve: 1.7 });
       }
     } },
 
@@ -184,6 +184,11 @@ const Archetypes = (() => {
               if (Util.dist2(p.x, p.y, P.x, P.y) < 400) p.active = false;
             }
           }
+          if (p.curve) { // spiral arms: velocity rotates continuously
+            const ca = Math.cos(p.curve * dt), sa = Math.sin(p.curve * dt);
+            const nvx = p.vx * ca - p.vy * sa; p.vy = p.vx * sa + p.vy * ca; p.vx = nvx;
+          }
+          if (p.decel) { p.vx *= p.decel; p.vy *= p.decel; }
           p.x += p.vx * dt; p.y += p.vy * dt;
           hitEnemies(G, p, dt);
           famTrail(p);
@@ -348,6 +353,7 @@ const Archetypes = (() => {
             const sp = Math.hypot(p.vx, p.vy);
             p.vx = Math.cos(a) * sp; p.vy = Math.sin(a) * sp;
             p.life = Math.max(p.life, 0.8);
+            Particles.burst(p.x, p.y, '#fff', 5, { speed: 130, life: 0.2 }); // bounce ping
             continue;
           }
         }
@@ -452,19 +458,47 @@ const Archetypes = (() => {
           break;
         }
         case 'mine': {
+          c.translate(p.x, p.y);
+          const blink = Math.sin(p.t * (4 + p.t * 3)) > 0; // ticks faster as it ages
+          // body: spiked pod
           c.fillStyle = p.color;
-          const blink = Math.sin(G.time * 10) > 0 ? 1 : 0.5;
-          c.globalAlpha = blink;
-          c.beginPath(); c.arc(p.x, p.y, p.r, 0, TAU); c.fill();
-          c.strokeStyle = '#fff'; c.globalAlpha = 0.3; c.stroke();
+          c.beginPath();
+          for (let i = 0; i < 6; i++) {
+            const a = (i / 6) * TAU + p.t * 0.5;
+            c.lineTo(Math.cos(a) * p.r * 1.25, Math.sin(a) * p.r * 1.25);
+            c.lineTo(Math.cos(a + TAU / 12) * p.r * 0.75, Math.sin(a + TAU / 12) * p.r * 0.75);
+          }
+          c.fill();
+          c.fillStyle = blink ? '#fff' : '#241636';
+          c.beginPath(); c.arc(0, 0, p.r * 0.35, 0, TAU); c.fill();
+          // arming countdown ring depletes
+          c.strokeStyle = p.color; c.lineWidth = 2; c.globalAlpha = 0.6;
+          c.beginPath(); c.arc(0, 0, p.r + 6, -Math.PI / 2, -Math.PI / 2 + TAU * (p.life / 8)); c.stroke();
           break;
         }
         case 'blackhole': {
-          c.globalAlpha = 0.7;
-          const g = c.createRadialGradient(p.x, p.y, 4, p.x, p.y, p.r);
-          g.addColorStop(0, '#000'); g.addColorStop(0.6, p.color); g.addColorStop(1, 'transparent');
+          c.translate(p.x, p.y);
+          c.globalAlpha = 0.75;
+          const g = c.createRadialGradient(0, 0, 4, 0, 0, p.r);
+          g.addColorStop(0, '#0a0312'); g.addColorStop(0.6, p.color); g.addColorStop(1, 'transparent');
           c.fillStyle = g;
-          c.beginPath(); c.arc(p.x, p.y, p.r, 0, TAU); c.fill();
+          c.beginPath(); c.arc(0, 0, p.r, 0, TAU); c.fill();
+          // spinning accretion arms
+          c.rotate(p.t * 4);
+          c.strokeStyle = '#fff'; c.lineWidth = 2; c.globalAlpha = 0.55;
+          for (let arm = 0; arm < 3; arm++) {
+            c.rotate(TAU / 3);
+            c.beginPath();
+            for (let k = 0; k < 8; k++) {
+              const rr = p.r * 0.15 + (k / 8) * p.r * 0.8;
+              const aa = k * 0.45;
+              c.lineTo(Math.cos(aa) * rr, Math.sin(aa) * rr);
+            }
+            c.stroke();
+          }
+          // event horizon
+          c.globalAlpha = 1; c.strokeStyle = p.color; c.lineWidth = 2;
+          c.beginPath(); c.arc(0, 0, p.r * 0.3 + Math.sin(p.t * 9) * 2, 0, TAU); c.stroke();
           break;
         }
         case 'wall': {
@@ -477,19 +511,61 @@ const Archetypes = (() => {
           break;
         }
         case 'bladering': {
-          c.globalAlpha = 0.85;
-          c.strokeStyle = p.color; c.lineWidth = 5;
-          c.beginPath(); c.arc(p.x, p.y, Math.max(1, p._R || 1), 0, TAU); c.stroke();
-          c.lineWidth = 1.5; c.strokeStyle = '#fff'; c.stroke();
+          const R = Math.max(1, p._R || 1);
+          c.translate(p.x, p.y); c.rotate(p.t * 6);
+          c.globalAlpha = 0.9;
+          c.strokeStyle = p.color; c.lineWidth = 4;
+          c.beginPath(); c.arc(0, 0, R, 0, TAU); c.stroke();
+          // spinning blade teeth riding the ring
+          c.fillStyle = p.color;
+          const nT = 10;
+          for (let i = 0; i < nT; i++) {
+            const a = (i / nT) * TAU;
+            c.save(); c.rotate(a); c.translate(R, 0); c.rotate(0.7);
+            c.beginPath(); c.moveTo(10, 0); c.lineTo(-4, 4); c.lineTo(-4, -4); c.fill();
+            c.restore();
+          }
+          c.lineWidth = 1.5; c.strokeStyle = '#fff';
+          c.beginPath(); c.arc(0, 0, R, 0, TAU); c.stroke();
           break;
         }
-        case 'drone': case 'turret': {
-          c.translate(p.x, p.y);
-          if (p.kind === 'drone') c.rotate(p.t * 3);
+        case 'drone': {
+          c.translate(p.x, p.y + Math.sin(p.t * 7) * 3); // hover bob
+          // thruster exhaust
+          c.fillStyle = p.color; c.globalAlpha = 0.4 + 0.3 * Math.sin(p.t * 30);
+          c.beginPath(); c.moveTo(-p.r * 0.6, p.r); c.lineTo(0, p.r * 2.4 + Math.random() * 3); c.lineTo(p.r * 0.6, p.r); c.fill();
+          c.globalAlpha = 1;
+          // body: winged diamond with eye
           c.fillStyle = p.color;
-          c.fillRect(-p.r, -p.r, p.r * 2, p.r * 2);
+          c.beginPath(); c.moveTo(0, -p.r * 1.3); c.lineTo(p.r * 1.4, 0); c.lineTo(0, p.r); c.lineTo(-p.r * 1.4, 0); c.fill();
+          // wing tips flap
+          const fl = Math.sin(p.t * 18) * p.r * 0.5;
+          c.fillRect(-p.r * 2, -1 + fl, p.r * 0.8, 2);
+          c.fillRect(p.r * 1.2, -1 - fl, p.r * 0.8, 2);
+          c.fillStyle = '#241636'; c.beginPath(); c.arc(0, -p.r * 0.2, p.r * 0.45, 0, TAU); c.fill();
+          c.fillStyle = '#fff'; c.beginPath(); c.arc(0, -p.r * 0.2, p.r * 0.2, 0, TAU); c.fill();
+          break;
+        }
+        case 'turret': {
+          c.translate(p.x, p.y);
+          const recoil = p.retT > 0.42 ? 3 : 0; // kick right after firing
+          // tripod legs
+          c.strokeStyle = '#241636'; c.lineWidth = 3;
+          for (const la of [0.6, Math.PI - 0.6, Math.PI / 2]) {
+            c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(la) * p.r * 1.6, Math.sin(la) * p.r * 1.6 + 4); c.stroke();
+          }
+          // rotating head tracks nearest enemy
+          const te = G.nearestEnemy(p.x, p.y, 420);
+          const ha = te ? Util.angTo(p.x, p.y, te.x, te.y) : G.time;
+          c.rotate(ha);
+          c.fillStyle = p.color;
+          c.fillRect(-p.r, -p.r * 0.8, p.r * 2, p.r * 1.6);
+          // barrel with recoil
           c.fillStyle = '#fff';
-          c.fillRect(-2, -2, 4, 4);
+          c.fillRect(p.r * 0.4 - recoil, -2, p.r * 1.4, 4);
+          if (recoil) { c.fillStyle = '#ffe93e'; c.beginPath(); c.arc(p.r * 1.9, 0, 5, 0, TAU); c.fill(); }
+          c.rotate(-ha);
+          c.fillStyle = '#ffd23e'; c.beginPath(); c.arc(0, -p.r, 3, 0, TAU); c.fill(); // status light
           break;
         }
         case 'orbit': {

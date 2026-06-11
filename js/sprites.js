@@ -203,8 +203,36 @@ const Sprites = (() => {
       b: def.color2 || shift(def.color, -70),
       w: '#ffffff', g: '#ffd23e',
     };
-    cache[key] = render(grid, pal, 4, true);
-    return cache[key];
+    const glyph = render(grid, pal, 4, true);
+    // mount the glyph on a talisman plate; tier decides the frame
+    const S = 64;
+    const cv = document.createElement('canvas');
+    cv.width = S; cv.height = S;
+    const c = cv.getContext('2d');
+    c.imageSmoothingEnabled = false;
+    const px = (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
+    const dark = shift(def.color, -95), mid = shift(def.color, -70);
+    if (def.tier === 'fusion') { // split two-tone plate
+      px(4, 4, S - 8, S - 8, shift(def.color, -85));
+      c.fillStyle = shift(def.color2 || def.color, -75);
+      c.beginPath(); c.moveTo(S - 4, 4); c.lineTo(S - 4, S - 4); c.lineTo(4, S - 4); c.fill();
+    } else {
+      px(4, 4, S - 8, S - 8, dark);
+      px(4, 4, S - 8, 10, mid); // top sheen band
+    }
+    // frame: gold for evolutions/fusions, element-tint for base
+    const frame = def.tier === 'base' ? mid : '#ffd23e';
+    px(4, 0, S - 8, 4, frame); px(4, S - 4, S - 8, 4, frame);
+    px(0, 4, 4, S - 8, frame); px(S - 4, 4, 4, S - 8, frame);
+    // notched corners (talisman cut)
+    px(4, 4, 4, 4, frame); px(S - 8, 4, 4, 4, frame);
+    px(4, S - 8, 4, 4, frame); px(S - 8, S - 8, 4, 4, frame);
+    if (def.tier === 'fusion') { // fusion star pip
+      px(S / 2 - 2, 0, 4, 4, '#fff');
+    }
+    c.drawImage(glyph, (S - glyph.width) / 2, (S - glyph.height) / 2);
+    cache[key] = cv;
+    return cv;
   }
 
   return { get, getElite, MONSTERS, BOSSES, render, weaponIcon };
