@@ -165,6 +165,7 @@ const Game = (() => {
     const range = 70 * (1 + 0.3 * (WeaponManager.passives.magnet || 0));
     for (let i = gems.length - 1; i >= 0; i--) {
       const g = gems[i]; g.t += dt;
+      if (Math.random() < 0.008) Particles.spawn(g.x, g.y - 4, g.heal ? '#ffd23e' : '#fff', { speed: 15, life: 0.4, size: 2 });
       const d2 = Util.dist2(g.x, g.y, P.x, P.y);
       if (d2 < range * range || g.pull) {
         g.pull = true;
@@ -261,8 +262,8 @@ const Game = (() => {
         const hue = (200 + Math.sin(x * 0.0009 + drift * 0.01) * 110 + Math.cos(y * 0.0011 - drift * 0.008) * 110 + drift) % 360;
         const check = ((x / gs + y / gs) & 1) ? 5 : 0;
         const h2 = Math.abs((x * 73 + y * 31) % 11);
-        const lit = 26 + check + (h2 < 2 ? 6 : 0);
-        c.fillStyle = `hsl(${hue},62%,${lit}%)`;
+        const lit = 24 + check + (h2 < 2 ? 5 : 0); // L 24-34: terrain budget (ART_STYLE.md)
+        c.fillStyle = `hsl(${hue},56%,${lit}%)`;
         c.fillRect(x, y, gs, gs);
         // woven-thread texture: two warp lines per tile
         c.fillStyle = `hsla(${hue},70%,${lit + 9}%,0.55)`;

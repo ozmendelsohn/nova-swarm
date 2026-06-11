@@ -78,17 +78,17 @@ const Enemies = (() => {
     const minute = G.time / 60;
     // spawn budget ramps with time
     spawnT -= dt;
-    const interval = Math.max(0.07, 0.5 - minute * 0.035);
-    if (spawnT <= 0 && list.length < 500) {
+    const interval = Math.max(0.05, 0.38 - minute * 0.03);
+    if (spawnT <= 0 && list.length < 650) {
       spawnT = interval;
       const avail = TYPES.filter(t => t.tier <= minute + 0.01);
       const t = avail[Math.max(0, avail.length - 1 - (Math.random() * Math.min(5, avail.length) | 0))];
-      const n = 2 + (minute / 2.5 | 0);
+      const n = 3 + (minute / 2 | 0);
       for (let i = 0; i < n; i++) spawnAt(G, t);
-      // occasional surge wave: a ring of weak enemies closing in
-      if (Math.random() < 0.018 + minute * 0.002) {
+      // surge wave: a ring of enemies closing in from all sides
+      if (Math.random() < 0.03 + minute * 0.003) {
         const st = avail[(Math.random() * avail.length) | 0];
-        for (let i = 0; i < 14; i++) spawnAt(G, st);
+        for (let i = 0; i < 20; i++) spawnAt(G, st);
       }
     }
     eliteT -= dt;
@@ -228,6 +228,15 @@ const Enemies = (() => {
       c.drawImage(f, -f.width / 2, -f.height / 2 + Math.sin(e.anim) * 2);
       c.restore();
       c.filter = 'none';
+      // elites wear a floating gold halo (rarity language, ART_STYLE.md)
+      if (e.elite) {
+        c.strokeStyle = '#ffd23e'; c.lineWidth = 2.5;
+        c.globalAlpha = 0.85;
+        c.beginPath();
+        c.ellipse(e.x, e.y - e.r - 8 + Math.sin(e.anim * 1.5) * 2, e.r * 0.55, e.r * 0.18, 0, 0, Math.PI * 2);
+        c.stroke();
+        c.globalAlpha = 1;
+      }
       // boss / elite hp bar
       if (e.boss || e.elite) {
         const w = e.boss ? 90 : 44;
