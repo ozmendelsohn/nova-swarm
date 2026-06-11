@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOVA SWARM — Reverse Bullet Hell</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+<div class="scanlines"></div>
+
+<div id="menu" class="screen visible">
+  <h1 class="logo">NOVA<span>SWARM</span></h1>
+  <p class="tagline">252 WEAPON FORMS · JOINT EVOLUTIONS · ONE SURVIVOR</p>
+  <button id="btn-start" class="btn big">▶ START RUN</button>
+  <button id="btn-codex" class="btn">📖 WEAPON CODEX</button>
+  <div class="help">
+    WASD / ARROWS — move &nbsp;·&nbsp; SPACE — dash (i-frames) &nbsp;·&nbsp; P — pause &nbsp;·&nbsp; M — mute<br>
+    Weapons fire automatically. Max a weapon to unlock its <b>evolution path</b>.<br>
+    Max <b>two</b> weapons with a shared destiny to trigger a <b class="glow">JOINT EVOLUTION</b>.
+  </div>
+</div>
+
+<div id="levelup" class="screen">
+  <h2 class="lvl-title">⬆ LEVEL UP — CHOOSE</h2>
+  <div id="cards"></div>
+</div>
+
+<div id="codex" class="screen">
+  <h2>WEAPON CODEX</h2>
+  <div id="codex-count" class="codex-count"></div>
+  <div id="codex-list"></div>
+  <button id="btn-codex-back" class="btn">← BACK</button>
+</div>
+
+<div id="gameover" class="screen">
+  <h1 id="go-title">YOU DIED</h1>
+  <div id="go-stats" class="go-stats"></div>
+  <button id="btn-retry" class="btn big">↻ RETRY</button>
+  <button id="btn-menu" class="btn">MENU</button>
+</div>
+
+<script src="js/util.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/particles.js"></script>
+<script src="js/projectiles.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/weapons/archetypes.js"></script>
+<script src="js/weapons/weapons.js"></script>
+<script src="js/weapons/fusions.js"></script>
+<script src="js/weapons/manager.js"></script>
+<script src="js/player.js"></script>
+<script src="js/enemies.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

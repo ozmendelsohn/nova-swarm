@@ -1,0 +1,242 @@
+// ---- enemies.js : 24 monster types, elites, 6 bosses, wave spawner ----
+const Enemies = (() => {
+  // tier = minute the type starts appearing
+  const TYPES = [
+    { id: 'slime',     hp: 8,   spd: 55,  dmg: 6,  xp: 1, tier: 0 },
+    { id: 'bat',       hp: 5,   spd: 95,  dmg: 5,  xp: 1, tier: 0 },
+    { id: 'beetle',    hp: 16,  spd: 45,  dmg: 8,  xp: 2, tier: 1 },
+    { id: 'shroom',    hp: 12,  spd: 50,  dmg: 7,  xp: 2, tier: 1 },
+    { id: 'eyeball',   hp: 14,  spd: 70,  dmg: 8,  xp: 2, tier: 2 },
+    { id: 'imp',       hp: 12,  spd: 105, dmg: 9,  xp: 2, tier: 2 },
+    { id: 'crab',      hp: 28,  spd: 40,  dmg: 10, xp: 3, tier: 3 },
+    { id: 'spider',    hp: 18,  spd: 85,  dmg: 9,  xp: 3, tier: 3 },
+    { id: 'jelly',     hp: 24,  spd: 60,  dmg: 10, xp: 3, tier: 4 },
+    { id: 'skullmage', hp: 22,  spd: 55,  dmg: 11, xp: 4, tier: 4, shoots: true },
+    { id: 'hornet',    hp: 18,  spd: 120, dmg: 10, xp: 4, tier: 5 },
+    { id: 'wraith',    hp: 30,  spd: 75,  dmg: 12, xp: 4, tier: 5 },
+    { id: 'serpent',   hp: 38,  spd: 70,  dmg: 12, xp: 5, tier: 6 },
+    { id: 'frostling', hp: 34,  spd: 65,  dmg: 12, xp: 5, tier: 7 },
+    { id: 'boulder',   hp: 70,  spd: 30,  dmg: 14, xp: 6, tier: 8 },
+    { id: 'hexer',     hp: 40,  spd: 60,  dmg: 13, xp: 6, tier: 9, shoots: true },
+    { id: 'golem',     hp: 95,  spd: 35,  dmg: 16, xp: 8, tier: 10 },
+    { id: 'lavaworm',  hp: 60,  spd: 80,  dmg: 14, xp: 7, tier: 11 },
+    { id: 'voidling',  hp: 55,  spd: 90,  dmg: 14, xp: 7, tier: 12 },
+    { id: 'cyclops',   hp: 130, spd: 45,  dmg: 18, xp: 10, tier: 13 },
+    { id: 'mimic',     hp: 110, spd: 70,  dmg: 16, xp: 12, tier: 14 },
+    { id: 'ghostking', hp: 100, spd: 80,  dmg: 16, xp: 10, tier: 15, shoots: true },
+    { id: 'seraph',    hp: 140, spd: 95,  dmg: 18, xp: 14, tier: 16, shoots: true },
+    { id: 'reaper',    hp: 200, spd: 85,  dmg: 22, xp: 18, tier: 17 },
+  ];
+
+  const BOSSES = [
+    { id: 'OMEGA_SLIME', name: 'OMEGA SLIME', hp: 1500,  spd: 45, dmg: 18, at: 180,  pattern: 'ring' },
+    { id: 'BONE_TYRANT', name: 'BONE TYRANT', hp: 3800,  spd: 50, dmg: 22, at: 420,  pattern: 'aimed' },
+    { id: 'STORM_EYE',   name: 'STORM EYE',   hp: 7500,  spd: 60, dmg: 26, at: 660,  pattern: 'spiral' },
+    { id: 'HELL_BLOOM',  name: 'HELL BLOOM',  hp: 13000, spd: 40, dmg: 30, at: 900,  pattern: 'flower' },
+    { id: 'VOID_MAW',    name: 'VOID MAW',    hp: 21000, spd: 70, dmg: 34, at: 1080, pattern: 'cross' },
+    { id: 'NOVA_PRIME',  name: 'NOVA PRIME',  hp: 40000, spd: 75, dmg: 40, at: 1185, pattern: 'all' },
+  ];
+
+  let list = [];
+  let spawnT = 0, eliteT = 50, bossIdx = 0;
+
+  function reset() { list = []; spawnT = 0; eliteT = 50; bossIdx = 0; }
+
+  function spawnAt(G, type, elite = false) {
+    const a = Math.random() * Math.PI * 2;
+    const d = Math.max(G.w, G.h) * 0.62;
+    const hpScale = 1 + G.time / 75;
+    const e = {
+      type, x: G.player.x + Math.cos(a) * d, y: G.player.y + Math.sin(a) * d,
+      hp: type.hp * hpScale * (elite ? 14 : 1),
+      maxHp: type.hp * hpScale * (elite ? 14 : 1),
+      spd: type.spd * (elite ? 0.85 : Util.rand(0.9, 1.1)),
+      dmg: type.dmg * (elite ? 1.6 : 1),
+      xp: type.xp * (elite ? 12 : 1),
+      r: elite ? 24 : 13, elite, flash: 0, anim: Math.random() * 9,
+      slow: 0, burn: 0, poison: 0, freeze: 0, shootT: Util.rand(1, 3),
+    };
+    list.push(e);
+    return e;
+  }
+
+  function spawnBoss(G, bdef) {
+    const a = Math.random() * Math.PI * 2;
+    const e = {
+      type: { id: bdef.id, dmg: bdef.dmg, xp: 400 }, boss: true, bdef,
+      x: G.player.x + Math.cos(a) * 600, y: G.player.y + Math.sin(a) * 600,
+      hp: bdef.hp, maxHp: bdef.hp, spd: bdef.spd, dmg: bdef.dmg, xp: 300 + bossIdx * 200,
+      r: 42, flash: 0, anim: 0, slow: 0, burn: 0, poison: 0, freeze: 0,
+      shootT: 2, patT: 0, patA: 0,
+    };
+    list.push(e);
+    G.announceBoss(bdef.name);
+    return e;
+  }
+
+  function update(G, dt) {
+    const minute = G.time / 60;
+    // spawn budget ramps with time
+    spawnT -= dt;
+    const interval = Math.max(0.07, 0.5 - minute * 0.035);
+    if (spawnT <= 0 && list.length < 500) {
+      spawnT = interval;
+      const avail = TYPES.filter(t => t.tier <= minute + 0.01);
+      const t = avail[Math.max(0, avail.length - 1 - (Math.random() * Math.min(5, avail.length) | 0))];
+      const n = 2 + (minute / 2.5 | 0);
+      for (let i = 0; i < n; i++) spawnAt(G, t);
+      // occasional surge wave: a ring of weak enemies closing in
+      if (Math.random() < 0.018 + minute * 0.002) {
+        const st = avail[(Math.random() * avail.length) | 0];
+        for (let i = 0; i < 14; i++) spawnAt(G, st);
+      }
+    }
+    eliteT -= dt;
+    if (eliteT <= 0) {
+      eliteT = Math.max(22, 45 - minute * 1.5);
+      const avail = TYPES.filter(t => t.tier <= minute + 1);
+      const nE = 1 + (minute / 5 | 0);
+      for (let i = 0; i < nE; i++) spawnAt(G, avail[avail.length - 1 - (i % 2)], true);
+      Snd.play('elite');
+    }
+    if (bossIdx < BOSSES.length && G.time >= BOSSES[bossIdx].at) {
+      spawnBoss(G, BOSSES[bossIdx]); bossIdx++;
+    }
+
+    const P = G.player;
+    for (let i = list.length - 1; i >= 0; i--) {
+      const e = list[i];
+      // safety net: anything that hit 0 HP through a side path dies properly
+      if (e.hp <= 0 || !isFinite(e.x) || !isFinite(e.y)) { G.killEnemy(e, i); continue; }
+      e.flash -= dt; e.anim += dt * 6;
+      // status effects
+      if (e.burn > 0) { e.burn -= dt; e.hp -= 8 * dt; if (Math.random() < 0.2) Particles.spawn(e.x, e.y, '#ff6b2e', { speed: 30, life: 0.3 }); if (e.hp <= 0) { G.killEnemy(e, i); continue; } }
+      if (e.poison > 0) { e.poison -= dt; e.hp -= 5 * dt; if (Math.random() < 0.15) Particles.spawn(e.x, e.y, '#5ce86b', { speed: 25, life: 0.35 }); if (e.hp <= 0) { G.killEnemy(e, i); continue; } }
+      e.freeze -= dt; e.slow -= dt;
+      if (e.freeze > 0) continue; // frozen solid
+
+      const sl = e.slow > 0 ? 0.5 : 1;
+      const a = Util.angTo(e.x, e.y, P.x, P.y);
+      e.x += Math.cos(a) * e.spd * sl * dt;
+      e.y += Math.sin(a) * e.spd * sl * dt;
+
+      // shooters & bosses fire bullet patterns
+      if (e.boss) {
+        bossAttack(G, e, dt);
+      } else if (e.type.shoots) {
+        e.shootT -= dt;
+        if (e.shootT <= 0 && Util.dist2(e.x, e.y, P.x, P.y) < 450 * 450) {
+          e.shootT = Util.rand(2.2, 3.5);
+          const aa = Util.angTo(e.x, e.y, P.x, P.y);
+          Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(aa) * 170, vy: Math.sin(aa) * 170, dmg: e.dmg * 0.8, r: 5 });
+        }
+      }
+
+      // contact damage
+      if (Util.dist2(e.x, e.y, P.x, P.y) < (e.r + P.r) * (e.r + P.r)) {
+        Player.hurt(G, e.dmg);
+      }
+      // de-clump (cheap): push away from previous enemy
+      if (i > 0) {
+        const o = list[i - 1];
+        const d2 = Util.dist2(e.x, e.y, o.x, o.y);
+        const rr = e.r + o.r;
+        if (d2 < rr * rr && d2 > 0.01) {
+          const d = Math.sqrt(d2), push = (rr - d) * 0.5;
+          const ax = (e.x - o.x) / d, ay = (e.y - o.y) / d;
+          e.x += ax * push; e.y += ay * push; o.x -= ax * push; o.y -= ay * push;
+        }
+      }
+    }
+  }
+
+  function bossAttack(G, e, dt) {
+    e.patT -= dt;
+    if (e.patT > 0) return;
+    const P = G.player;
+    const pat = e.bdef.pattern === 'all' ? Util.pick(['ring', 'aimed', 'spiral', 'flower', 'cross']) : e.bdef.pattern;
+    switch (pat) {
+      case 'ring': {
+        e.patT = 2.4;
+        const n = 22;
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2 + e.patA;
+          Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a) * 140, vy: Math.sin(a) * 140, dmg: e.dmg * 0.6, r: 6, color: '#ff8c5c' });
+        }
+        e.patA += 0.3;
+        break;
+      }
+      case 'aimed': {
+        e.patT = 1.5;
+        const a = Util.angTo(e.x, e.y, P.x, P.y);
+        for (let i = -2; i <= 2; i++) {
+          Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a + i * 0.14) * 220, vy: Math.sin(a + i * 0.14) * 220, dmg: e.dmg * 0.7, r: 6, color: '#ffe96b' });
+        }
+        break;
+      }
+      case 'spiral': {
+        e.patT = 0.09;
+        for (let k = 0; k < 2; k++) {
+          const a = e.patA + k * Math.PI;
+          Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a) * 160, vy: Math.sin(a) * 160, dmg: e.dmg * 0.5, r: 5, color: '#7fb8f0' });
+        }
+        e.patA += 0.42;
+        break;
+      }
+      case 'flower': {
+        e.patT = 1.1;
+        const n = 8;
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2 + e.patA;
+          for (let s = 0; s < 3; s++) {
+            Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a) * (90 + s * 50), vy: Math.sin(a) * (90 + s * 50), dmg: e.dmg * 0.5, r: 5, color: '#ff5c8a' });
+          }
+        }
+        e.patA += 0.5;
+        break;
+      }
+      case 'cross': {
+        e.patT = 0.7;
+        for (let i = 0; i < 4; i++) {
+          const a = e.patA + (i * Math.PI) / 2;
+          Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a) * 240, vy: Math.sin(a) * 240, dmg: e.dmg * 0.6, r: 7, color: '#f05cf0' });
+        }
+        e.patA += 0.22;
+        break;
+      }
+    }
+  }
+
+  function draw(G, c) {
+    // drop shadows first so they never overlap sprites
+    c.fillStyle = 'rgba(20,8,40,0.35)';
+    for (const e of list) {
+      c.beginPath();
+      c.ellipse(e.x, e.y + e.r * 0.9, e.r * 0.9, e.r * 0.35, 0, 0, Math.PI * 2);
+      c.fill();
+    }
+    for (const e of list) {
+      const frames = e.boss ? Sprites.get(e.bdef.id) : e.elite ? Sprites.getElite(e.type.id) : Sprites.get(e.type.id);
+      if (!frames) continue; // never let a bad sprite lookup kill the render loop
+      const f = frames[(e.anim * 1.5 | 0) % frames.length];
+      c.save();
+      c.translate(e.x, e.y);
+      if (e.flash > 0) { c.globalAlpha = 0.9; c.filter = 'brightness(3)'; }
+      if (e.freeze > 0) c.filter = 'saturate(0.2) brightness(1.6)';
+      const flip = G.player.x < e.x ? -1 : 1;
+      c.scale(flip, 1);
+      c.drawImage(f, -f.width / 2, -f.height / 2 + Math.sin(e.anim) * 2);
+      c.restore();
+      c.filter = 'none';
+      // boss / elite hp bar
+      if (e.boss || e.elite) {
+        const w = e.boss ? 90 : 44;
+        c.fillStyle = '#000a'; c.fillRect(e.x - w / 2, e.y - e.r - 14, w, 5);
+        c.fillStyle = e.boss ? '#ff3a5c' : '#ffd23e';
+        c.fillRect(e.x - w / 2, e.y - e.r - 14, w * Math.max(0, e.hp / e.maxHp), 5);
+      }
+    }
+  }
+
+  return { get list() { return list; }, TYPES, BOSSES, reset, update, draw, spawnAt };
+})();
