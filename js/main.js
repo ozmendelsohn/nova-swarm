@@ -72,6 +72,7 @@ const Game = (() => {
     const fx = opts.effects || [];
     if (fx.includes('crit') && Math.random() < 0.25 + luck) { d *= 2.2; crit = true; }
     else if (Math.random() < luck) { d *= 2; crit = true; }
+    if (e.dr) d *= e.dr; // BULWARK elite affix
     e.hp -= d;
     e.flash = 0.08;
     if (Math.random() < 0.4 || crit) Particles.text(e.x + Util.rand(-8, 8), e.y - e.r, Math.round(d), crit ? '#ffe93e' : '#fff', crit ? 16 : 12);
@@ -116,6 +117,18 @@ const Game = (() => {
     Enemies.list.splice(i, 1);
     G.kills++; G.combo++; G.comboT = 2.5;
     if (e.elite || e.boss) World.addStain(e); // spilled dye stains the cloth forever
+    if (e.splits) { // SPLITTING affix: bursts into weakened copies
+      for (let k = 0; k < e.splits; k++) {
+        const s = Enemies.spawnAt(G, e.type);
+        s.x = e.x + Util.rand(-30, 30); s.y = e.y + Util.rand(-30, 30);
+        s.hp = s.maxHp = s.maxHp * 0.3; s.xp = 1;
+      }
+    }
+    if (e.volatile) { // VOLATILE affix: dying blast hurts YOU
+      Particles.burst(e.x, e.y, '#ff6b2e', 30, { speed: 300 });
+      Snd.play('explode'); G.shake(8);
+      if (Util.dist2(e.x, e.y, G.player.x, G.player.y) < 130 * 130) Player.hurt(G, e.dmg * 1.5);
+    }
     // the knot unravels: thread strands spill out (LORE.md), plus a dye puff
     const tcol = (e.boss || e.elite) ? '#ffd23e' : '#ff8c5c';
     Particles.burst(e.x, e.y, tcol, e.boss ? 50 : 8, { speed: e.boss ? 350 : 140 });
@@ -218,11 +231,27 @@ const Game = (() => {
     G.shakeAmt *= 0.88; G.flashAmt *= 0.92;
     G.totem = null; // re-claimed each tick by an active totem projectile
 
-    // ambient dye-motes: loose pigment drifting up from the local province
-    if (Math.random() < 0.12) {
+    // province weather: each dye-field has its own ambient mood
+    if (Math.random() < 0.22) {
       const mx = G.player.x + Util.rand(-G.w / 2, G.w / 2), my = G.player.y + Util.rand(-G.h / 2, G.h / 2);
       const [h, s] = World.dyeAt(mx, my);
-      Particles.spawn(mx, my, `hsl(${h},${s + 25}%,62%)`, { speed: 12, life: 1.6, size: 2, grav: -22, drag: 0.995 });
+      const col = `hsl(${h},${s + 25}%,62%)`;
+      switch (true) {
+        case h < 40:   // Ember fields: rising sparks
+          Particles.spawn(mx, my, col, { speed: 20, life: 1.4, size: 2, grav: -70 }); break;
+        case h < 90:   // Volt fields: tiny static crackles
+          if (Math.random() < 0.4) Particles.spawn(mx, my, '#ffe93e', { speed: 160, life: 0.1, size: 2, thread: true }); break;
+        case h < 160:  // Verdant fields: drifting petals fall
+          Particles.spawn(mx, my - 60, col, { speed: 16, life: 2.2, size: 3, grav: 26, drag: 0.985 }); break;
+        case h < 215:  // Frost fields: snow
+          Particles.spawn(mx, my - 60, '#dff3ff', { speed: 10, life: 2.4, size: 2, grav: 32, drag: 0.99 }); break;
+        case h < 250:  // Adamant fields: still, faint dust
+          if (Math.random() < 0.5) Particles.spawn(mx, my, col, { speed: 6, life: 1.8, size: 2 }); break;
+        case h < 300:  // Void fields: motes drift inward, unsettling
+          Particles.spawn(mx, my, col, { speed: 8, life: 1.8, size: 2, drag: 1.012 }); break;
+        default:       // Arcane fields: twinkling stardust
+          Particles.spawn(mx, my, Math.random() < 0.3 ? '#fff' : col, { speed: 10, life: 1.5, size: Math.random() < 0.2 ? 4 : 2 });
+      }
     }
     // warp-thread blessing: the Weaver's strings still carry power
     const P = G.player;

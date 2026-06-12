@@ -67,6 +67,15 @@ const Enemies = (() => {
 
   function reset() { list = []; spawnT = 0; eliteT = 50; bossIdx = 0; mothT = 150; gildT = 70; }
 
+  // elite affixes: named modifiers with a visual tell (ring color)
+  const AFFIXES = {
+    HASTED:   { color: '#3ae0ff', apply: e => { e.spd *= 1.6; } },
+    BULWARK:  { color: '#c9ccd6', apply: e => { e.dr = 0.5; } },          // takes half damage
+    SPLITTING:{ color: '#5ce86b', apply: e => { e.splits = 4; } },        // bursts into copies
+    VOLATILE: { color: '#ff6b2e', apply: e => { e.volatile = true; } },   // explodes on death
+    UNDYING:  { color: '#ff5cd6', apply: e => { e.regen = 0.02; } },      // regenerates
+  };
+
   function spawnAt(G, type, elite = false) {
     const a = Math.random() * Math.PI * 2;
     const d = Math.max(G.w, G.h) * 0.62;
@@ -81,6 +90,10 @@ const Enemies = (() => {
       r: elite ? 24 : 13, elite, flash: 0, anim: Math.random() * 9,
       slow: 0, burn: 0, poison: 0, freeze: 0, shootT: Util.rand(1, 3),
     };
+    if (elite) {
+      e.affix = Util.pick(Object.keys(AFFIXES));
+      AFFIXES[e.affix].apply(e);
+    }
     list.push(e);
     return e;
   }
@@ -163,6 +176,7 @@ const Enemies = (() => {
       // status effects
       if (e.burn > 0) { e.burn -= dt; e.hp -= 8 * dt; if (Math.random() < 0.2) Particles.spawn(e.x, e.y, '#ff6b2e', { speed: 30, life: 0.3 }); if (e.hp <= 0) { G.killEnemy(e, i); continue; } }
       if (e.poison > 0) { e.poison -= dt; e.hp -= 5 * dt; if (Math.random() < 0.15) Particles.spawn(e.x, e.y, '#5ce86b', { speed: 25, life: 0.35 }); if (e.hp <= 0) { G.killEnemy(e, i); continue; } }
+      if (e.regen) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * e.regen * dt); // UNDYING affix
       e.freeze -= dt; e.slow -= dt;
       if (e.freeze > 0) continue; // frozen solid
 
@@ -337,6 +351,14 @@ const Enemies = (() => {
         c.fillStyle = '#000a'; c.fillRect(e.x - w / 2, e.y - e.r - 14, w, 5);
         c.fillStyle = e.boss ? '#ff3a5c' : '#ffd23e';
         c.fillRect(e.x - w / 2, e.y - e.r - 14, w * Math.max(0, e.hp / e.maxHp), 5);
+        if (e.affix) { // affix tell: colored ground ring + name
+          const ac = AFFIXES[e.affix].color;
+          c.strokeStyle = ac; c.lineWidth = 2; c.globalAlpha = 0.6;
+          c.beginPath(); c.ellipse(e.x, e.y + e.r * 0.9, e.r * 1.3, e.r * 0.5, 0, 0, Math.PI * 2); c.stroke();
+          c.globalAlpha = 1;
+          c.font = 'bold 9px monospace'; c.textAlign = 'center'; c.fillStyle = ac;
+          c.fillText(e.affix, e.x, e.y - e.r - 18);
+        }
       }
     }
   }
