@@ -1,5 +1,9 @@
 # NOVA SWARM — Art Style Guidelines
 
+> The fiction behind these rules lives in **LORE.md** (the Loomworld, the
+> Unraveling, the Threadbound). When a visual question isn't covered here,
+> answer it from the lore: "what would this look like on a living tapestry?"
+
 ## The style: **ARCADE FOLKLORE**
 The world is a living, neon-dyed **woven tapestry** — as if a folk-art textile
 got possessed by an arcade cabinet. Monsters are embroidered charms that came

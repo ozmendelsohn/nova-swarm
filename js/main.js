@@ -253,39 +253,82 @@ const Game = (() => {
     const sx = Util.rand(-G.shakeAmt, G.shakeAmt), sy = Util.rand(-G.shakeAmt, G.shakeAmt);
     c.translate(G.w / 2 - P.x + sx, G.h / 2 - P.y + sy);
 
-    // candy terrain: chunky tiles whose hue flows across the world and
-    // slowly drifts with time, checkerboard value variation for texture
-    const gs = 64;
+    // ---- the Loomworld tapestry (LORE.md "map rules") ----
+    // quilt of dye-field provinces, stitched seams, golden warp-threads,
+    // embroidered sigils. Cloth breathes slowly but stays dimmer than actors.
+    const gs = 64, PROV = gs * 7; // province = 7x7 tiles of one dye
+    const DYES = [ // [hue, sat] for the seven dyes
+      [16, 60], [203, 58], [50, 55], [275, 56], [130, 52], [228, 22], [315, 56],
+    ];
+    const hash = (x, y) => { let h = (x * 374761393 + y * 668265263) ^ (x * 1274126177); h = (h ^ (h >> 13)) * 1103515245; return ((h ^ (h >> 16)) >>> 0); };
+    const dyeOf = (px, py) => hash(Math.floor(px / PROV), Math.floor(py / PROV)) % 7;
+    const breathe = Math.sin(G.time * 0.4) * 1.5;
     const x0 = Math.floor((P.x - G.w / 2) / gs) * gs - gs, y0 = Math.floor((P.y - G.h / 2) / gs) * gs - gs;
     const x1 = P.x + G.w / 2 + gs, y1 = P.y + G.h / 2 + gs;
-    const drift = G.time * 4;
     for (let x = x0; x < x1; x += gs) {
       for (let y = y0; y < y1; y += gs) {
-        const hue = (200 + Math.sin(x * 0.0009 + drift * 0.01) * 110 + Math.cos(y * 0.0011 - drift * 0.008) * 110 + drift) % 360;
-        const check = ((x / gs + y / gs) & 1) ? 5 : 0;
-        const h2 = Math.abs((x * 73 + y * 31) % 11);
-        const lit = 24 + check + (h2 < 2 ? 5 : 0); // L 24-34: terrain budget (ART_STYLE.md)
-        c.fillStyle = `hsl(${hue},56%,${lit}%)`;
+        const dye = dyeOf(x, y);
+        const [hue, sat] = DYES[dye];
+        const h2 = hash(x, y) % 13;
+        const check = ((x / gs + y / gs) & 1) ? 4 : 0;
+        const lit = 25 + check + (h2 < 2 ? 4 : 0) + breathe; // L budget 22-34
+        c.fillStyle = `hsl(${hue},${sat}%,${lit}%)`;
         c.fillRect(x, y, gs, gs);
-        // woven-thread texture: two warp lines per tile
-        c.fillStyle = `hsla(${hue},70%,${lit + 9}%,0.55)`;
-        c.fillRect(x, y + gs * 0.28, gs, 2);
-        c.fillStyle = `hsla(${(hue + 25) % 360},70%,${lit - 7}%,0.55)`;
+        // cloth weave: two weft lines per tile
+        c.fillStyle = `hsla(${hue},${sat + 10}%,${lit + 8}%,0.45)`;
+        c.fillRect(x, y + gs * 0.3, gs, 2);
+        c.fillStyle = `hsla(${hue},${sat + 10}%,${lit - 6}%,0.45)`;
         c.fillRect(x, y + gs * 0.72, gs, 2);
-        // sparse decorations: crystals / flowers / glow dots
-        if (h2 === 3) {
-          c.fillStyle = `hsl(${(hue + 150) % 360},85%,68%)`;
-          const dx = x + (x * 17 % gs), dy = y + (y * 13 % gs);
-          c.fillRect(dx, dy, 5, 5);
-          c.fillStyle = `hsl(${(hue + 150) % 360},85%,85%)`;
-          c.fillRect(dx + 1, dy + 1, 2, 2);
-        } else if (h2 === 7) {
-          c.fillStyle = `hsla(${(hue + 40) % 360},80%,60%,0.5)`;
-          const dx = x + (y * 23 % gs), dy = y + (x * 7 % gs);
-          c.fillRect(dx, dy, 3, 8); c.fillRect(dx - 2, dy + 2, 7, 3);
+        // stitched seams where two dye-fields meet (dashed thread)
+        const seamCol = `hsla(${hue},40%,72%,0.5)`;
+        if (dyeOf(x + gs, y) !== dye) {
+          c.fillStyle = seamCol;
+          for (let k = 6; k < gs; k += 16) c.fillRect(x + gs - 2, y + k, 2, 8);
+        }
+        if (dyeOf(x, y + gs) !== dye) {
+          c.fillStyle = seamCol;
+          for (let k = 6; k < gs; k += 16) c.fillRect(x + k, y + gs - 2, 8, 2);
+        }
+        // embroidered sigil of this dye (sparse, glinting)
+        if (h2 === 5) {
+          const sx2 = x + 14 + hash(x, y + 1) % (gs - 30), sy2 = y + 14 + hash(x + 1, y) % (gs - 30);
+          const glint = 0.55 + 0.3 * Math.sin(G.time * 2 + (x + y) * 0.01);
+          c.globalAlpha = glint;
+          c.fillStyle = `hsl(${hue},80%,64%)`;
+          switch (dye) {
+            case 0: // Ember: flame knot
+              c.fillRect(sx2 + 3, sy2, 3, 3); c.fillRect(sx2, sy2 + 3, 9, 3); c.fillRect(sx2 + 3, sy2 + 6, 3, 3); break;
+            case 1: // Frost: six-point star stitch
+              c.fillRect(sx2 + 3, sy2 - 2, 3, 13); c.fillRect(sx2 - 2, sy2 + 3, 13, 3); c.fillRect(sx2, sy2, 3, 3); c.fillRect(sx2 + 6, sy2 + 6, 3, 3); break;
+            case 2: // Volt: zigzag stitch
+              c.fillRect(sx2, sy2, 4, 3); c.fillRect(sx2 + 3, sy2 + 3, 4, 3); c.fillRect(sx2, sy2 + 6, 4, 3); break;
+            case 3: // Void: hollow eye
+              c.fillRect(sx2, sy2, 9, 2); c.fillRect(sx2, sy2 + 7, 9, 2); c.fillRect(sx2, sy2, 2, 9); c.fillRect(sx2 + 7, sy2, 2, 9); break;
+            case 4: // Verdant: leaf-work
+              c.fillRect(sx2 + 3, sy2, 3, 9); c.fillRect(sx2, sy2 + 2, 3, 3); c.fillRect(sx2 + 6, sy2 + 4, 3, 3); break;
+            case 5: // Adamant: rivet cross-stitch
+              c.fillRect(sx2, sy2, 3, 3); c.fillRect(sx2 + 6, sy2, 3, 3); c.fillRect(sx2 + 3, sy2 + 3, 3, 3); c.fillRect(sx2, sy2 + 6, 3, 3); c.fillRect(sx2 + 6, sy2 + 6, 3, 3); break;
+            case 6: // Arcane: spiral stitch
+              c.fillRect(sx2, sy2, 9, 2); c.fillRect(sx2 + 7, sy2, 2, 9); c.fillRect(sx2 + 2, sy2 + 7, 7, 2); c.fillRect(sx2 + 2, sy2 + 3, 2, 5); c.fillRect(sx2 + 4, sy2 + 3, 3, 2); break;
+          }
+          c.globalAlpha = 1;
         }
       }
     }
+    // the Weaver's golden warp-threads, every 9 provinces (sacred gold)
+    const WARP = PROV * 3;
+    c.strokeStyle = '#ffd23e'; c.lineWidth = 2;
+    for (let wxL = Math.floor(x0 / WARP) * WARP; wxL < x1; wxL += WARP) {
+      c.globalAlpha = 0.18 + 0.07 * Math.sin(G.time * 1.3 + wxL);
+      c.beginPath(); c.moveTo(wxL, y0); c.lineTo(wxL, y1); c.stroke();
+      c.globalAlpha = 0.5;
+      for (let k = y0 - (y0 % 48); k < y1; k += 48) c.fillStyle = '#ffd23e', c.fillRect(wxL - 1, k, 2, 6);
+    }
+    for (let wyL = Math.floor(y0 / WARP) * WARP; wyL < y1; wyL += WARP) {
+      c.globalAlpha = 0.18 + 0.07 * Math.sin(G.time * 1.3 + wyL);
+      c.beginPath(); c.moveTo(x0, wyL); c.lineTo(x1, wyL); c.stroke();
+    }
+    c.globalAlpha = 1;
     // drifting nebula orbs (parallax glow)
     for (let i = 0; i < 7; i++) {
       const nx = P.x * 0.55 + Math.sin(i * 2.4 + G.time * 0.08) * 700 + i * 530;
