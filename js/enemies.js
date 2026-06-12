@@ -134,7 +134,7 @@ const Enemies = (() => {
 
       // contact damage
       if (Util.dist2(e.x, e.y, P.x, P.y) < (e.r + P.r) * (e.r + P.r)) {
-        Player.hurt(G, e.dmg);
+        Player.hurt(G, e.dmg, e);
       }
       // de-clump (cheap): push away from previous enemy
       if (i > 0) {

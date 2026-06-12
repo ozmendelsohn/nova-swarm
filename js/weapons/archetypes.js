@@ -148,6 +148,37 @@ const Archetypes = (() => {
     bladering: { fire: (G, w, s) => { // expanding then contracting ring
       Projectiles.fire({ kind: 'bladering', x: G.player.x, y: G.player.y, dmg: s.dmg * 0.7, r: 10, life: 1.6, color: w.def.color, ownerW: w, effects: w.def.effects, size: 170 * s.area, pierce: 9999 });
     } },
+
+    splitter: { fire: (G, w, s) => { // shots shatter into shards on impact
+      shot(G, w, s, { split: 2 + (s.count | 0) });
+    } },
+
+    mortar: { fire: (G, w, s) => { // lobbed bombs arc onto targets
+      for (let i = 0; i < s.count; i++) {
+        const e = G.nearestEnemy(G.player.x, G.player.y, 480);
+        const tx = (e ? e.x : G.player.x) + Util.rand(-70, 70);
+        const ty = (e ? e.y : G.player.y) + Util.rand(-70, 70);
+        Projectiles.fire({ kind: 'mortar', x: G.player.x, y: G.player.y, srcX: G.player.x, srcY: G.player.y, life: 0.85, size: 0.85, dmg: s.dmg * 1.4, r: 7, color: w.def.color, ownerW: w, effects: w.def.effects, explode: 65 * s.area, vx: tx, vy: ty }); // vx,vy = landing spot
+      }
+    } },
+
+    flail: { fire: (G, w, s) => { // chained spiked ball swings around you
+      const have = Projectiles.pool.filter(q => q.active && q.kind === 'flail' && q.ownerW === w).length;
+      if (have) return;
+      Projectiles.fire({ kind: 'flail', x: G.player.x, y: G.player.y, dmg: s.dmg, r: 13 * s.area, life: s.cd * 1.1, color: w.def.color, ownerW: w, effects: w.def.effects, orbitR: 95 * s.area, t: Math.random() * TAU, knock: 1 });
+    } },
+
+    geyser: { fire: (G, w, s) => { // staggered eruptions marching down a line
+      const a = aimAng(G);
+      for (let i = 0; i < 3 + s.count; i++) {
+        const d = 55 + i * 65;
+        Projectiles.fire({ kind: 'geyser', x: G.player.x + Math.cos(a) * d, y: G.player.y + Math.sin(a) * d, retT: 0.14 + i * 0.13, life: 0.14 + i * 0.13 + 0.4, dmg: s.dmg, r: 42 * s.area, color: w.def.color, ownerW: w, effects: w.def.effects });
+      }
+    } },
+
+    tether: { fire: (G, w, s) => { // sustained lock-on link that cooks one target
+      Projectiles.fire({ kind: 'tether', x: G.player.x, y: G.player.y, dmg: s.dmg * 0.45, r: 12, life: 1.1 + s.dur * 0.3, color: w.def.color, ownerW: w, effects: w.def.effects, size: 340 + 40 * s.count });
+    } },
   };
 
   // ---------- shared projectile update ----------
@@ -159,6 +190,7 @@ const Archetypes = (() => {
       p.life -= dt; p.t += dt;
       if (p.life <= 0) {
         if (p.kind === 'mine') G.explodeAt(p.x, p.y, p.explode, p.dmg, p);
+        if (p.kind === 'mortar') G.explodeAt(p.vx, p.vy, p.explode, p.dmg, p); // lands and detonates
         p.active = false; continue;
       }
       switch (p.kind) {
@@ -174,7 +206,6 @@ const Archetypes = (() => {
               p.vx = Math.cos(na) * sp; p.vy = Math.sin(na) * sp;
             }
           }
-          if (p.boomerang && p.t > p.life + p.t - 0.0001) {/*noop*/}
           if (p.boomerang) {
             // accelerate back toward player after half-life
             const half = 0.55;
@@ -272,6 +303,30 @@ const Archetypes = (() => {
           }
           break;
         }
+        case 'mortar': break; // pure flight, handled in draw + expiry
+        case 'flail': {
+          p.t += 5.5 * dt; // swing speed
+          const R = p.orbitR * (0.55 + 0.45 * Math.sin(p.t * 1.3));
+          p.x = P.x + Math.cos(p.t) * R;
+          p.y = P.y + Math.sin(p.t) * R;
+          hitEnemies(G, p, dt, 0.15);
+          break;
+        }
+        case 'geyser': {
+          p.retT -= dt;
+          if (p.retT <= 0) hitEnemies(G, p, dt, 99);
+          break;
+        }
+        case 'tether': {
+          p.x = P.x; p.y = P.y;
+          const e = G.nearestEnemy(P.x, P.y, p.size);
+          p._e = e || null;
+          if (e) {
+            tryHit(G, p, e, 0.12);
+            if (Math.random() < 0.4) Particles.spawn(e.x, e.y, p.color, { speed: 60, life: 0.2, size: 2 });
+          }
+          break;
+        }
         case 'bladering': {
           const ph = 1 - p.life / 1.6;
           const R = Math.sin(ph * Math.PI) * p.size;
@@ -345,6 +400,16 @@ const Archetypes = (() => {
         if (p.hitSet.has(e)) continue;
         p.hitSet.add(e);
         G.damageEnemy(e, p.dmg, { color: p.color, effects: p.effects, w: p.ownerW, knock: p.knock, from: p });
+        if (p.split) { // shatter into a fan of shards (which don't re-split)
+          const base = Math.atan2(p.vy, p.vx);
+          for (let k = 0; k < p.split; k++) {
+            const a = base + (k - (p.split - 1) / 2) * 0.7 + Util.rand(-0.15, 0.15);
+            Projectiles.fire({ x: p.x, y: p.y, vx: Math.cos(a) * 320, vy: Math.sin(a) * 320, dmg: p.dmg * 0.45, r: p.r * 0.6, life: 0.5, color: p.color, ownerW: p.ownerW, effects: p.effects, hitSet: new Set([e]) });
+          }
+          Particles.burst(p.x, p.y, '#fff', 6, { speed: 150, life: 0.2 });
+          p.active = false;
+          break;
+        }
         if (p.ricochet > 0) {
           p.ricochet--;
           const ne = G.nearestEnemy(p.x, p.y, 320, p.hitSet);
@@ -527,6 +592,82 @@ const Archetypes = (() => {
           }
           c.lineWidth = 1.5; c.strokeStyle = '#fff';
           c.beginPath(); c.arc(0, 0, R, 0, TAU); c.stroke();
+          break;
+        }
+        case 'mortar': {
+          const ph = 1 - p.life / p.size; // 0..1 flight
+          // landing shadow grows as the bomb falls
+          c.globalAlpha = 0.25 + ph * 0.3;
+          c.fillStyle = '#241636';
+          c.beginPath(); c.ellipse(p.vx, p.vy, 8 + ph * 12, (8 + ph * 12) * 0.45, 0, 0, TAU); c.fill();
+          c.globalAlpha = 0.6; c.strokeStyle = p.color; c.lineWidth = 2;
+          c.beginPath(); c.ellipse(p.vx, p.vy, (1 - ph) * 30 + 10, ((1 - ph) * 30 + 10) * 0.45, 0, 0, TAU); c.stroke();
+          // the bomb arcs overhead
+          const bx = Util.lerp(p.srcX, p.vx, ph), by = Util.lerp(p.srcY, p.vy, ph) - Math.sin(ph * Math.PI) * 130;
+          c.globalAlpha = 1;
+          c.translate(bx, by); c.rotate(ph * 9);
+          c.fillStyle = p.color;
+          c.beginPath(); c.arc(0, 0, p.r, 0, TAU); c.fill();
+          c.fillStyle = '#fff'; c.fillRect(-2, -p.r - 3, 4, 5); // fuse spark
+          break;
+        }
+        case 'flail': {
+          // chain from player to ball
+          c.strokeStyle = '#8a8aa0'; c.lineWidth = 3; c.setLineDash([5, 4]);
+          c.beginPath(); c.moveTo(G.player.x, G.player.y); c.lineTo(p.x, p.y); c.stroke();
+          c.setLineDash([]);
+          // spiked ball
+          c.translate(p.x, p.y); c.rotate(p.t * 3);
+          c.fillStyle = p.color;
+          c.beginPath();
+          for (let i = 0; i < 8; i++) {
+            const a = (i / 8) * TAU;
+            c.lineTo(Math.cos(a) * p.r * 1.45, Math.sin(a) * p.r * 1.45);
+            c.lineTo(Math.cos(a + TAU / 16) * p.r * 0.85, Math.sin(a + TAU / 16) * p.r * 0.85);
+          }
+          c.fill();
+          c.fillStyle = '#241636'; c.beginPath(); c.arc(0, 0, p.r * 0.45, 0, TAU); c.fill();
+          c.fillStyle = '#fff'; c.beginPath(); c.arc(-p.r * 0.15, -p.r * 0.15, p.r * 0.18, 0, TAU); c.fill();
+          break;
+        }
+        case 'geyser': {
+          c.translate(p.x, p.y);
+          if (p.retT > 0) { // warning: cracking ground ring
+            c.globalAlpha = 0.55;
+            c.strokeStyle = p.color; c.lineWidth = 2; c.setLineDash([6, 5]);
+            c.beginPath(); c.ellipse(0, 0, p.r * 0.8, p.r * 0.36, 0, 0, TAU); c.stroke();
+            c.setLineDash([]);
+          } else { // eruption pillar
+            const eh = Math.min(1, (0.4 - p.life + 0.001) / 0.15 + 0.4);
+            c.globalAlpha = Math.min(1, p.life * 5);
+            c.fillStyle = p.color;
+            c.beginPath(); c.ellipse(0, 0, p.r, p.r * 0.45, 0, 0, TAU); c.fill();
+            for (let i = 0; i < 3; i++) { // jets
+              const jx = (i - 1) * p.r * 0.45;
+              c.fillRect(jx - 5, -70 * eh + i * 12, 10, 70 * eh - i * 12);
+            }
+            c.fillStyle = '#fff';
+            c.fillRect(-3, -70 * eh, 6, 18);
+          }
+          break;
+        }
+        case 'tether': {
+          if (p._e) {
+            const e = p._e;
+            c.globalAlpha = 0.9;
+            c.strokeStyle = p.color; c.lineWidth = 3.5;
+            c.beginPath(); c.moveTo(p.x, p.y);
+            const segs = 5;
+            for (let i = 1; i <= segs; i++) {
+              const t = i / segs;
+              c.lineTo(Util.lerp(p.x, e.x, t) + (i < segs ? Util.rand(-9, 9) : 0), Util.lerp(p.y, e.y, t) + (i < segs ? Util.rand(-9, 9) : 0));
+            }
+            c.stroke();
+            c.strokeStyle = '#fff'; c.lineWidth = 1.2; c.stroke();
+            // lock ring on the victim
+            c.strokeStyle = p.color; c.lineWidth = 2;
+            c.beginPath(); c.arc(e.x, e.y, e.r + 5 + Math.sin(G.time * 14) * 2, 0, TAU); c.stroke();
+          }
           break;
         }
         case 'drone': {

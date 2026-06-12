@@ -4,12 +4,15 @@ const Player = (() => {
   window.addEventListener('keydown', e => { keys[e.code] = true; });
   window.addEventListener('keyup', e => { keys[e.code] = false; });
 
-  function create() {
+  function create(ch) {
     return {
-      x: 0, y: 0, r: 12, hp: 100, maxHp: 100,
+      x: 0, y: 0, r: 12, hp: ch.hp, maxHp: ch.hp,
       xp: 0, lvl: 1, nextXp: 10,
-      speed: 200, faceAng: 0, hurtT: 0,
-      dashT: 0, dashCd: 0, anim: 0,
+      speed: ch.speed, faceAng: 0, hurtT: 0,
+      dashT: 0, dashCd: 0, anim: 0, char: ch,
+      // perk-driven modifiers (see characters.js)
+      mods: { dmg: ch.dmgMul, cd: ch.cdMul, count: 0, dashCd: 1, armor: 0, regen: 0, crit: 0, lifesteal: 0, thorns: 0, dashExplode: false, special: null },
+      specialT: 0,
     };
   }
 
@@ -23,9 +26,19 @@ const Player = (() => {
 
     p.dashCd -= dt; p.dashT -= dt; p.hurtT -= dt;
     if (keys.Space && p.dashCd <= 0 && (dx || dy)) {
-      p.dashT = 0.18; p.dashCd = 2.2;
+      p.dashT = 0.18; p.dashCd = 2.2 * p.mods.dashCd;
       Snd.play('dash');
-      Particles.burst(p.x, p.y, '#3ae0ff', 14, { speed: 180 });
+      Particles.burst(p.x, p.y, p.char.pal.a, 14, { speed: 180 });
+      if (p.mods.dashExplode) G.explodeAt(p.x, p.y, 90, 30 * p.mods.dmg, { color: p.char.pal.a });
+    }
+    // character special: free archetype cast on a timer
+    if (p.mods.special) {
+      p.specialT -= dt;
+      if (p.specialT <= 0) {
+        p.specialT = p.mods.special.cd;
+        const sd = { color: p.mods.special.color, effects: [], family: p.char.id, arch: p.mods.special.arch };
+        Archetypes.A[p.mods.special.arch].fire(G, { def: sd }, { dmg: 30 * p.mods.dmg, cd: 1, count: 3, speed: 380, area: 1.2, dur: 1.6, pierce: 1 });
+      }
     }
 
     const spd = p.speed * (1 + 0.1 * (WeaponManager.passives.speed || 0)) * (p.dashT > 0 ? 3.2 : 1);
@@ -38,7 +51,7 @@ const Player = (() => {
     }
 
     // regen
-    const rg = 0.6 * (WeaponManager.passives.regen || 0);
+    const rg = 0.6 * (WeaponManager.passives.regen || 0) + p.mods.regen;
     if (rg) p.hp = Math.min(p.maxHp, p.hp + rg * dt);
   }
 
@@ -49,16 +62,18 @@ const Player = (() => {
       p.xp -= p.nextXp;
       p.lvl++;
       p.nextXp = Math.floor(10 + p.lvl * 5.5 + p.lvl * p.lvl * 0.4);
+      Characters.onLevel(G);
       G.queueLevelUp();
     }
   }
 
-  function hurt(G, dmg) {
+  function hurt(G, dmg, attacker) {
     const p = G.player;
     if (p.dashT > 0) return; // i-frames while dashing
-    const armor = 1.5 * (WeaponManager.passives.armor || 0);
+    const armor = 1.5 * (WeaponManager.passives.armor || 0) + 1.5 * p.mods.armor;
     const d = Math.max(1, dmg - armor);
     if (p.hurtT > 0) return;
+    if (attacker && p.mods.thorns) G.damageEnemy(attacker, p.mods.thorns, { color: '#5ce86b' });
     p.hurtT = 0.5;
     p.hp -= d;
     G.shake(6);
@@ -69,7 +84,8 @@ const Player = (() => {
 
   function draw(G, c) {
     const p = G.player;
-    const spr = Sprites.get('player')[0];
+    if (!p._spr) p._spr = Characters.sprite(p.char);
+    const spr = p._spr;
     c.fillStyle = 'rgba(20,8,40,0.35)';
     c.beginPath();
     c.ellipse(p.x, p.y + 16, 13, 5, 0, 0, Math.PI * 2);

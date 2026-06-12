@@ -192,6 +192,11 @@ const Sprites = (() => {
     lance:      ['....w','...wa','...aa','...aa','...ab','...ab','...ab','..g.b','.g..b','....b'],
     storm:      ['.aabb','aaabb','aaaab','.aaa.','...w.','..w..','.ww..','..w..','.w...','w....'],
     bladering:  ['..a.a','.a..a','a..a.','a.a.w','a..a.','.a..a','..a.a','...a.','.....','.....'],
+    splitter:   ['....a','....a','...aw','...aa','..a.a','.a..b','a...b','....b','...b.','..b..'],
+    mortar:     ['.....','..aaa','.aaaw','.aaaa','..aaa','.....','.b.b.','b.b.b','.bbb.','..b..'],
+    flail:      ['w....','.g...','..g..','...g.','...aa','..aaa','..aaw','...aa','..a.a','.....'],
+    geyser:     ['...a.','..aw.','..aw.','.aaw.','.aaa.','aaaa.','.bbb.','bb.bb','.....','.....'],
+    tether:     ['aa...','a.a..','.a.a.','..a.a','...aa','..a.a','.a.a.','a.a..','aa...','.....'],
   };
 
   function weaponIcon(def) {

@@ -22,7 +22,7 @@ const Game = (() => {
     gems.length = 0; zaps.length = 0;
     G = {
       state: 'play', time: 0, w: cv.width, h: cv.height,
-      player: Player.create(), kills: 0, combo: 0, comboT: 0,
+      player: Player.create(Characters.selected), kills: 0, combo: 0, comboT: 0,
       shakeAmt: 0, flashAmt: 0, freezeT: 0, levelUpQueue: 0,
       bossBanner: 0, bossName: '', won: false,
       // API used by weapons/enemies:
@@ -31,7 +31,7 @@ const Game = (() => {
       shake: a => { G.shakeAmt = Math.max(G.shakeAmt, a); },
       announceBoss, onFusion, gameOver,
     };
-    WeaponManager.addWeapon(Util.pick(['ember', 'shard', 'arc', 'missile']));
+    WeaponManager.addWeapon(Characters.selected.start);
     UI.showScreen(null);
   }
 
@@ -62,7 +62,7 @@ const Game = (() => {
     if (e.hp <= 0) return;
     let d = dmg;
     let crit = false;
-    const luck = 0.08 * (WeaponManager.passives.luck || 0);
+    const luck = 0.08 * (WeaponManager.passives.luck || 0) + G.player.mods.crit;
     const fx = opts.effects || [];
     if (fx.includes('crit') && Math.random() < 0.25 + luck) { d *= 2.2; crit = true; }
     else if (Math.random() < luck) { d *= 2; crit = true; }
@@ -97,6 +97,7 @@ const Game = (() => {
           break;
         }
         case 'lifesteal': if (Math.random() < 0.2) G.player.hp = Math.min(G.player.maxHp, G.player.hp + 1); break;
+        default: break;
         case 'explode': if (opts.from && !opts.from._chainExp && Math.random() < 0.4) explodeAt(e.x, e.y, 55, d * 0.5, { color: opts.color, _chainExp: true, ownerW: opts.w }); break;
       }
     }
@@ -343,6 +344,25 @@ const Game = (() => {
   }
 
   // ---------- wiring ----------
+  // character select cards
+  (() => {
+    const box = document.getElementById('charsel');
+    box.innerHTML = Characters.CHARS.map((ch, i) => `
+      <div class="char-card ${i === 0 ? 'sel' : ''}" data-i="${i}">
+        <img src="${Characters.sprite(ch).toDataURL()}" alt="${ch.name}">
+        <div class="char-name" style="color:${ch.pal.a}">${ch.name}</div>
+        <div class="char-blurb">${ch.blurb}</div>
+        <div class="char-perks">${ch.perks.map(p => `<span title="${p.desc}">L${p.lvl} ${p.name}</span>`).join('')}</div>
+      </div>`).join('');
+    box.addEventListener('click', ev => {
+      const card = ev.target.closest('.char-card');
+      if (!card) return;
+      box.querySelectorAll('.char-card').forEach(el => el.classList.remove('sel'));
+      card.classList.add('sel');
+      Characters.select(Characters.CHARS[+card.dataset.i]);
+    });
+  })();
+
   document.getElementById('btn-start').addEventListener('click', () => {
     Snd.init(); Snd.startMusic();
     newGame();

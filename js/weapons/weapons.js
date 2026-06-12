@@ -41,7 +41,7 @@ const WEAPONS = (() => {
   // ============ FIRE ============
   W('ember', 'Ember Bolt', 'Fire', 'projectile', [12, 0.8, 1, 420], null, 'A searing bolt that ignites foes.',
     { id: 'ember_a', name: 'Hellstream', m: { cd: 0.35, dmg: 0.7 }, desc: 'Machine-gun fire rate.' },
-    { id: 'ember_b', name: 'Meteor Bolt', m: { dmg: 2.4, cd: 1.5, area: 1.6 }, fx: ['explode'], desc: 'Slow, huge, explosive.' });
+    { id: 'ember_b', name: 'Meteor Bolt', arch: 'mortar', m: { dmg: 1.8, cd: 1.5, area: 1.5 }, fx: ['explode'], desc: 'Lobs burning meteors that crash down.' });
   W('flamewhip', 'Flame Whip', 'Fire', 'whip', [16, 1.1, 1, 0, 1.1], null, 'Lashes a cone of fire.',
     { id: 'flamewhip_a', name: 'Inferno Lash', m: { count: 2, dmg: 1.2 }, desc: 'Strikes both sides.' },
     { id: 'flamewhip_b', name: 'Solar Flare', arch: 'nova', m: { dmg: 0.9, cd: 1.2 }, desc: 'Erupts in a flame ring.' });
@@ -50,11 +50,11 @@ const WEAPONS = (() => {
     { id: 'firestorm_b', name: 'Cinder Core', m: { dmg: 2.2, area: 1.5 }, desc: 'Fewer, devastating strikes.' });
   W('magmamine', 'Magma Mine', 'Fire', 'mine', [22, 1.8, 2, 0, 1.2], null, 'Plants explosive magma pods.',
     { id: 'magmamine_a', name: 'Minefield', m: { count: 2, cd: 0.8, dmg: 0.8 }, desc: 'Carpets the ground.' },
-    { id: 'magmamine_b', name: 'Caldera', m: { dmg: 2, area: 1.8 }, desc: 'City-block explosions.' });
+    { id: 'magmamine_b', name: 'Caldera', arch: 'geyser', m: { dmg: 1.6, area: 1.5 }, desc: 'Fissures erupt in a marching line of lava.' });
 
   // ============ FROST ============
   W('shard', 'Ice Shard', 'Frost', 'projectile', [10, 0.7, 2, 460], null, 'Twin shards that chill.',
-    { id: 'shard_a', name: 'Glacier Volley', m: { count: 2.5, cd: 1.1 }, desc: 'A wall of shards.' },
+    { id: 'shard_a', name: 'Glacier Volley', arch: 'splitter', m: { count: 1.5 }, desc: 'Shards shatter into razor fragments on impact.' },
     { id: 'shard_b', name: 'Permafrost Lance', arch: 'lance', m: { dmg: 1.8 }, desc: 'Piercing frozen spear.' });
   W('frostnova', 'Frost Nova', 'Frost', 'nova', [11, 1.5, 2, 340], null, 'Ring of freezing crystals.',
     { id: 'frostnova_a', name: 'Absolute Zero', m: { area: 1.5, dmg: 1.3 }, fx: ['slow'], desc: 'Deep-freezes all it touches.' },
@@ -69,7 +69,7 @@ const WEAPONS = (() => {
   // ============ VOLT ============
   W('arc', 'Arc Chain', 'Volt', 'chain', [13, 1.0, 2, 0], null, 'Lightning leaps between foes.',
     { id: 'arc_a', name: 'Tesla Cascade', m: { count: 2, cd: 0.85 }, desc: 'Endless chain hops.' },
-    { id: 'arc_b', name: 'Gigavolt', m: { dmg: 2.5 }, desc: 'One devastating arc.' });
+    { id: 'arc_b', name: 'Gigavolt', arch: 'tether', m: { dmg: 1.8 }, desc: 'A sustained lightning tether that cooks its victim.' });
   W('voltorb', 'Volt Orbiter', 'Volt', 'orbit', [9, 2.4, 2, 0, 1], null, 'Charged orbs circle you.',
     { id: 'voltorb_a', name: 'Ion Ring', m: { count: 2, area: 1.2 }, desc: 'A full electric halo.' },
     { id: 'voltorb_b', name: 'Railgun Orbit', arch: 'ricochet', m: { dmg: 1.6, speed: 1.3 }, desc: 'Orbs launch and bounce.' });
@@ -102,7 +102,7 @@ const WEAPONS = (() => {
     { id: 'sporecloud_a', name: 'Blight Garden', m: { area: 1.6 }, desc: 'A vast poison field.' },
     { id: 'sporecloud_b', name: 'Spore Mines', arch: 'mine', m: { dmg: 1.8 }, desc: 'Spores condense into pods.' });
   W('vinewhip', 'Vine Whip', 'Nature', 'whip', [14, 1.0, 1, 0], null, 'A living lash.',
-    { id: 'vinewhip_a', name: 'World Root', m: { count: 2, area: 1.4 }, desc: 'Roots strike everywhere.' },
+    { id: 'vinewhip_a', name: 'World Root', arch: 'geyser', m: { count: 1.5, area: 1.2 }, desc: 'Roots erupt from the earth in a charging line.' },
     { id: 'vinewhip_b', name: 'Mantis Scythe', arch: 'bladering', m: { dmg: 1.3 }, desc: 'A spinning blade of chitin.' });
   W('beestorm', 'Hornet Hive', 'Nature', 'drone', [7, 2.8, 2, 0], null, 'Angry guardians.',
     { id: 'beestorm_a', name: 'Queen\'s Wrath', m: { count: 2.5 }, desc: 'The whole hive.' },
@@ -111,9 +111,9 @@ const WEAPONS = (() => {
   // ============ STEEL ============
   W('saw', 'Saw Disc', 'Steel', 'boomerang', [13, 1.1, 1, 400], null, 'A returning blade.',
     { id: 'saw_a', name: 'Twin Reapers', m: { count: 2.5, cd: 1.1 }, desc: 'Multiple discs.' },
-    { id: 'saw_b', name: 'Buzzkill', m: { dmg: 2, area: 1.4 }, desc: 'A giant shredder.' });
+    { id: 'saw_b', name: 'Buzzkill', arch: 'flail', m: { dmg: 1.8, area: 1.5 }, desc: 'A chained shredder ball swung around you.' });
   W('flak', 'Flak Cannon', 'Steel', 'spread', [9, 1.0, 4, 420], null, 'Shrapnel everywhere.',
-    { id: 'flak_a', name: 'Cluster Hell', m: { count: 2 }, fx: ['explode'], desc: 'Exploding flechettes.' },
+    { id: 'flak_a', name: 'Cluster Hell', arch: 'splitter', m: { count: 1.5 }, fx: ['explode'], desc: 'Flechettes burst into shrapnel fans.' },
     { id: 'flak_b', name: 'Slug Driver', arch: 'projectile', m: { dmg: 3, cd: 1.2, speed: 1.3 }, desc: 'One brutal slug.' });
   W('sentry', 'Sentry Gun', 'Steel', 'turret', [10, 3.2, 1, 380], null, 'Deploys an autogun.',
     { id: 'sentry_a', name: 'Firebase', m: { count: 2, dur: 1.5 }, desc: 'A fortified position.' },

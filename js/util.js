@@ -1,9 +1,6 @@
 // ---- util.js : math, RNG, spatial hash ----
 const Util = (() => {
-  let seed = 1234567;
-  const rng = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const rand = (a = 1, b) => (b === undefined ? Math.random() * a : a + Math.random() * (b - a));
-  const irand = (a, b) => Math.floor(rand(a, b + 1));
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -31,5 +28,5 @@ const Util = (() => {
       return out;
     }
   }
-  return { rng, rand, irand, pick, clamp, lerp, dist2, angTo, Grid };
+  return { rand, pick, clamp, lerp, dist2, angTo, Grid };
 })();

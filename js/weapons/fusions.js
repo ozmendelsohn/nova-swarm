@@ -25,7 +25,7 @@ const FUSIONS = (() => {
     ricochet: 'Rebound', chain: 'Conduit', nova: 'Burst', spiral: 'Helix',
     orbit: 'Halo', beam: 'Ray', aura: 'Mantle', whip: 'Lash', mine: 'Trap',
     drone: 'Legion', turret: 'Bastion', blackhole: 'Abyss', wall: 'Bulwark',
-    mirror: 'Duality', lance: 'Pike', storm: 'Tempest', bladering: 'Cyclone',
+    mirror: 'Duality', lance: 'Pike', storm: 'Tempest', bladering: 'Cyclone', splitter: 'Shatter', mortar: 'Meteor', flail: 'Flail', geyser: 'Geyser', tether: 'Leash',
   };
   const ELEM = {
     'Fire,Fire': 'Infernal', 'Frost,Frost': 'Glacial', 'Volt,Volt': 'Fulminant',
@@ -41,6 +41,10 @@ const FUSIONS = (() => {
     'Steel,Arcane': 'Runeblade',
   };
 
+  // normalize ELEM keys to alphabetical order to match the sorted lookup
+  const ELEM_N = {};
+  for (const k in ELEM) ELEM_N[k.split(',').sort().join(',')] = ELEM[k];
+
   function build() {
     const ids = WEAPONS.baseIds; // 28
     const recipes = [];
@@ -51,7 +55,7 @@ const FUSIONS = (() => {
         const a = WEAPONS.defs[ids[i]], b = WEAPONS.defs[ids[j]];
         const tw = TWISTS[(i * 7 + j * 3 + k) % TWISTS.length];
         const ekey = [a.family, b.family].sort().join(',');
-        const name = `${ELEM[ekey]} ${NOUN[a.arch]}-${NOUN[b.arch]} [${tw.name}]`;
+        const name = `${ELEM_N[ekey]} ${NOUN[a.arch]}-${NOUN[b.arch]} [${tw.name}]`;
         const id = `fz_${a.id}_${b.id}`;
         const def = {
           id, name, tier: 'fusion', parents: [a.id, b.id],
