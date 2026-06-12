@@ -787,6 +787,16 @@ const Enemies = (() => {
 
   const hazards = []; // ground hazards left by monsters (lava wakes etc.)
 
+  // bestiary discovery: kills per monster type, persisted across runs
+  let killBook = {};
+  try { killBook = JSON.parse(localStorage.getItem('ns_bestiary')) || {}; } catch { killBook = {}; }
+  let killSaveT = 0;
+  function recordKill(e) {
+    const id = e.type.id;
+    killBook[id] = (killBook[id] || 0) + 1;
+    if (++killSaveT >= 25) { killSaveT = 0; localStorage.setItem('ns_bestiary', JSON.stringify(killBook)); }
+  }
+
   function quirkDeath(G, e) {
     const q = MQUIRKS[e.type.id];
     if (q && q.onDeath) q.onDeath(G, e);
@@ -1203,5 +1213,5 @@ const Enemies = (() => {
     }
   }
 
-  return { get list() { return list; }, TYPES, BOSSES, MQUIRKS, reset, update, draw, spawnAt, quirkDeath, quirkHurt };
+  return { get list() { return list; }, TYPES, BOSSES, MQUIRKS, killBook, recordKill, reset, update, draw, spawnAt, quirkDeath, quirkHurt };
 })();

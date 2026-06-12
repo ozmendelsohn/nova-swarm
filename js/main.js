@@ -132,6 +132,7 @@ const Game = (() => {
     G.kills++; G.combo++; G.comboT = 2.5;
     if (e.elite || e.boss) World.addStain(e); // spilled dye stains the cloth forever
     Enemies.quirkDeath(G, e); // per-monster death behavior
+    Enemies.recordKill(e); // bestiary discovery
     if (e.splits) { // SPLITTING affix: bursts into weakened copies
       for (let k = 0; k < e.splits; k++) {
         const s = Enemies.spawnAt(G, e.type);
@@ -216,6 +217,7 @@ const Game = (() => {
   function gameOver() {
     if (G.state === 'over') return;
     G.state = 'over';
+    localStorage.setItem('ns_bestiary', JSON.stringify(Enemies.killBook)); // flush discoveries
     setTimeout(() => UI.showGameOver(G, G.won), 800);
   }
 

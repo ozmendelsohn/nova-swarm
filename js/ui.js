@@ -165,6 +165,30 @@ const UI = (() => {
       }
       html += '</div>';
     }
+    // ----- bestiary: knots of the Unraveling, discovered by unmaking them -----
+    const kb = Enemies.killBook;
+    const pretty = id => id.replace(/_/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase());
+    const monsters = Enemies.TYPES.slice().sort((a, b) => a.tier - b.tier);
+    const knownM = monsters.filter(t => kb[t.id]).length;
+    html += `<h3>BESTIARY — KNOTS OF THE UNRAVELING (${knownM}/${monsters.length})</h3><div class="codex-grid">`;
+    for (const t of monsters) {
+      const known = !!kb[t.id];
+      const lore = (Enemies.MQUIRKS[t.id] || {}).lore || '';
+      html += `<div class="codex-item ${known ? '' : 'unknown'}" title="${known ? `Tier ${t.tier} · unmade ×${kb[t.id]}${lore ? ' — ' + lore : ''}` : '???'}">
+        ${known ? `<img class="codex-icon" src="${Sprites.get(t.id)[0].toDataURL()}">` : '<span class="codex-dot" style="background:#333"></span>'}
+        ${known ? pretty(t.id) : '?????'}</div>`;
+    }
+    html += '</div>';
+    const knownB = Enemies.BOSSES.filter(b => kb[b.id]).length;
+    html += `<h3>KNOT-TYRANTS (${knownB}/${Enemies.BOSSES.length})</h3><div class="codex-grid">`;
+    for (const b of Enemies.BOSSES) {
+      const known = !!kb[b.id];
+      const lore = (Enemies.MQUIRKS[b.id] || {}).lore || '';
+      html += `<div class="codex-item ${known ? '' : 'unknown'}" title="${known ? `${b.title}${lore ? ' — ' + lore : ''}` : '???'}">
+        ${known ? `<img class="codex-icon" src="${Sprites.get(b.id)[0].toDataURL()}">` : '<span class="codex-dot" style="background:#333"></span>'}
+        ${known ? b.name : '?????'}</div>`;
+    }
+    html += '</div>';
     $('codex-list').innerHTML = html;
     showScreen('codex');
   }
