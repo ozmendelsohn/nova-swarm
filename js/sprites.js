@@ -129,6 +129,60 @@ const Sprites = (() => {
       'ww..ww', 'wwwwww', 'wwaaww', 'w.aea.', '..aa..', '..aa..', '...a..', '..a...'] },
     stalker: { pal: { a: '#4a2c66', b: '#2a1440', e: '#5cf0c9', t: '#8a5cb8' }, grid: [
       't....t', '.t..t.', '..aa..', '.aaaa.', '.aeae.', '.aaaa.', 't.aa.t', '..tt..'] },
+    lanternfly: { pal: { a: '#ffe9a8', b: '#a8742a', e: '#ff8c42', w: '#fff' }, grid: [
+      'w..w..', '.ww...', '.aaaa.', 'aaeaea', '.aaaa.', '..ww..', '..ee..', '...e..'] },
+    foxfire: { pal: { a: '#ff9e3e', b: '#b85c14', e: '#fff', t: '#ffe96b' }, grid: [
+      't....t', '.t..t.', '.aaaa.', 'aaeaea', 'aaaaaa', '.aaaa.', 'a.aa.a', 't....t'] },
+    tumbler: { pal: { a: '#b8a05c', b: '#7a6428', e: '#3a2c0a' }, grid: [
+      '.a.a..', 'a.a.a.', '.aeaa.', 'a.aa.a', '.aaea.', 'a.a.a.', '.a.a..'] },
+    pincer: { pal: { a: '#d65c5c', b: '#8a2424', e: '#ffe96b', l: '#5c1414' }, grid: [
+      'l....l', 'll..ll', '.aaaa.', 'aaeaea', 'aaaaaa', '.abba.', 'l.bb.l'] },
+    magmite: { pal: { a: '#ff6b2e', b: '#8a2c0a', e: '#ffe96b', d: '#3a1404' }, grid: [
+      '.bbbb.', 'baaaab', 'baeaeb', 'bdaadb', 'baaaab', '.bbbb.', 'd....d'] },
+    icefang: { pal: { a: '#bfeaff', b: '#5ca8d6', e: '#1f3a5c', w: '#fff' }, grid: [
+      'a....a', '.a..a.', '.aaaa.', 'aaeaea', 'aawwaa', '.aww..', '..w...'] },
+    sparkmite: { pal: { a: '#ffe93e', b: '#a8861f', e: '#fff' }, grid: [
+      '..a...', '.aaa..', 'aaeaa.', '.aaa..', 'a.a.a.', '.a.a..'] },
+    voideye: { pal: { a: '#6b2ea8', b: '#2a0f52', e: '#f05cf0', w: '#d8b8ff' }, grid: [
+      '.bbbb.', 'baaaab', 'bawwab', 'baweab', 'baaaab', '.bbbb.'] },
+    bloomling: { pal: { a: '#ff8cc9', b: '#b8407a', e: '#ffe96b', g: '#5ce86b' }, grid: [
+      '.a..a.', 'aaaaaa', 'aaeaea', 'aaaaaa', '.aaaa.', '..gg..', '..g...', '.gg...'] },
+    rusthound: { pal: { a: '#b8703a', b: '#6b3a14', e: '#ffe96b', d: '#3a1c08' }, grid: [
+      'a.....', 'aa.aaa', '.aaaaa', '.aeaea', '.aaaaa', '.ad.da', '.d...d'] },
+    glasswing: { pal: { a: '#d8f0f5', b: '#7ab8c9', e: '#2a6b8a', w: '#fff' }, grid: [
+      'w..a..', 'ww.aa.', 'wwaaea', 'ww.aa.', 'w..a..', '...a..'] },
+    owlet: { pal: { a: '#a88a5c', b: '#6b522a', e: '#ffe96b', w: '#e8d8b8' }, grid: [
+      'a....a', 'aa..aa', 'awewea', 'awaawa', '.aaaa.', '.abba.', '..b.b.'] },
+    lurkfish: { pal: { a: '#3a6b8a', b: '#14344a', e: '#5cf0c9', t: '#7ab8d6' }, grid: [
+      '......', 't.aaa.', 'taaeaa', 'taaaaa', 't.aaa.', '...a..', '..a...'] },
+    barnacle: { pal: { a: '#8a8a7a', b: '#52523f', e: '#ff5c5c', m: '#d65c8a' }, grid: [
+      '..mm..', '.maam.', '.aaea.', 'aaaaaa', 'abbbba', 'bbbbbb'] },
+    fumebat: { pal: { a: '#5c5c8a', b: '#2c2c4a', e: '#a8f05c', s: '#8a8ab8' }, grid: [
+      'b....b', 'bb.sbb', 'bbsasb', '.baea.', '..aaa.', '.s..s.'] },
+    thornling: { pal: { a: '#5ce86b', b: '#1f8a3a', e: '#ffd23e', t: '#0f4a1f' }, grid: [
+      't.t.t.', '.aaa..', 'taeat.', '.aaa..', 't.a.t.', '..b...', '.bb...'] },
+    coilworm: { pal: { a: '#d6a85c', b: '#8a642a', e: '#3a2408' }, grid: [
+      '.aaa..', 'aaeaa.', 'a.aaa.', '.aa.a.', 'aa..a.', 'a..aa.', '.aaa..'] },
+    gravekite: { pal: { a: '#c9c9d8', b: '#6e6e85', e: '#5cf0c9', d: '#2c2c3a' }, grid: [
+      '..a...', '.aaa..', 'aaeaa.', 'daaad.', '.aaa..', '..a...', '..d...', '..d...'] },
+    sunmote: { pal: { a: '#ffd23e', b: '#c98a14', e: '#fff', r: '#ff8c42' }, grid: [
+      'r..r..', '.aaa..', 'raear.', '.aaa..', 'r..r..', '......'] },
+    inkling: { pal: { a: '#2c2c44', b: '#14141f', e: '#f05cf0', s: '#5c5c8a' }, grid: [
+      '.aaaa.', 'aaeaea', 'aaaaaa', '.asas.', 's.s.s.', '.s.s..'] },
+    bramblebear: { pal: { a: '#6b8a3a', b: '#3a521f', e: '#ff5c5c', t: '#24340f' }, grid: [
+      '.a..a.', 'aaaaaa', 'aaeaea', 'aaaaaa', 'taaaat', 'aabbaa', 'tb..bt'] },
+    chimeling: { pal: { a: '#d6c95c', b: '#8a7e2a', e: '#3ae0ff', w: '#fff8d0' }, grid: [
+      '..aa..', '.aaaa.', '.aeae.', '.aaaa.', 'w.aa.w', '..ww..', '..w...'] },
+    boneworm: { pal: { a: '#e8e3d5', b: '#a89e8a', e: '#ff5c2e' }, grid: [
+      '.aaa..', 'aaeaa.', 'ab.ba.', '.aab..', '..aab.', '.aab..', 'aab...'] },
+    ashwalker: { pal: { a: '#8a8a8a', b: '#4a4a4a', e: '#ff6b2e', d: '#2a2a2a' }, grid: [
+      '..aa..', '.aaaa.', '.aeae.', '.aaaa.', '.dada.', '.a..a.', '.d..d.'] },
+    pearlsnail: { pal: { a: '#e8d8f0', b: '#a88ac9', e: '#2a1a4a', s: '#fff' }, grid: [
+      'a.....', 'ae.sss', 'a.s.ss', 'aass.s', 'aasssb', 'aaaaaa'] },
+    stormcrow: { pal: { a: '#3a4a6b', b: '#1c2438', e: '#ffe93e', w: '#7a8ab8' }, grid: [
+      'b.....', 'bb.aa.', 'bbbaae', '.bwaaa', '..waa.', '.w.a..', '....a.'] },
+    maweater: { pal: { a: '#8a3a6b', b: '#4a1438', e: '#ffe96b', t: '#fff' }, grid: [
+      '.aaaa.', 'aaaaaa', 'aeaaea', 'atatat', 'aat.ta', '.aaaa.', '..aa..'] },
     gildedmoth: { pal: { a: '#ffd23e', b: '#a8741f', e: '#fff', w: '#fff3c4' }, grid: [
       'ww..ww', 'wwwwww', 'wwaaww', 'w.aea.', '..aa..', '..aa..', '...a..', '..a...'] },
     toad: { pal: { a: '#8ac93a', b: '#4a8a14', e: '#ffd23e', u: '#d8ffb0' }, grid: [

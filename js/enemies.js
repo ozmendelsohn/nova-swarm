@@ -41,14 +41,42 @@ const Enemies = (() => {
     { id: 'gargoyle',    hp: 80,  spd: 75,  dmg: 15, xp: 8, tier: 12 },
     { id: 'djinn',       hp: 90,  spd: 85,  dmg: 16, xp: 9, tier: 14, shoots: true },
     { id: 'stalker',     hp: 150, spd: 95,  dmg: 20, xp: 14, tier: 16 },
+    // -- the deep bestiary: 27 more knots of the Unraveling --
+    { id: 'sparkmite',   hp: 6,   spd: 115, dmg: 5,  xp: 1, tier: 0 },
+    { id: 'tumbler',     hp: 12,  spd: 70,  dmg: 7,  xp: 1, tier: 0 },
+    { id: 'sunmote',     hp: 8,   spd: 85,  dmg: 6,  xp: 1, tier: 1 },
+    { id: 'lanternfly',  hp: 11,  spd: 90,  dmg: 7,  xp: 2, tier: 1 },
+    { id: 'glasswing',   hp: 9,   spd: 125, dmg: 7,  xp: 2, tier: 2 },
+    { id: 'pearlsnail',  hp: 26,  spd: 22,  dmg: 9,  xp: 3, tier: 2 },
+    { id: 'foxfire',     hp: 16,  spd: 100, dmg: 9,  xp: 2, tier: 3 },
+    { id: 'owlet',       hp: 18,  spd: 95,  dmg: 9,  xp: 3, tier: 3 },
+    { id: 'inkling',     hp: 22,  spd: 75,  dmg: 10, xp: 3, tier: 4 },
+    { id: 'pincer',      hp: 32,  spd: 50,  dmg: 12, xp: 4, tier: 5 },
+    { id: 'fumebat',     hp: 20,  spd: 105, dmg: 10, xp: 3, tier: 5 },
+    { id: 'thornling',   hp: 24,  spd: 65,  dmg: 11, xp: 4, tier: 6, shoots: true },
+    { id: 'coilworm',    hp: 42,  spd: 70,  dmg: 12, xp: 5, tier: 7 },
+    { id: 'icefang',     hp: 38,  spd: 88,  dmg: 13, xp: 5, tier: 8 },
+    { id: 'barnacle',    hp: 65,  spd: 18,  dmg: 12, xp: 6, tier: 8, shoots: true },
+    { id: 'stormcrow',   hp: 36,  spd: 115, dmg: 12, xp: 5, tier: 9 },
+    { id: 'magmite',     hp: 78,  spd: 42,  dmg: 15, xp: 7, tier: 10 },
+    { id: 'lurkfish',    hp: 55,  spd: 92,  dmg: 14, xp: 6, tier: 11 },
+    { id: 'rusthound',   hp: 70,  spd: 100, dmg: 15, xp: 7, tier: 12 },
+    { id: 'voideye',     hp: 60,  spd: 78,  dmg: 14, xp: 7, tier: 12, shoots: true },
+    { id: 'bloomling',   hp: 85,  spd: 60,  dmg: 15, xp: 8, tier: 13 },
+    { id: 'chimeling',   hp: 75,  spd: 85,  dmg: 15, xp: 8, tier: 14 },
+    { id: 'boneworm',    hp: 110, spd: 72,  dmg: 17, xp: 10, tier: 15 },
+    { id: 'ashwalker',   hp: 120, spd: 65,  dmg: 18, xp: 10, tier: 15 },
+    { id: 'gravekite',   hp: 95,  spd: 105, dmg: 17, xp: 10, tier: 16, shoots: true },
+    { id: 'bramblebear', hp: 190, spd: 55,  dmg: 22, xp: 14, tier: 17 },
+    { id: 'maweater',    hp: 230, spd: 80,  dmg: 24, xp: 18, tier: 18, kamikaze: true },
   ];
 
   // animation personality per monster (ART_STYLE.md: idle motion everywhere)
   const ANIM = {
-    bounce: ['slime', 'jelly', 'toad', 'shroom', 'voidling', 'krakenspawn'],  // squash & stretch
-    flap:   ['bat', 'raven', 'moth', 'hornet', 'gargoyle', 'seraph', 'gildedmoth'], // vertical wing pump
-    float:  ['wraith', 'banshee', 'ghostking', 'djinn', 'reaper', 'skullmage', 'eyeball', 'stalker'], // sine hover + shimmer
-    waddle: ['beetle', 'crab', 'golem', 'boulder', 'knightling', 'cyclops', 'snail', 'cactoid', 'mimic'], // rocking gait
+    bounce: ['slime', 'jelly', 'toad', 'shroom', 'voidling', 'krakenspawn', 'inkling', 'bloomling', 'tumbler', 'foxfire'],  // squash & stretch
+    flap:   ['bat', 'raven', 'moth', 'hornet', 'gargoyle', 'seraph', 'gildedmoth', 'lanternfly', 'glasswing', 'owlet', 'fumebat', 'stormcrow', 'gravekite'], // vertical wing pump
+    float:  ['wraith', 'banshee', 'ghostking', 'djinn', 'reaper', 'skullmage', 'eyeball', 'stalker', 'voideye', 'sunmote', 'chimeling', 'ashwalker', 'lurkfish'], // sine hover + shimmer
+    waddle: ['beetle', 'crab', 'golem', 'boulder', 'knightling', 'cyclops', 'snail', 'cactoid', 'mimic', 'pincer', 'pearlsnail', 'magmite', 'rusthound', 'bramblebear', 'barnacle', 'thornling', 'maweater'], // rocking gait
   };
   const ANIM_OF = {};
   for (const k in ANIM) for (const id of ANIM[k]) ANIM_OF[id] = k;
