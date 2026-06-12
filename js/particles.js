@@ -16,6 +16,7 @@ const Particles = (() => {
     p.life = p.maxLife = opts.life ?? 0.45;
     p.size = opts.size ?? 3; p.color = color;
     p.drag = opts.drag ?? 0.92; p.grav = opts.grav ?? 0;
+    p.thread = opts.thread ?? false; // draws as a wiggling thread strand
   }
 
   function burst(x, y, color, n = 8, opts = {}) {
@@ -47,8 +48,17 @@ const Particles = (() => {
       const a = p.life / p.maxLife;
       c.globalAlpha = a;
       c.fillStyle = p.color;
-      const s = p.size * (0.5 + a * 0.5);
-      c.fillRect(p.x - s / 2, p.y - s / 2, s, s);
+      if (p.thread) { // unraveled thread: short strand along its motion, wiggling
+        const ang = Math.atan2(p.vy, p.vx) + Math.sin(p.life * 30) * 0.5;
+        const len = p.size * 3.2;
+        c.save();
+        c.translate(p.x, p.y); c.rotate(ang);
+        c.fillRect(-len / 2, -1, len, 2);
+        c.restore();
+      } else {
+        const s = p.size * (0.5 + a * 0.5);
+        c.fillRect(p.x - s / 2, p.y - s / 2, s, s);
+      }
     }
     c.globalAlpha = 1;
     c.textAlign = 'center';

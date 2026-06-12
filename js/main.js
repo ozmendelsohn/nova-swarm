@@ -17,6 +17,14 @@ const Game = (() => {
   const props = []; // breakable dye-spools on the tapestry
   let propT = 0;
 
+  // dye-field geography (shared by terrain render + ambient effects)
+  const PROV = 64 * 7; // province = 7x7 tiles of one dye
+  const DYES = [ // [hue, sat] for the seven dyes
+    [16, 60], [203, 58], [50, 55], [275, 56], [130, 52], [228, 22], [315, 56],
+  ];
+  const hash = (x, y) => { let h = (x * 374761393 + y * 668265263) ^ (x * 1274126177); h = (h ^ (h >> 13)) * 1103515245; return ((h ^ (h >> 16)) >>> 0); };
+  const dyeOf = (px, py) => hash(Math.floor(px / PROV), Math.floor(py / PROV)) % 7;
+
   function newGame() {
     WeaponManager.reset();
     Enemies.reset();
@@ -115,7 +123,12 @@ const Game = (() => {
     if (i < 0) return;
     Enemies.list.splice(i, 1);
     G.kills++; G.combo++; G.comboT = 2.5;
-    Particles.burst(e.x, e.y, e.boss ? '#ffd23e' : '#ff8c5c', e.boss ? 60 : 10, { speed: e.boss ? 350 : 140 });
+    // the knot unravels: thread strands spill out (LORE.md), plus a dye puff
+    const tcol = e.boss ? '#ffd23e' : (e.elite ? '#ffd23e' : '#ff8c5c');
+    Particles.burst(e.x, e.y, tcol, e.boss ? 50 : 8, { speed: e.boss ? 350 : 140 });
+    for (let k = 0; k < (e.boss ? 26 : 7); k++) {
+      Particles.spawn(e.x, e.y, k % 3 ? tcol : '#e8d8b0', { speed: e.boss ? 280 : 170, life: 0.7, size: 3, thread: true, drag: 0.9, grav: 70 });
+    }
     Snd.play('kill');
     // drop xp gems
     let xp = e.xp;
@@ -180,7 +193,8 @@ const Game = (() => {
     if (propT <= 0 && props.length < 5) {
       propT = 16;
       const a = Math.random() * Math.PI * 2, d = Util.rand(350, 600);
-      props.push({ x: P.x + Math.cos(a) * d, y: P.y + Math.sin(a) * d, hp: 30, wob: 0 });
+      const kind = Util.pick(['spool', 'spool', 'urn', 'cocoon']); // spools commonest
+      props.push({ x: P.x + Math.cos(a) * d, y: P.y + Math.sin(a) * d, hp: kind === 'cocoon' ? 45 : 30, wob: 0, kind });
     }
     for (let i = props.length - 1; i >= 0; i--) {
       const pr = props[i];
@@ -201,11 +215,16 @@ const Game = (() => {
         Particles.burst(pr.x, pr.y, '#d65cb1', 18, { speed: 200 });
         Particles.burst(pr.x, pr.y, '#e8d8b0', 10, { speed: 150 });
         Snd.play('kill');
-        // the spool spills: health chest, magnet charm, or a few coins
-        const roll = Math.random();
-        if (roll < 0.45) gems.push({ x: pr.x, y: pr.y, v: 0, heal: 30, t: 0 });
-        else if (roll < 0.75) gems.push({ x: pr.x, y: pr.y, v: 0, magnet: true, t: 0 });
-        else for (let k = 0; k < 3; k++) gems.push({ x: pr.x + Util.rand(-20, 20), y: pr.y + Util.rand(-20, 20), v: 0, coin: 1, t: 0 });
+        if (pr.kind === 'urn') { // dye urn: always coins
+          for (let k = 0; k < 5; k++) gems.push({ x: pr.x + Util.rand(-22, 22), y: pr.y + Util.rand(-22, 22), v: 0, coin: 1, t: 0 });
+        } else if (pr.kind === 'cocoon') { // knot cocoon: a burst of dye-gems (XP)
+          for (let k = 0; k < 9; k++) gems.push({ x: pr.x + Util.rand(-26, 26), y: pr.y + Util.rand(-26, 26), v: 3, t: 0 });
+        } else { // spool: health chest, magnet charm, or a few coins
+          const roll = Math.random();
+          if (roll < 0.45) gems.push({ x: pr.x, y: pr.y, v: 0, heal: 30, t: 0 });
+          else if (roll < 0.75) gems.push({ x: pr.x, y: pr.y, v: 0, magnet: true, t: 0 });
+          else for (let k = 0; k < 3; k++) gems.push({ x: pr.x + Util.rand(-20, 20), y: pr.y + Util.rand(-20, 20), v: 0, coin: 1, t: 0 });
+        }
       }
     }
   }
@@ -285,6 +304,12 @@ const Game = (() => {
     G.shakeAmt *= 0.88; G.flashAmt *= 0.92;
 
     G.totem = null; // re-claimed each tick by an active totem projectile
+    // ambient dye-motes: loose pigment drifting up from the local province
+    if (Math.random() < 0.12) {
+      const mx = G.player.x + Util.rand(-G.w / 2, G.w / 2), my = G.player.y + Util.rand(-G.h / 2, G.h / 2);
+      const [h, s] = DYES[dyeOf(mx, my)];
+      Particles.spawn(mx, my, `hsl(${h},${s + 25}%,62%)`, { speed: 12, life: 1.6, size: 2, grav: -22, drag: 0.995 });
+    }
     Player.update(G, dt);
     rebuildGrid();
     WeaponManager.update(G, dt);
@@ -320,12 +345,7 @@ const Game = (() => {
     // ---- the Loomworld tapestry (LORE.md "map rules") ----
     // quilt of dye-field provinces, stitched seams, golden warp-threads,
     // embroidered sigils. Cloth breathes slowly but stays dimmer than actors.
-    const gs = 64, PROV = gs * 7; // province = 7x7 tiles of one dye
-    const DYES = [ // [hue, sat] for the seven dyes
-      [16, 60], [203, 58], [50, 55], [275, 56], [130, 52], [228, 22], [315, 56],
-    ];
-    const hash = (x, y) => { let h = (x * 374761393 + y * 668265263) ^ (x * 1274126177); h = (h ^ (h >> 13)) * 1103515245; return ((h ^ (h >> 16)) >>> 0); };
-    const dyeOf = (px, py) => hash(Math.floor(px / PROV), Math.floor(py / PROV)) % 7;
+    const gs = 64;
     const breathe = Math.sin(G.time * 0.4) * 1.5;
     const x0 = Math.floor((P.x - G.w / 2) / gs) * gs - gs, y0 = Math.floor((P.y - G.h / 2) / gs) * gs - gs;
     const x1 = P.x + G.w / 2 + gs, y1 = P.y + G.h / 2 + gs;
@@ -405,15 +425,16 @@ const Game = (() => {
       c.fillRect(nx - 190, ny - 190, 380, 380);
     }
 
-    // dye-spools (breakable props)
-    const spoolSpr = Sprites.get('spool')[0];
+    // breakable props (spools, urns, cocoons)
     for (const pr of props) {
+      const prSpr = Sprites.get(pr.kind || 'spool')[0];
       c.fillStyle = 'rgba(20,8,40,0.35)';
       c.beginPath(); c.ellipse(pr.x, pr.y + 16, 16, 6, 0, 0, Math.PI * 2); c.fill();
       c.save();
       c.translate(pr.x, pr.y);
+      if (pr.kind === 'cocoon') c.rotate(Math.sin(G.time * 2.5) * 0.06); // it's alive...
       if (pr.wob > 0) c.rotate(Math.sin(G.time * 35) * 0.12 * pr.wob);
-      c.drawImage(spoolSpr, -spoolSpr.width / 2, -spoolSpr.height / 2);
+      c.drawImage(prSpr, -prSpr.width / 2, -prSpr.height / 2);
       c.restore();
     }
     // gems

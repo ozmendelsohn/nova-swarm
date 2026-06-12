@@ -157,6 +157,10 @@ const Sprites = (() => {
     '.ss.', 'saas', 'aaag', 'aaaa', 'aaag', 'saas', '.ss.'] };
   const MAGNET = { pal: { a: '#3ae0ff', b: '#1f6b9e', w: '#fff' }, grid: ['aa.', 'aab', 'a..', 'a..', 'aab', 'aa.', 'w.w'] };
   const COIN = { pal: { a: '#ffd23e', b: '#a8741f', w: '#fff8d0' }, grid: ['.aa', 'aab', 'awb', 'aab', '.aa'] };
+  const URN = { pal: { a: '#5c8aff', b: '#2a4aa8', g: '#ffd23e', d: '#1a2a5c' }, grid: [
+    '.ga', 'gaa', '.aa', 'aaa', 'add', 'add', 'aaa', '.gg'] };
+  const COCOON = { pal: { a: '#d8cfc0', b: '#a89a85', t: '#ff8c5c', e: '#5cf0c9' }, grid: [
+    '.ta', 'taa', 'aaa', 'aea', 'aaa', 'aab', '.ab', '..t'] };
   const CHEST = { pal: { a: '#ffd23e', b: '#a8741f', w: '#fff' }, grid: ['.aaa', 'abba', 'awba', 'abba', '.aaa'] };
 
   function frame2(grid) { // simple 2nd frame: nudge bottom third
@@ -189,6 +193,10 @@ const Sprites = (() => {
       out = [render(MAGNET.grid, MAGNET.pal, 3, false)];
     } else if (name === 'coin') {
       out = [render(COIN.grid, COIN.pal, 3, true)];
+    } else if (name === 'urn') {
+      out = [render(URN.grid, URN.pal, 4, true)];
+    } else if (name === 'cocoon') {
+      out = [render(COCOON.grid, COCOON.pal, 4, true)];
     }
     cache[name] = out;
     return out;
