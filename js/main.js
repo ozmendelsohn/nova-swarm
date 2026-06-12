@@ -14,12 +14,14 @@ const Game = (() => {
   const qbuf = [];
   const zaps = []; // lightning visuals
   const gems = [];
+  const props = []; // breakable dye-spools on the tapestry
+  let propT = 0;
 
   function newGame() {
     WeaponManager.reset();
     Enemies.reset();
     Projectiles.clearAll();
-    gems.length = 0; zaps.length = 0;
+    gems.length = 0; zaps.length = 0; props.length = 0; propT = 4;
     G = {
       state: 'play', time: 0, w: cv.width, h: cv.height,
       player: Player.create(Characters.selected), kills: 0, combo: 0, comboT: 0,
@@ -160,6 +162,41 @@ const Game = (() => {
     setTimeout(() => UI.showGameOver(G, G.won), 800);
   }
 
+  // ---------- breakable dye-spools ----------
+  function updateProps(dt) {
+    const P = G.player;
+    propT -= dt;
+    if (propT <= 0 && props.length < 5) {
+      propT = 16;
+      const a = Math.random() * Math.PI * 2, d = Util.rand(350, 600);
+      props.push({ x: P.x + Math.cos(a) * d, y: P.y + Math.sin(a) * d, hp: 30, wob: 0 });
+    }
+    for (let i = props.length - 1; i >= 0; i--) {
+      const pr = props[i];
+      pr.wob = Math.max(0, pr.wob - dt * 4);
+      if (Util.dist2(pr.x, pr.y, P.x, P.y) > 1600 * 1600) { props.splice(i, 1); continue; } // left behind
+      // any player projectile cracks it
+      for (const p of Projectiles.pool) {
+        if (!p.active || p.kind === 'aura' || p.kind === 'totem') continue;
+        if (Util.dist2(pr.x, pr.y, p.x, p.y) < 26 * 26) {
+          pr.hp -= 12; pr.wob = 1;
+          Particles.burst(pr.x, pr.y, '#d65cb1', 5, { speed: 110, life: 0.3 });
+          Snd.play('hit');
+          break;
+        }
+      }
+      if (pr.hp <= 0) {
+        props.splice(i, 1);
+        Particles.burst(pr.x, pr.y, '#d65cb1', 18, { speed: 200 });
+        Particles.burst(pr.x, pr.y, '#e8d8b0', 10, { speed: 150 });
+        Snd.play('kill');
+        // the spool spills: health chest or a magnet charm
+        if (Math.random() < 0.55) gems.push({ x: pr.x, y: pr.y, v: 0, heal: 30, t: 0 });
+        else gems.push({ x: pr.x, y: pr.y, v: 0, magnet: true, t: 0 });
+      }
+    }
+  }
+
   // ---------- pickups ----------
   function updateGems(dt) {
     const P = G.player;
@@ -177,6 +214,12 @@ const Game = (() => {
       if (d2 < 22 * 22) {
         gems.splice(i, 1);
         if (g.heal) { P.hp = Math.min(P.maxHp, P.hp + g.heal); Particles.text(P.x, P.y - 20, '+' + g.heal, '#5cffb0'); }
+        else if (g.magnet) { // every gem on the field rushes to you
+          for (const o of gems) o.pull = true;
+          Particles.text(P.x, P.y - 24, 'MAGNETIZED!', '#3ae0ff', 16);
+          Particles.burst(P.x, P.y, '#3ae0ff', 24, { speed: 280 });
+          Snd.play('levelup');
+        }
         else Player.gainXp(G, g.v);
         Snd.play('gem');
       }
@@ -228,6 +271,7 @@ const Game = (() => {
     Archetypes.updateProjectiles(G, dt);
     Enemies.update(G, dt);
     updateEnemyBullets(dt);
+    updateProps(dt);
     updateGems(dt);
     Particles.update(dt);
     for (let i = zaps.length - 1; i >= 0; i--) { zaps[i].life -= dt; if (zaps[i].life <= 0) zaps.splice(i, 1); }
@@ -341,11 +385,25 @@ const Game = (() => {
       c.fillRect(nx - 190, ny - 190, 380, 380);
     }
 
+    // dye-spools (breakable props)
+    const spoolSpr = Sprites.get('spool')[0];
+    for (const pr of props) {
+      c.fillStyle = 'rgba(20,8,40,0.35)';
+      c.beginPath(); c.ellipse(pr.x, pr.y + 16, 16, 6, 0, 0, Math.PI * 2); c.fill();
+      c.save();
+      c.translate(pr.x, pr.y);
+      if (pr.wob > 0) c.rotate(Math.sin(G.time * 35) * 0.12 * pr.wob);
+      c.drawImage(spoolSpr, -spoolSpr.width / 2, -spoolSpr.height / 2);
+      c.restore();
+    }
     // gems
-    const gemSpr = Sprites.get('gem')[0], chestSpr = Sprites.get('chest')[0];
+    const gemSpr = Sprites.get('gem')[0], chestSpr = Sprites.get('chest')[0], magSpr = Sprites.get('magnet')[0];
     for (const g of gems) {
       const bob = Math.sin(G.time * 5 + g.x) * 3;
-      c.drawImage(g.heal ? chestSpr : gemSpr, g.x - 6, g.y - 6 + bob);
+      const spr = g.heal ? chestSpr : g.magnet ? magSpr : gemSpr;
+      if (g.magnet) { c.shadowColor = '#3ae0ff'; c.shadowBlur = 12; }
+      c.drawImage(spr, g.x - spr.width / 2, g.y - spr.height / 2 + bob);
+      c.shadowBlur = 0;
     }
 
     Enemies.draw(G, c);

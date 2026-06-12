@@ -153,6 +153,9 @@ const Sprites = (() => {
     '....w', '...ww', '..waa', '.waaa', '.waab', 'waaab', 'waabb', '.wabb', '.e.bb', 'e..b.'] };
 
   const GEM = { pal: { a: '#5cffb0', b: '#1fa86b', w: '#fff' }, grid: ['..a', '.aw', 'aaa', '.ab', '..b'] };
+  const SPOOL = { pal: { a: '#d65cb1', b: '#7a2c66', s: '#e8d8b0', g: '#ffd23e' }, grid: [
+    '.ss.', 'saas', 'aaag', 'aaaa', 'aaag', 'saas', '.ss.'] };
+  const MAGNET = { pal: { a: '#3ae0ff', b: '#1f6b9e', w: '#fff' }, grid: ['aa.', 'aab', 'a..', 'a..', 'aab', 'aa.', 'w.w'] };
   const CHEST = { pal: { a: '#ffd23e', b: '#a8741f', w: '#fff' }, grid: ['.aaa', 'abba', 'awba', 'abba', '.aaa'] };
 
   function frame2(grid) { // simple 2nd frame: nudge bottom third
@@ -179,6 +182,10 @@ const Sprites = (() => {
       out = [render(GEM.grid, GEM.pal, 2, true)];
     } else if (name === 'chest') {
       out = [render(CHEST.grid, CHEST.pal, 3, true)];
+    } else if (name === 'spool') {
+      out = [render(SPOOL.grid, SPOOL.pal, 4, true)];
+    } else if (name === 'magnet') {
+      out = [render(MAGNET.grid, MAGNET.pal, 3, false)];
     }
     cache[name] = out;
     return out;
