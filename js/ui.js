@@ -5,6 +5,7 @@ const UI = (() => {
   function showScreen(name) {
     for (const s of document.querySelectorAll('.screen')) s.classList.remove('visible');
     if (name) $(name).classList.add('visible');
+    if (name === 'menu') $('menu-coins').textContent = `⛀ ${Meta.coins} WEAVER'S COINS BANKED`;
   }
 
   function fmtTime(t) {

@@ -154,7 +154,19 @@ const Game = (() => {
     if (e.boss) {
       G.freezeT = 0.35; G.shakeAmt = 18; G.flashAmt = 0.8;
       Snd.play('bosskill');
-      if (e.bdef.id === 'NOVA_PRIME') { G.won = true; gameOver(); }
+      if (e.bdef.id === 'NOVA_PRIME') { // victory: the final knot comes undone
+        G.won = true;
+        G.winT = 2.8; // savor it before the score screen
+        announceBoss('THE LOOM IS MENDED', 'The Pattern Holds. The Weaver Smiles.');
+        for (let k = 0; k < 80; k++) {
+          Particles.spawn(e.x, e.y, k % 2 ? '#ffd23e' : '#fff', { speed: 420, life: 1.4, size: 4, thread: k % 3 === 0, drag: 0.95 });
+        }
+      }
+    }
+    // combo milestones: every 50-kill streak mends a little cloth
+    if (G.combo > 0 && G.combo % 50 === 0) {
+      G.player.hp = Math.min(G.player.maxHp, G.player.hp + 5);
+      Particles.text(G.player.x, G.player.y - 30, `${G.combo} COMBO! +5 HP`, '#5cffb0', 15);
     }
   }
 
@@ -230,6 +242,11 @@ const Game = (() => {
     G.comboT -= dt; if (G.comboT <= 0) G.combo = 0;
     G.shakeAmt *= 0.88; G.flashAmt *= 0.92;
     G.totem = null; // re-claimed each tick by an active totem projectile
+    if (G.winT !== undefined) { // victory lap: golden rain, then the score screen
+      G.winT -= dt;
+      if (Math.random() < 0.4) Particles.spawn(G.player.x + Util.rand(-G.w / 3, G.w / 3), G.player.y - G.h / 2, '#ffd23e', { speed: 30, life: 2, size: 3, grav: 120 });
+      if (G.winT <= 0) { G.winT = undefined; gameOver(); }
+    }
 
     // province weather: each dye-field has its own ambient mood
     if (Math.random() < 0.22) {
@@ -341,6 +358,12 @@ const Game = (() => {
   }
 
   // ---------- wiring ----------
+  // menu parade: the Swarm marches across the title screen
+  (() => {
+    const ids = ['slime', 'bat', 'shroom', 'beetle', 'toad', 'imp', 'moth', 'eyeball', 'snail', 'gildedmoth'];
+    document.getElementById('parade').innerHTML = ids.map((id, i) =>
+      `<img src="${Sprites.get(id)[0].toDataURL()}" style="animation-delay:${(i * 0.17).toFixed(2)}s" alt="">`).join('');
+  })();
   // character select cards
   (() => {
     const box = document.getElementById('charsel');
