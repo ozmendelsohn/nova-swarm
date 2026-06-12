@@ -54,5 +54,22 @@ One entry per weapon: its Loomworld fiction and its unique mechanical quirk
 | Drone Swarm | One spark is a pet. A thousand are weather. | **Biting Static** — mite bites numb (slow) the legs |
 | War Drone | The Weaver built one soldier, felt ashamed, and hid it. It found you. | **Ordnance** — every 6th hit fires a rocket |
 
-*(Void, Nature, Steel, Arcane, and fusions follow in subsequent passes.
+## Void — charms cut from the hole in the pattern
+
+| Weapon | Lore | Quirk |
+|---|---|---|
+| Void Bolt | An arrow fletched with absence. It always knows the shortest way to nothing. | **Devour the Faint** — executes knots below 12% HP; executions feed +damage |
+| Hungering Dark | Three hungers sharing one memory of being fed. | **Marked Prey** — marked targets take +30% from the dark |
+| Event Bolt | Some falls take a lifetime. This one takes everyone nearby. | **Slow Collapse** — feeding a singularity extends its life |
+| Singularity | The Weaver dropped a stitch. The stitch kept dropping. | **Accretion** — grows as it eats |
+| Galaxy Engine | Two absences, orbiting the memory of each other. | **Binary Pull** — twin holes pull far harder |
+| Big Crunch | In the end, everything comes home. This is the end, commuting. | **Event Horizon** — the moon drags enemies into its path |
+| Rift Spiral | Where it passes, directions stop agreeing with each other. | **Disorient** — scrambles enemy positions |
+| Maelstrom | Two currents from the same wound, braiding shut around whatever they catch. | **Crossing Currents** — hits whirl nearby knots together |
+| Null Ray | It does not destroy. It revises. | **Erasure** — strips wards and haste, punishing the protected |
+| Shadow Lance | Forged from the shadow of a spear that was never made. | **First Strike** — double damage to the unwounded |
+| Phantom Pike | They circle, remembering when they were soldiers. Then they remember the rest. | **Haunting** — hits leave striking shadows |
+| Umbra Mirror | Every blow owes a twin. The mirror collects. | **Mirror Debt** — also strikes the knot opposite you |
+
+*(Nature, Steel, Arcane, and fusions follow in subsequent passes.
 Monsters are complete — see MONSTER_LORE.md.)*

@@ -315,6 +315,109 @@ const Quirks = (() => {
     },
   };
 
+  // ===================== VOID =====================
+  Q.voidshot = {
+    lore: 'An arrow fletched with absence. It always knows the shortest way to nothing.',
+    name: 'Devour the Faint',
+    // executes knots below 12% HP outright; each execution feeds the dark
+    onHit(G, e, d, opts) {
+      if (!e.boss && e.hp < e.maxHp * 0.12) {
+        e.hp = -1;
+        Particles.burst(e.x, e.y, '#b05cff', 10, { speed: 140 });
+        opts.w._fed = Math.min(12, (opts.w._fed || 0) + 0.5);
+      }
+    },
+    mod(s, w) { s.dmg += w._fed || 0; },
+  };
+  Q.voidshot_a = {
+    lore: 'Three hungers sharing one memory of being fed.',
+    name: 'Marked Prey',
+    // seekers mark; marked prey takes more from the dark
+    onHit(G, e, d) {
+      if (e._dark > G.time) e.hp -= d * 0.3;
+      e._dark = G.time + 2;
+    },
+  };
+  Q.voidshot_b = {
+    lore: 'Some falls take a lifetime. This one takes everyone nearby.',
+    name: 'Slow Collapse',
+    onHit(G, e, d, opts) { if (opts.from && opts.from.kind === 'blackhole') opts.from.life += 0.08; }, // feeding extends the hole
+  };
+
+  Q.singularity = {
+    lore: 'The Weaver dropped a stitch. The stitch kept dropping.',
+    name: 'Accretion',
+    onHit(G, e, d, opts) { if (opts.from && opts.from.r < 150) opts.from.r += 0.8; }, // it grows as it eats
+  };
+  Q.singularity_a = {
+    lore: 'Two absences, orbiting the memory of each other.',
+    name: 'Binary Pull',
+    onFire(G, w) {
+      for (const p of Projectiles.pool) if (p.active && p.kind === 'blackhole' && p.ownerW === w) p.vacuum = 380;
+    },
+  };
+  Q.singularity_b = {
+    lore: 'In the end, everything comes home. This is the end, commuting.',
+    name: 'Event Horizon',
+    onFire(G, w) {
+      for (const p of Projectiles.pool) if (p.active && p.kind === 'jugger' && p.ownerW === w) p.vacuum = 220;
+    },
+  };
+
+  Q.riftspiral = {
+    lore: 'Where it passes, directions stop agreeing with each other.',
+    name: 'Disorient',
+    onHit(G, e) { // scrambled heading
+      if (e.boss) return;
+      const a = Math.random() * Math.PI * 2;
+      e.x += Math.cos(a) * 24; e.y += Math.sin(a) * 24;
+    },
+  };
+  Q.riftspiral_a = {
+    lore: 'Two currents from the same wound, braiding shut around whatever they catch.',
+    name: 'Crossing Currents',
+    onHit(G, e) { // a brief local vortex
+      if (Math.random() > 0.3) return;
+      const out = [];
+      G.enemiesInRange(e.x, e.y, 90, out);
+      for (const o of out) {
+        if (o.boss) continue;
+        const a = Util.angTo(o.x, o.y, e.x, e.y);
+        o.x += Math.cos(a) * 26; o.y += Math.sin(a) * 26;
+      }
+    },
+  };
+  Q.riftspiral_b = {
+    lore: 'It does not destroy. It revises.',
+    name: 'Erasure',
+    onHit(G, e, d) { // strips wards and haste; punishes the protected
+      if (e.wardT > 0 || e._hasteT > 0) e.hp -= d * 0.25;
+      e.wardT = 0; e._hasteT = 0;
+    },
+  };
+
+  Q.shadowlance = {
+    lore: 'Forged from the shadow of a spear that was never made.',
+    name: 'First Strike',
+    onHit(G, e, d) { if (e.hp > e.maxHp * 0.95) e.hp -= d; }, // doubles on the unwounded
+  };
+  Q.shadowlance_a = {
+    lore: 'They circle, remembering when they were soldiers. Then they remember the rest.',
+    name: 'Haunting',
+    onHit(G, e, d, opts) {
+      if (Math.random() < 0.25) Projectiles.fire({ kind: 'strike', x: e.x, y: e.y, dmg: d * 0.4, r: 34, life: 0.25, color: '#b05cff', ownerW: opts.w, effects: [] });
+    },
+  };
+  Q.shadowlance_b = {
+    lore: 'Every blow owes a twin. The mirror collects.',
+    name: 'Mirror Debt',
+    onHit(G, e, d) { // the opposite side of you is struck too
+      const mx = G.player.x * 2 - e.x, my = G.player.y * 2 - e.y;
+      const ne = G.nearestEnemy(mx, my, 120, new Set([e]));
+      if (ne) { G.damageEnemy(ne, d * 0.5, { color: '#b05cff' }); Particles.burst(ne.x, ne.y, '#b05cff', 4, { speed: 80 }); }
+    },
+  };
+
   // attach lore/quirk ids onto weapon defs
   for (const id in Q) {
     if (WEAPONS.defs[id]) {

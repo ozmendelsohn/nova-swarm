@@ -423,6 +423,7 @@ const Archetypes = (() => {
         }
         case 'jugger': {
           p.x += p.vx * dt; p.y += p.vy * dt;
+          if (p.vacuum) pullEnemies(G, p, dt, 2); // event-horizon moons
           hitEnemies(G, p, dt, 0.2);
           if (Math.random() < 0.4) Particles.spawn(p.x + Util.rand(-p.r, p.r), p.y + p.r * 0.8, p.color, { speed: 30, life: 0.4, size: 3 });
           break;
