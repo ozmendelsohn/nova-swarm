@@ -5,7 +5,17 @@ const UI = (() => {
   function showScreen(name) {
     for (const s of document.querySelectorAll('.screen')) s.classList.remove('visible');
     if (name) $(name).classList.add('visible');
-    if (name === 'menu') $('menu-coins').textContent = `⛀ ${Meta.coins} WEAVER'S COINS BANKED`;
+    if (name === 'menu') {
+      $('menu-coins').textContent = `⛀ ${Meta.coins} WEAVER'S COINS BANKED`;
+      Characters.CHARS.forEach((ch, i) => {
+        const el = $(`char-best-${i}`);
+        if (!el) return;
+        const b = Meta.best(ch.id);
+        el.textContent = b.time > 0
+          ? `BEST ${fmtTime(b.time)} · LV ${b.lvl}${b.wins ? ` · ★×${b.wins}` : ''}`
+          : 'UNTESTED';
+      });
+    }
   }
 
   function fmtTime(t) {
@@ -196,8 +206,10 @@ const UI = (() => {
   function showGameOver(G, won) {
     $('go-title').textContent = won ? '★ VICTORY ★' : 'YOU DIED';
     $('go-title').style.color = won ? '#5cffb0' : '#ff3a5c';
+    const broke = G.recordsBroken || [];
     $('go-stats').innerHTML =
       `SURVIVED <b>${fmtTime(G.time)}</b> · LEVEL <b>${G.player.lvl}</b> · KILLS <b>${G.kills}</b><br>
+       ${broke.length ? `<span class="new-best">★ NEW BEST: ${broke.join(' · ')} ★</span><br>` : ''}
        WEAVER'S COINS EARNED: <b>⛀ ${G.coinsRun}</b> (bank: ⛀ ${Meta.coins})<br>
        WEAPONS DISCOVERED: <b>${WeaponManager.discovered.size}/252</b>`;
     showScreen('gameover');

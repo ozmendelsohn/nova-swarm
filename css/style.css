@@ -183,3 +183,7 @@ body { touch-action: none; -webkit-tap-highlight-color: transparent; overscroll-
 /* ---- weapon lore & quirks ---- */
 .card-lore { font-size: 10px; font-style: italic; color: #8a7ab8; margin-top: 8px; line-height: 1.4; }
 .quirk-chip { color: #ffd23e; font-size: 10.5px; white-space: nowrap; }
+
+/* ---- records ---- */
+.char-best { font-size: 9px; color: #ffd23e; margin-top: 6px; letter-spacing: 1px; }
+.new-best { color: #ffd23e; font-weight: bold; text-shadow: 0 0 10px #ffd23e88; animation: pulse 1s ease-in-out infinite; }

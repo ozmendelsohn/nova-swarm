@@ -72,5 +72,19 @@ const Meta = (() => {
     });
   }
 
-  return { UPGRADES, fx, addCoins, buy, rank, renderShop, get coins() { return coins; } };
+  // ---- personal-best records per character ----
+  let records = load('ns_records', {});
+  function best(charId) { return records[charId] || { time: 0, lvl: 0, kills: 0, wins: 0 }; }
+  function record(charId, run) { // returns list of records broken
+    const b = best(charId), broke = [];
+    if (run.time > b.time) { b.time = run.time; broke.push('SURVIVAL'); }
+    if (run.lvl > b.lvl) { b.lvl = run.lvl; broke.push('LEVEL'); }
+    if (run.kills > b.kills) { b.kills = run.kills; broke.push('KILLS'); }
+    if (run.won) b.wins = (b.wins || 0) + 1;
+    records[charId] = b;
+    localStorage.setItem('ns_records', JSON.stringify(records));
+    return broke;
+  }
+
+  return { UPGRADES, fx, addCoins, buy, rank, renderShop, best, record, get coins() { return coins; } };
 })();

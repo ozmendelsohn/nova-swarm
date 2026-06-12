@@ -218,6 +218,7 @@ const Game = (() => {
     if (G.state === 'over') return;
     G.state = 'over';
     localStorage.setItem('ns_bestiary', JSON.stringify(Enemies.killBook)); // flush discoveries
+    G.recordsBroken = Meta.record(Characters.selected.id, { time: G.time, lvl: G.player.lvl, kills: G.kills, won: G.won });
     setTimeout(() => UI.showGameOver(G, G.won), 800);
   }
 
@@ -407,6 +408,7 @@ const Game = (() => {
         <div class="char-name" style="color:${ch.pal.a}">${ch.name}</div>
         <div class="char-blurb">${ch.blurb}</div>
         <div class="char-perks">${ch.perks.map(p => `<span title="${p.desc}">L${p.lvl} ${p.name}</span>`).join('')}</div>
+        <div class="char-best" id="char-best-${i}"></div>
       </div>`).join('');
     box.addEventListener('click', ev => {
       const card = ev.target.closest('.char-card');
