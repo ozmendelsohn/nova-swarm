@@ -41,10 +41,11 @@ const Player = (() => {
   cvEl.addEventListener('touchcancel', endTouch);
 
   function create(ch) {
+    const hp = ch.hp + Meta.fx.hp();
     return {
-      x: 0, y: 0, r: 12, hp: ch.hp, maxHp: ch.hp,
+      x: 0, y: 0, r: 12, hp, maxHp: hp,
       xp: 0, lvl: 1, nextXp: 10,
-      speed: ch.speed, faceAng: 0, hurtT: 0,
+      speed: ch.speed * Meta.fx.speed(), faceAng: 0, hurtT: 0,
       dashT: 0, dashCd: 0, anim: 0, char: ch,
       // perk-driven modifiers (see characters.js)
       mods: { dmg: ch.dmgMul, cd: ch.cdMul, count: 0, dashCd: 1, armor: 0, regen: 0, crit: 0, lifesteal: 0, thorns: 0, dashExplode: false, special: null },
@@ -100,7 +101,7 @@ const Player = (() => {
 
   function gainXp(G, amount) {
     const p = G.player;
-    p.xp += amount;
+    p.xp += amount * Meta.fx.xp();
     while (p.xp >= p.nextXp) {
       p.xp -= p.nextXp;
       p.lvl++;
@@ -117,7 +118,7 @@ const Player = (() => {
   function hurt(G, dmg, attacker) {
     const p = G.player;
     if (p.dashT > 0) return; // i-frames while dashing
-    const armor = 1.5 * (WeaponManager.passives.armor || 0) + 1.5 * p.mods.armor;
+    const armor = 1.5 * (WeaponManager.passives.armor || 0) + 1.5 * p.mods.armor + Meta.fx.armor();
     const d = Math.max(1, dmg - armor);
     if (p.hurtT > 0) return;
     if (attacker && p.mods.thorns) G.damageEnemy(attacker, p.mods.thorns, { color: '#5ce86b' });

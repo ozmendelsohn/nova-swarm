@@ -31,6 +31,7 @@ const UI = (() => {
     c.font = 'bold 13px monospace'; c.textAlign = 'left';
     c.fillStyle = '#ffd23e'; c.fillText(`LV ${p.lvl}`, 20, 52);
     c.fillStyle = '#9be8ff'; c.fillText(`☠ ${G.kills}`, 80, 52);
+    c.fillStyle = '#ffd23e'; c.fillText(`⛀ ${G.coinsRun}`, 150, 52);
     if (G.combo > 5) {
       c.textAlign = 'right'; c.font = `bold ${Math.min(28, 14 + G.combo / 8)}px monospace`;
       c.fillStyle = `hsl(${(G.time * 120) % 360},90%,65%)`;
@@ -160,6 +161,7 @@ const UI = (() => {
     $('go-title').style.color = won ? '#5cffb0' : '#ff3a5c';
     $('go-stats').innerHTML =
       `SURVIVED <b>${fmtTime(G.time)}</b> · LEVEL <b>${G.player.lvl}</b> · KILLS <b>${G.kills}</b><br>
+       WEAVER'S COINS EARNED: <b>⛀ ${G.coinsRun}</b> (bank: ⛀ ${Meta.coins})<br>
        WEAPONS DISCOVERED: <b>${WeaponManager.discovered.size}/252</b>`;
     showScreen('gameover');
   }

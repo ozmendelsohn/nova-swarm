@@ -40,7 +40,7 @@ const WeaponManager = (() => {
   function stats(w) {
     const d = w.def, lvl = w.lvl;
     const mods = (typeof Game !== 'undefined' && Game.G) ? Game.G.player.mods : { dmg: 1, cd: 1, count: 0 };
-    const might = (1 + 0.12 * (passives.might || 0) + 0.18 * (lvl - 1)) * mods.dmg;
+    const might = (1 + 0.12 * (passives.might || 0) + 0.18 * (lvl - 1)) * mods.dmg * Meta.fx.dmg();
     const haste = Math.max(0.3, (1 - 0.08 * (passives.haste || 0)) * (1 - 0.05 * (lvl - 1)) * mods.cd);
     const area = (1 + 0.1 * (passives.area || 0)) * d.area * (1 + 0.06 * (lvl - 1));
     return {

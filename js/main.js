@@ -24,7 +24,7 @@ const Game = (() => {
     gems.length = 0; zaps.length = 0; props.length = 0; propT = 4;
     G = {
       state: 'play', time: 0, w: cv.width, h: cv.height,
-      player: Player.create(Characters.selected), kills: 0, combo: 0, comboT: 0,
+      player: Player.create(Characters.selected), kills: 0, combo: 0, comboT: 0, coinsRun: 0,
       shakeAmt: 0, flashAmt: 0, freezeT: 0, levelUpQueue: 0,
       bossBanner: 0, bossName: '', won: false,
       // API used by weapons/enemies:
@@ -34,6 +34,10 @@ const Game = (() => {
       announceBoss, onFusion, gameOver,
     };
     WeaponManager.addWeapon(Characters.selected.start);
+    if (Meta.fx.arsenal()) { // Second Talisman upgrade
+      const others = WEAPONS.baseIds.filter(id => id !== Characters.selected.start);
+      WeaponManager.addWeapon(Util.pick(others));
+    }
     UI.showScreen(null);
   }
 
@@ -120,6 +124,13 @@ const Game = (() => {
       gems.push({ x: e.x + Util.rand(-12, 12), y: e.y + Util.rand(-12, 12), v: Math.ceil(xp / n), t: 0 });
     }
     if (e.elite || e.boss) gems.push({ x: e.x, y: e.y, v: 0, heal: 25, t: 0 });
+    // Weaver's Coins: elites a few, bosses a pile, NOVA PRIME a fortune
+    let coinDrop = 0;
+    if (e.elite) coinDrop = Util.rand(2, 5) | 0;
+    if (e.boss) coinDrop = e.bdef.id === 'NOVA_PRIME' ? 60 : 12 + (Enemies.BOSSES.findIndex(b => b.id === e.bdef.id)) * 6;
+    for (let k = 0; k < coinDrop; k++) {
+      gems.push({ x: e.x + Util.rand(-40, 40), y: e.y + Util.rand(-40, 40), v: 0, coin: e.boss && e.bdef.id === 'NOVA_PRIME' ? 5 : Math.random() < 0.15 ? 5 : 1, t: 0 });
+    }
     if (e.boss) {
       G.freezeT = 0.35; G.shakeAmt = 18; G.flashAmt = 0.8;
       Snd.play('bosskill');
@@ -190,9 +201,11 @@ const Game = (() => {
         Particles.burst(pr.x, pr.y, '#d65cb1', 18, { speed: 200 });
         Particles.burst(pr.x, pr.y, '#e8d8b0', 10, { speed: 150 });
         Snd.play('kill');
-        // the spool spills: health chest or a magnet charm
-        if (Math.random() < 0.55) gems.push({ x: pr.x, y: pr.y, v: 0, heal: 30, t: 0 });
-        else gems.push({ x: pr.x, y: pr.y, v: 0, magnet: true, t: 0 });
+        // the spool spills: health chest, magnet charm, or a few coins
+        const roll = Math.random();
+        if (roll < 0.45) gems.push({ x: pr.x, y: pr.y, v: 0, heal: 30, t: 0 });
+        else if (roll < 0.75) gems.push({ x: pr.x, y: pr.y, v: 0, magnet: true, t: 0 });
+        else for (let k = 0; k < 3; k++) gems.push({ x: pr.x + Util.rand(-20, 20), y: pr.y + Util.rand(-20, 20), v: 0, coin: 1, t: 0 });
       }
     }
   }
@@ -200,7 +213,7 @@ const Game = (() => {
   // ---------- pickups ----------
   function updateGems(dt) {
     const P = G.player;
-    const range = 70 * (1 + 0.3 * (WeaponManager.passives.magnet || 0));
+    const range = 70 * (1 + 0.3 * (WeaponManager.passives.magnet || 0)) * Meta.fx.magnet();
     for (let i = gems.length - 1; i >= 0; i--) {
       const g = gems[i]; g.t += dt;
       if (Math.random() < 0.008) Particles.spawn(g.x, g.y - 4, g.heal ? '#ffd23e' : '#fff', { speed: 15, life: 0.4, size: 2 });
@@ -214,6 +227,12 @@ const Game = (() => {
       if (d2 < 22 * 22) {
         gems.splice(i, 1);
         if (g.heal) { P.hp = Math.min(P.maxHp, P.hp + g.heal); Particles.text(P.x, P.y - 20, '+' + g.heal, '#5cffb0'); }
+        else if (g.coin) {
+          const gained = Math.round(g.coin * Meta.fx.greed());
+          G.coinsRun += gained;
+          Meta.addCoins(gained);
+          Particles.text(g.x, g.y - 14, `+${gained}⛀`, '#ffd23e', 13);
+        }
         else if (g.magnet) { // every gem on the field rushes to you
           for (const o of gems) o.pull = true;
           Particles.text(P.x, P.y - 24, 'MAGNETIZED!', '#3ae0ff', 16);
@@ -400,8 +419,9 @@ const Game = (() => {
     const gemSpr = Sprites.get('gem')[0], chestSpr = Sprites.get('chest')[0], magSpr = Sprites.get('magnet')[0];
     for (const g of gems) {
       const bob = Math.sin(G.time * 5 + g.x) * 3;
-      const spr = g.heal ? chestSpr : g.magnet ? magSpr : gemSpr;
+      const spr = g.heal ? chestSpr : g.magnet ? magSpr : g.coin ? Sprites.get('coin')[0] : gemSpr;
       if (g.magnet) { c.shadowColor = '#3ae0ff'; c.shadowBlur = 12; }
+      if (g.coin) { c.shadowColor = '#ffd23e'; c.shadowBlur = 8; }
       c.drawImage(spr, g.x - spr.width / 2, g.y - spr.height / 2 + bob);
       c.shadowBlur = 0;
     }
@@ -470,6 +490,8 @@ const Game = (() => {
     newGame();
   });
   document.getElementById('btn-codex').addEventListener('click', () => UI.showCodex());
+  document.getElementById('btn-shop').addEventListener('click', () => { Meta.renderShop(); UI.showScreen('shop'); });
+  document.getElementById('btn-shop-back').addEventListener('click', () => UI.showScreen('menu'));
   document.getElementById('btn-codex-back').addEventListener('click', () => UI.showScreen('menu'));
   document.getElementById('btn-retry').addEventListener('click', () => newGame());
   document.getElementById('btn-menu').addEventListener('click', () => { G.state = 'menu'; UI.showScreen('menu'); });

@@ -19,6 +19,7 @@
   <p class="tagline">252 WEAPON FORMS · JOINT EVOLUTIONS · ONE SURVIVOR</p>
   <div id="charsel"></div>
   <button id="btn-start" class="btn big">▶ START RUN</button>
+  <button id="btn-shop" class="btn">⛀ LOOM SHOP</button>
   <button id="btn-codex" class="btn">📖 WEAPON CODEX</button>
   <div class="help">
     <span class="desktop-help">WASD / ARROWS — move &nbsp;·&nbsp; SPACE — dash (i-frames) &nbsp;·&nbsp; P — pause &nbsp;·&nbsp; M — mute</span>
@@ -40,6 +41,13 @@
   <button id="btn-codex-back" class="btn">← BACK</button>
 </div>
 
+<div id="shop" class="screen">
+  <h2>⛀ THE LOOM SHOP</h2>
+  <div id="shop-coins" class="codex-count"></div>
+  <div id="shop-list"></div>
+  <button id="btn-shop-back" class="btn">← BACK</button>
+</div>
+
 <div id="gameover" class="screen">
   <h1 id="go-title">YOU DIED</h1>
   <div id="go-stats" class="go-stats"></div>
@@ -52,6 +60,7 @@
 <script src="js/particles.js"></script>
 <script src="js/projectiles.js"></script>
 <script src="js/audio.js"></script>
+<script src="js/meta.js"></script>
 <script src="js/weapons/archetypes.js"></script>
 <script src="js/weapons/weapons.js"></script>
 <script src="js/weapons/fusions.js"></script>

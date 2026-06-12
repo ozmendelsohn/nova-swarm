@@ -151,6 +151,25 @@ body { touch-action: none; -webkit-tap-highlight-color: transparent; overscroll-
 .codex-dot { display: inline-block; width: 8px; height: 8px; margin-right: 5px; }
 #btn-codex-back { margin-top: 18px; }
 
+/* ---- loom shop ---- */
+#shop h2 { color: #ffd23e; letter-spacing: 4px; text-shadow: 0 0 14px #ffd23e55; }
+#shop-list { max-width: 620px; width: 100%; max-height: 60vh; overflow-y: auto; margin: 10px 0; }
+.shop-item {
+  display: flex; align-items: center; gap: 12px; text-align: left;
+  padding: 10px 14px; margin-bottom: 8px;
+  background: linear-gradient(180deg, #1c1433, #120c22);
+  border: 2px solid #4a3a6e; outline: 1px dashed #8a6ec955; outline-offset: -6px;
+}
+.shop-item.can-buy { border-color: #ffd23e88; }
+.shop-item.maxed { opacity: 0.55; }
+.shop-icon { font-size: 24px; width: 40px; text-align: center; }
+.shop-info { flex: 1; }
+.shop-name { font-size: 14px; font-weight: bold; color: #fff; }
+.shop-rank { color: #ffd23e; font-size: 11px; margin-left: 6px; }
+.shop-desc { font-size: 11px; color: #a8b8d6; margin-top: 2px; }
+.shop-buy { margin: 0; padding: 8px 14px; font-size: 13px; color: #ffd23e; border-color: #ffd23e66; white-space: nowrap; }
+.shop-buy:disabled { cursor: default; color: #6a6a7a; border-color: #3a3a4e; transform: none; box-shadow: none; }
+
 /* ---- game over ---- */
 #go-title { font-size: clamp(40px, 7vw, 72px); letter-spacing: 6px; text-shadow: 0 0 26px currentColor; }
 .go-stats { margin: 22px 0 30px; font-size: 16px; line-height: 2; color: #a8b8d6; }
