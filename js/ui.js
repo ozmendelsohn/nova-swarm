@@ -38,18 +38,25 @@ const UI = (() => {
     }
     // weapon icons
     c.textAlign = 'left';
-    let wx = G.w - 24 - WeaponManager.weapons.length * 36;
-    for (const w of WeaponManager.weapons) {
-      c.fillStyle = '#1a0e2eee'; c.fillRect(wx, 12, 32, 32);
+    const ws = WeaponManager.weapons;
+    const slotMax = WeaponManager.maxWeapons(G);
+    // shrink slots so a maxed-out arsenal still fits on screen
+    const sz = Math.max(18, Math.min(32, ((G.w * 0.55) / Math.max(1, ws.length)) - 4 | 0));
+    let wx = G.w - 24 - ws.length * (sz + 4);
+    for (const w of ws) {
+      c.fillStyle = '#1a0e2eee'; c.fillRect(wx, 12, sz, sz);
       c.strokeStyle = w.def.tier === 'fusion' ? '#ffd23e' : w.def.color;
-      c.lineWidth = 1.5; c.strokeRect(wx + 0.5, 12.5, 31, 31);
+      c.lineWidth = 1.5; c.strokeRect(wx + 0.5, 12.5, sz - 1, sz - 1);
       const ic = Sprites.weaponIcon(w.def);
       c.imageSmoothingEnabled = false;
-      c.drawImage(ic, wx + 2, 14, 28, 28);
+      c.drawImage(ic, wx + 2, 14, sz - 4, sz - 4);
       c.fillStyle = '#ffd23e'; c.font = 'bold 10px monospace';
-      c.fillText(w.def.tier === 'fusion' ? '★' : w.lvl, wx + 24, 43);
-      wx += 36;
+      c.fillText(w.def.tier === 'fusion' ? '★' : w.lvl, wx + sz - 8, 12 + sz + 11);
+      wx += sz + 4;
     }
+    c.fillStyle = '#9a8ac9'; c.font = 'bold 10px monospace'; c.textAlign = 'right';
+    c.fillText(`SLOTS ${ws.length}/${slotMax} · +1 @ LV ${(((G.player.lvl / WeaponManager.SLOT_EVERY) | 0) + 1) * WeaponManager.SLOT_EVERY}`, G.w - 24, 12 + sz + 24);
+    c.textAlign = 'left';
     // virtual joystick (touch)
     const t = Player.touch;
     if (t.active) {

@@ -106,6 +106,10 @@ const Player = (() => {
       p.lvl++;
       p.nextXp = Math.floor(10 + p.lvl * 5.5 + p.lvl * p.lvl * 0.4);
       Characters.onLevel(G);
+      if (p.lvl % WeaponManager.SLOT_EVERY === 0) {
+        Particles.text(p.x, p.y - 60, '+1 WEAPON SLOT!', '#3ae0ff', 18);
+        Particles.burst(p.x, p.y, '#3ae0ff', 20, { speed: 220 });
+      }
       G.queueLevelUp();
     }
   }

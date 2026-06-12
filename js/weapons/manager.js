@@ -1,6 +1,8 @@
 // ---- manager.js : weapon slots, leveling, branching, fusion, passives ----
 const WeaponManager = (() => {
-  const MAX_WEAPONS = 6, MAX_PASSIVES = 6, MAX_LVL = 5;
+  const BASE_WEAPONS = 6, MAX_PASSIVES = 6, MAX_LVL = 5;
+  const SLOT_EVERY = 8; // +1 weapon slot every 8 player levels — endgame holds everything
+  const maxWeapons = G => BASE_WEAPONS + ((G.player.lvl / SLOT_EVERY) | 0);
 
   const PASSIVES = {
     might:    { name: 'Power Core',   icon: '⚔', desc: '+12% damage per rank' },
@@ -89,7 +91,7 @@ const WeaponManager = (() => {
         pool.push({ type: 'upgrade', w });
       }
     }
-    if (weapons.length < MAX_WEAPONS) {
+    if (weapons.length < maxWeapons(G)) {
       const owned = new Set(weapons.map(w => w.def.parent || w.def.id));
       const news = WEAPONS.baseIds.filter(id => !owned.has(id));
       for (let i = 0; i < 3 && news.length; i++) {
@@ -135,6 +137,6 @@ const WeaponManager = (() => {
     get weapons() { return weapons; },
     get passives() { return passives; },
     get discovered() { return discovered; },
-    PASSIVES, MAX_LVL, reset, addWeapon, update, rollCards, applyCard, stats, discover,
+    PASSIVES, MAX_LVL, SLOT_EVERY, maxWeapons, reset, addWeapon, update, rollCards, applyCard, stats, discover,
   };
 })();
