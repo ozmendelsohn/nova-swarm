@@ -585,6 +585,98 @@ const Quirks = (() => {
     },
   };
 
+  // ===================== ARCANE =====================
+  Q.missile = {
+    lore: 'The oldest spell in the book, because it is the book.',
+    name: 'Long Arithmetic',
+    onHit(G, e, d) { // distance is just a term in the equation
+      if (Util.dist2(e.x, e.y, G.player.x, G.player.y) > 300 * 300) e.hp -= d * 0.35;
+    },
+  };
+  Q.missile_a = {
+    lore: 'One missile is a spell. A sky of them is a syllabus.',
+    name: 'Saturation',
+    onHit(G, e, d, opts) { // every missile in flight sharpens the rest
+      let n = 0;
+      for (const p of Projectiles.pool) if (p.active && p.ownerW === opts.w) n++;
+      e.hp -= d * Math.min(0.5, n * 0.04);
+    },
+  };
+  Q.missile_b = {
+    lore: 'A proof that ends in a point.',
+    name: 'Penetrating Logic',
+    onHit(G, e, d, opts) { if (opts.from) opts.from.dmg *= 1.25; }, // each premise strengthens the conclusion
+  };
+
+  Q.prism = {
+    lore: 'White light is just a committee. This is the gavel.',
+    name: 'Split Spectrum',
+    onHit(G, e, d, opts) { // each tick cycles a different dye through the beam
+      const w = opts.w;
+      w._cyc = ((w._cyc || 0) + 1) % 3;
+      if (w._cyc === 0) e.burn = Math.max(e.burn, 1.5);
+      else if (w._cyc === 1) e.slow = Math.max(e.slow, 1.2);
+      else if (Math.random() < 0.3) {
+        const ne = G.nearestEnemy(e.x, e.y, 150, new Set([e]));
+        if (ne) { G.zap(e.x, e.y, ne.x, ne.y, '#ff5cd6'); G.damageEnemy(ne, d * 0.3, { color: '#ff5cd6' }); }
+      }
+    },
+  };
+  Q.prism_a = {
+    lore: 'Seven colors, one verdict.',
+    name: 'White Light',
+    onHit(G, e, d) { if (e.burn > 0 && e.slow > 0) e.hp -= d * 0.6; }, // the full spectrum condemns
+  };
+  Q.prism_b = {
+    lore: 'Light made solid is still light. Ask anything that touches it.',
+    name: 'Refraction Cell',
+    onHit(G, e) { e.vulnT = G.time + 1.5; }, // held in the light, seen by everything
+  };
+
+  Q.hexbolt = {
+    lore: 'Somewhere a mirror breaks, a ladder leans, a black thread crosses. This is the invoice.',
+    name: 'Fumble',
+    onHit(G, e) { if (!e.boss && Math.random() < 0.1) e.freeze = Math.max(e.freeze, 0.4); }, // luck runs out mid-step
+  };
+  Q.hexbolt_a = {
+    lore: 'It does not curse you. It introduces you to consequences.',
+    name: 'Withering Word',
+    onHit(G, e) { e.dmg = Math.max(e.dmg * 0.97, e.type.dmg * 0.5); }, // each jinx saps their bite
+  };
+  Q.hexbolt_b = {
+    lore: 'The bell has been tolling for some time. You simply walked into earshot.',
+    name: 'Tick of Doom',
+    onHit(G, e, d, opts) { // eight tolls, then the bell
+      e._doom = (e._doom || 0) + 1;
+      if (e._doom >= 8) {
+        e._doom = 0;
+        G.explodeAt(e.x, e.y, 70, d * 3, { color: '#ff5cd6', ownerW: opts.w });
+      }
+    },
+  };
+
+  Q.mirrorbolt = {
+    lore: 'Every cast happens twice: once here, once in the glass. Sometimes the glass is generous.',
+    name: 'Reflection',
+    onHit(G, e, d) { if (Math.random() < 0.15) { e.hp -= d; Particles.text(e.x, e.y - 14, 'ECHO', '#ff5cd6', 11); } },
+  };
+  Q.mirrorbolt_a = {
+    lore: 'Turn the spell and the pattern changes. Turn it enough and the pattern is everywhere.',
+    name: 'Fractal',
+    onHit(G, e, d, opts) {
+      if (Math.random() > 0.12) return;
+      for (let k = 0; k < 2; k++) {
+        const a = Math.random() * Math.PI * 2;
+        Projectiles.fire({ x: e.x, y: e.y, vx: Math.cos(a) * 300, vy: Math.sin(a) * 300, dmg: d * 0.4, r: 4, life: 0.5, color: '#ff5cd6', ownerW: opts.w, effects: [] });
+      }
+    },
+  };
+  Q.mirrorbolt_b = {
+    lore: 'The twin arrives before it leaves. Do not ask it which one it is.',
+    name: 'Causality',
+    onFire(G, w, s) { w._par = !w._par; if (w._par) { w.echoT = 0.1; w.echoS = s; } }, // every other cast doubles
+  };
+
   // attach lore/quirk ids onto weapon defs
   for (const id in Q) {
     if (WEAPONS.defs[id]) {

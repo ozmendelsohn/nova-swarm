@@ -105,5 +105,24 @@ One entry per weapon: its Loomworld fiction and its unique mechanical quirk
 | Tornado of Knives | The first cut is a greeting. The rest are the conversation. | **Lacerate** — repeat hits within 1.2s cut +45% deeper |
 | Guillotine Orbit | The Loom's justice is a circle. It comes around. | **Execution Arc** — finishes common knots under 10% HP |
 
-*(Arcane and fusions follow in the final passes.
-Monsters are complete — see MONSTER_LORE.md.)*
+## Arcane — charms written in the Weaver's own hand
+
+| Weapon | Lore | Quirk |
+|---|---|---|
+| Arcane Missile | The oldest spell in the book, because it is the book. | **Long Arithmetic** — distant targets take +35% |
+| Missile Swarm | One missile is a spell. A sky of them is a syllabus. | **Saturation** — every missile in flight sharpens the rest |
+| Arcanum Lance | A proof that ends in a point. | **Penetrating Logic** — damage ramps with each enemy pierced |
+| Prism Beam | White light is just a committee. This is the gavel. | **Split Spectrum** — ticks cycle burn / chill / arc |
+| Spectrum Array | Seven colors, one verdict. | **White Light** — burning AND chilled targets take +60% |
+| Prism Prison | Light made solid is still light. Ask anything that touches it. | **Refraction Cell** — the wall marks victims for all weapons |
+| Hex Ricochet | Somewhere a mirror breaks, a ladder leans, a black thread crosses. This is the invoice. | **Fumble** — chance to stop victims mid-step |
+| Jinx Engine | It does not curse you. It introduces you to consequences. | **Withering Word** — each jinx permanently saps their bite |
+| Doom Orbit | The bell has been tolling for some time. You simply walked into earshot. | **Tick of Doom** — eight tolls, then detonation |
+| Mirror Bolt | Every cast happens twice: once here, once in the glass. Sometimes the glass is generous. | **Reflection** — 15% chance hits echo for double |
+| Kaleidoscope | Turn the spell and the pattern changes. Turn it enough and the pattern is everywhere. | **Fractal** — hits can splinter into new shards |
+| Twin Paradox | The twin arrives before it leaves. Do not ask it which one it is. | **Causality** — every other cast fires twice |
+
+**All 84 named weapons are complete.** Fusions inherit both parents' quirks
+plus their twist (see fusions pass).
+
+Monsters are complete — see MONSTER_LORE.md.
