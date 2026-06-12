@@ -418,6 +418,79 @@ const Quirks = (() => {
     },
   };
 
+  // ===================== NATURE =====================
+  Q.thorn = {
+    lore: 'The meadow keeps its own counsel, and its counsel is sharp.',
+    name: 'Festering',
+    onHit(G, e) { e.poison = Math.min(6, (e.poison || 0) + 1.2); }, // every thorn deepens the venom
+  };
+  Q.thorn_a = {
+    lore: 'Roots deep enough to hold the cloth together where it stands.',
+    name: 'Sap Tithe',
+    onHit(G) { G.player.hp = Math.min(G.player.maxHp, G.player.hp + 0.8); }, // the totem feeds its planter
+  };
+  Q.thorn_b = {
+    lore: 'The serpent lost its body in the Unraveling. The bite negotiated independence.',
+    name: 'Envenom',
+    onHit(G, e) { e.poison = Math.max(e.poison, 4); }, // burst wounds always fester
+  };
+
+  Q.sporecloud = {
+    lore: 'Breathe carefully. The garden is paying attention.',
+    name: 'Fruiting Bodies',
+    onHit(G, e, d) { if (e.poison > 0) e.hp -= d * 0.25; }, // the poisoned rot faster inside it
+  };
+  Q.sporecloud_a = {
+    lore: 'Left alone, a garden becomes a province. This one is never left alone enough.',
+    name: 'Creep',
+    onFire(G, w) { w._creep = Math.min(0.6, (w._creep || 0) + 0.004); }, // grows all run
+    mod(s, w) { s.area *= 1 + (w._creep || 0); },
+  };
+  Q.sporecloud_b = {
+    lore: 'Patience, compressed until it ticks.',
+    name: 'Burst Bloom',
+    onHit(G, e) { e.poison = Math.max(e.poison, 3); e.slow = Math.max(e.slow, 1); },
+  };
+
+  Q.vinewhip = {
+    lore: 'The Loom\'s gardener kept one tool when she was unwoven. The tool kept her temper.',
+    name: 'Grasping',
+    onHit(G, e) { // the lash reels them in to be lashed again
+      if (e.boss) return;
+      const a = Util.angTo(e.x, e.y, G.player.x, G.player.y);
+      e.x += Math.cos(a) * 22; e.y += Math.sin(a) * 22;
+    },
+  };
+  Q.vinewhip_a = {
+    lore: 'Ask the oldest root how far it reaches. Wait. It is still answering.',
+    name: 'Long Memory',
+    onFire(G, w) { w._rootN = ((w._rootN || 0) + 1) % 3; },
+    mod(s, w) { if (w._rootN === 2) s.count += 2; }, // every third line runs much longer
+  };
+  Q.vinewhip_b = {
+    lore: 'The mantis prays before eating. It is not praying to you.',
+    name: 'Harvest Spin',
+    onHit(G, e) { // reaping shakes loose dye-gems
+      if (Math.random() < 0.06) World.gems.push({ x: e.x, y: e.y, v: 1, t: 0 });
+    },
+  };
+
+  Q.beestorm = {
+    lore: 'The hive remembers being kept, and has decided to keep you instead.',
+    name: 'Sting Ledger',
+    onHit(G, e) { e.poison = Math.min(5, (e.poison || 0) + 0.6); }, // stings accumulate
+  };
+  Q.beestorm_a = {
+    lore: 'Her majesty does not grieve. She mobilizes.',
+    name: 'Protect the Queen',
+    onHit(G, e, d) { if (G.player.hp < G.player.maxHp * 0.5) e.hp -= d * 0.4; }, // the wounded queen\'s swarm rages
+  };
+  Q.beestorm_b = {
+    lore: 'There is one of it. That has always been enough.',
+    name: 'Apex Mark',
+    onHit(G, e) { e.vulnT = G.time + 1.5; }, // its prey is marked for ALL your weapons
+  };
+
   // attach lore/quirk ids onto weapon defs
   for (const id in Q) {
     if (WEAPONS.defs[id]) {

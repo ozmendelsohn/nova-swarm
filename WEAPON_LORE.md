@@ -71,5 +71,22 @@ One entry per weapon: its Loomworld fiction and its unique mechanical quirk
 | Phantom Pike | They circle, remembering when they were soldiers. Then they remember the rest. | **Haunting** — hits leave striking shadows |
 | Umbra Mirror | Every blow owes a twin. The mirror collects. | **Mirror Debt** — also strikes the knot opposite you |
 
-*(Nature, Steel, Arcane, and fusions follow in subsequent passes.
+## Nature — charms grown from the verdant vat
+
+| Weapon | Lore | Quirk |
+|---|---|---|
+| Thorn Shot | The meadow keeps its own counsel, and its counsel is sharp. | **Festering** — every thorn deepens the venom (stacking poison) |
+| Bramble Totem | Roots deep enough to hold the cloth together where it stands. | **Sap Tithe** — the totem's strikes heal its planter |
+| Serpent Fang | The serpent lost its body in the Unraveling. The bite negotiated independence. | **Envenom** — burst wounds always fester |
+| Spore Aura | Breathe carefully. The garden is paying attention. | **Fruiting Bodies** — the poisoned rot +25% faster inside it |
+| Blight Garden | Left alone, a garden becomes a province. This one is never left alone enough. | **Creep** — the garden grows all run (up to +60% area) |
+| Spore Mines | Patience, compressed until it ticks. | **Burst Bloom** — detonations poison and slow |
+| Vine Whip | The Loom's gardener kept one tool when she was unwoven. The tool kept her temper. | **Grasping** — reels victims in to be lashed again |
+| World Root | Ask the oldest root how far it reaches. Wait. It is still answering. | **Long Memory** — every third eruption line runs much longer |
+| Mantis Scythe | The mantis prays before eating. It is not praying to you. | **Harvest Spin** — reaping shakes loose dye-gems |
+| Hornet Hive | The hive remembers being kept, and has decided to keep you instead. | **Sting Ledger** — stings accumulate venom |
+| Queen's Wrath | Her majesty does not grieve. She mobilizes. | **Protect the Queen** — swarm rages (+40%) while you're below half HP |
+| Murder Hornet | There is one of it. That has always been enough. | **Apex Mark** — its prey takes +20% from ALL your weapons |
+
+*(Steel, Arcane, and fusions follow in subsequent passes.
 Monsters are complete — see MONSTER_LORE.md.)*
