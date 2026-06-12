@@ -51,17 +51,23 @@ const WeaponManager = (() => {
     };
   }
 
+  function fireWeapon(G, w, s) {
+    Archetypes.A[w.def.arch].fire(G, w, s);
+    if (w.def.arch2) Archetypes.A[w.def.arch2].fire(G, w, s); // fusion: both archetypes
+  }
+
   function update(G, dt) {
     for (const w of weapons) {
       w.t -= dt;
       if (w.t <= 0) {
         const s = stats(w);
         w.t = s.cd;
-        Archetypes.A[w.def.arch].fire(G, w, s);
-        if (w.def.arch2) Archetypes.A[w.def.arch2].fire(G, w, s); // fusion: both archetypes
-        if (w.def.twist && w.def.twist.id === 'echo') {
-          setTimeout(() => { if (G.state === 'play') { Archetypes.A[w.def.arch].fire(G, w, s); if (w.def.arch2) Archetypes.A[w.def.arch2].fire(G, w, s); } }, 280);
-        }
+        fireWeapon(G, w, s);
+        if (w.def.twist && w.def.twist.id === 'echo') { w.echoT = 0.28; w.echoS = s; }
+      }
+      if (w.echoT !== undefined) { // Echo twist: repeat the volley on game time
+        w.echoT -= dt;
+        if (w.echoT <= 0) { fireWeapon(G, w, w.echoS); w.echoT = undefined; }
       }
     }
   }

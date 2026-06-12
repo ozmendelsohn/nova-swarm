@@ -131,7 +131,7 @@ const UI = (() => {
         <div class="card-name">${p.name}</div>
         <div class="card-desc">${p.desc}</div></div>`;
     }
-    return `<div class="card"><div class="card-tier">RECOVERY</div><div class="card-icon" style="background:#5cffb0"></div>
+    return `<div class="card"><div class="card-tier">RECOVERY</div><div class="card-icon passive-icon">+</div>
       <div class="card-name">Repair Kit</div><div class="card-desc">Restore 30 HP.</div></div>`;
   }
 
