@@ -73,6 +73,7 @@ const Game = (() => {
     if (fx.includes('crit') && Math.random() < 0.25 + luck) { d *= 2.2; crit = true; }
     else if (Math.random() < luck) { d *= 2; crit = true; }
     if (e.dr) d *= e.dr; // BULWARK elite affix
+    if (e.vulnT > G.time) d *= 1.2; // hoarfrost-style vulnerability marks
     e.hp -= d;
     e.flash = 0.08;
     if (Math.random() < 0.4 || crit) Particles.text(e.x + Util.rand(-8, 8), e.y - e.r, Math.round(d), crit ? '#ffe93e' : '#fff', crit ? 16 : 12);

@@ -113,6 +113,114 @@ const Quirks = (() => {
     onFire(G, w, s) { w.echoT = 0.45; w.echoS = { ...s, dmg: s.dmg * 0.5 }; },
   };
 
+  // ===================== FROST =====================
+  Q.shard = {
+    lore: 'Splinters of a winter the Weaver wove, regretted, and ripped out.',
+    name: 'Brittle',
+    // chilled or frozen knots SHATTER: bonus area damage on hit
+    onHit(G, e, d) {
+      if (e.slow > 0 || e.freeze > 0) {
+        G.explodeAt(e.x, e.y, 45, d * 0.5, { color: '#bfeaff' });
+      }
+    },
+  };
+  Q.shard_a = {
+    lore: 'Break a winter into pieces and every piece is still winter.',
+    name: 'Shrapnel Frost',
+    onHit(G, e) { e.slow = Math.max(e.slow, 1.5); }, // every fragment chills
+  };
+  Q.shard_b = {
+    lore: 'The cold at the bottom of the vat, sharpened to a point.',
+    name: 'Dead Stop',
+    onHit(G, e) { if (!e.boss) e.freeze = Math.max(e.freeze, 0.5); }, // skewered solid
+  };
+
+  Q.frostnova = {
+    lore: 'The Loom exhales once a heartbeat. This is the breath.',
+    name: 'Winter\'s Grip',
+    // the expanding ring drags knots outward with it and chills them
+    onHit(G, e) {
+      e.slow = Math.max(e.slow, 1.2);
+      if (!e.boss) {
+        const a = Util.angTo(G.player.x, G.player.y, e.x, e.y);
+        e.x += Math.cos(a) * 22; e.y += Math.sin(a) * 22;
+      }
+    },
+  };
+  Q.frostnova_a = {
+    lore: 'Where the frozen star pulses, even time wears mittens.',
+    name: 'Stillness',
+    // every 12th pulse-hit freezes its victim solid
+    onHit(G, e) {
+      this._n = (this._n || 0) + 1;
+      if (this._n >= 12) { this._n = 0; if (!e.boss) { e.freeze = 1.2; Particles.burst(e.x, e.y, '#dff3ff', 8, { speed: 100 }); } }
+    },
+  };
+  Q.frostnova_b = {
+    lore: 'Hail is just the sky returning what the vat spilled upward.',
+    name: 'Black Ice',
+    onHit(G, e) { e.slow = Math.max(e.slow, 2); if (Math.random() < 0.12 && !e.boss) e.freeze = 0.6; },
+  };
+
+  Q.icewall = {
+    lore: 'The Weaver pressed a cold iron to the cloth, and the crease holds.',
+    name: 'Grinding Floe',
+    // the wall shoves whatever it grinds
+    onHit(G, e) {
+      if (e.boss) return;
+      const a = Util.angTo(G.player.x, G.player.y, e.x, e.y);
+      e.x += Math.cos(a) * 34; e.y += Math.sin(a) * 34;
+    },
+  };
+  Q.icewall_a = {
+    lore: 'Dropped from a ship that sailed a sea the Loom unwove long ago.',
+    name: 'Drowner\'s Grip',
+    // three pulls from the anchor and the victim freezes in the undertow
+    onHit(G, e) {
+      e._undertow = (e._undertow || 0) + 1;
+      if (e._undertow >= 3 && !e.boss) { e._undertow = 0; e.freeze = 1; }
+    },
+  };
+  Q.icewall_b = {
+    lore: 'It starts as a snowflake. Everything terrible starts small.',
+    name: 'Gathering Mass',
+    // also looses one boulder that grows as it rolls
+    onFire(G, w, s) {
+      const e = G.nearestEnemy(G.player.x, G.player.y, 600);
+      const a = e ? Util.angTo(G.player.x, G.player.y, e.x, e.y) : G.player.faceAng;
+      Projectiles.fire({ x: G.player.x, y: G.player.y, vx: Math.cos(a) * 200, vy: Math.sin(a) * 200, dmg: s.dmg, r: 6, life: 2, color: '#dff3ff', ownerW: w, effects: w.def.effects, pierce: 9999, grow: s.dmg * 0.8 });
+    },
+  };
+
+  Q.cryobeam = {
+    lore: 'Light, if light had given up on warmth entirely.',
+    name: 'Deep Cold',
+    // the longer the beam holds one victim, the colder: 4 ticks = frozen solid
+    onHit(G, e) {
+      e._cryo = (e._cryo || 0) + 1;
+      e.slow = Math.max(e.slow, 0.8);
+      if (e._cryo >= 4) { e._cryo = 0; if (!e.boss) e.freeze = 0.8; }
+    },
+  };
+  Q.cryobeam_a = {
+    lore: 'Cut cold with cold and you get edges all the way down.',
+    name: 'Refraction',
+    // hits scatter razor shards sideways
+    onHit(G, e, d, opts) {
+      if (Math.random() > 0.4) return;
+      for (const sgn of [1, -1]) {
+        const a = Util.angTo(G.player.x, G.player.y, e.x, e.y) + sgn * Math.PI / 2;
+        Projectiles.fire({ x: e.x, y: e.y, vx: Math.cos(a) * 300, vy: Math.sin(a) * 300, dmg: d * 0.35, r: 4, life: 0.45, color: '#dff3ff', ownerW: opts.w, effects: ['freeze'] });
+      }
+    },
+  };
+  Q.cryobeam_b = {
+    lore: 'Stand in it long enough and you forget there were other seasons.',
+    name: 'Hoarfrost',
+    // chilled flesh splits easier: marked knots take +20% from EVERYTHING
+    onHit(G, e) { e.vulnT = G.time + 1.2; },
+  };
+
   // attach lore/quirk ids onto weapon defs
   for (const id in Q) {
     if (WEAPONS.defs[id]) {

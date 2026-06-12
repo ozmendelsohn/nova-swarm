@@ -20,5 +20,22 @@ One entry per weapon: its Loomworld fiction and its unique mechanical quirk
 | Minefield | Sow blisters. Reap a province. | **Bumper Crop** — every 4th volley is doubled |
 | Caldera | The wound under the cloth, opening one stitch at a time. | **Aftershock** — the eruption line echoes at half strength |
 
-*(Frost, Volt, Void, Nature, Steel, Arcane, fusions, and monsters follow in
+## Frost — charms cut from the regretted winter
+
+| Weapon | Lore | Quirk |
+|---|---|---|
+| Ice Shard | Splinters of a winter the Weaver wove, regretted, and ripped out. | **Brittle** — chilled/frozen knots shatter for bonus area damage |
+| Glacier Volley | Break a winter into pieces and every piece is still winter. | **Shrapnel Frost** — every fragment chills |
+| Permafrost Lance | The cold at the bottom of the vat, sharpened to a point. | **Dead Stop** — skewered knots freeze briefly |
+| Frost Nova | The Loom exhales once a heartbeat. This is the breath. | **Winter's Grip** — the ring drags knots outward and chills them |
+| Absolute Zero | Where the frozen star pulses, even time wears mittens. | **Stillness** — every 12th pulse-hit freezes solid |
+| Hailstorm | Hail is just the sky returning what the vat spilled upward. | **Black Ice** — heavy slow, occasional freeze |
+| Glacial Wall | The Weaver pressed a cold iron to the cloth, and the crease holds. | **Grinding Floe** — the wall shoves whatever it grinds |
+| Dead Man's Anchor | Dropped from a ship that sailed a sea the Loom unwove long ago. | **Drowner's Grip** — three pulls and the victim freezes |
+| Avalanche | It starts as a snowflake. Everything terrible starts small. | **Gathering Mass** — looses a boulder that grows as it rolls |
+| Cryo Beam | Light, if light had given up on warmth entirely. | **Deep Cold** — holding the beam on one victim freezes it solid |
+| Diamond Ray | Cut cold with cold and you get edges all the way down. | **Refraction** — hits scatter razor shards sideways |
+| Winter Aura | Stand in it long enough and you forget there were other seasons. | **Hoarfrost** — marked knots take +20% from ALL damage |
+
+*(Volt, Void, Nature, Steel, Arcane, fusions, and monsters follow in
 subsequent passes.)*

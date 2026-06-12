@@ -293,6 +293,7 @@ const Archetypes = (() => {
             const nvx = p.vx * ca - p.vy * sa; p.vy = p.vx * sa + p.vy * ca; p.vx = nvx;
           }
           if (p.decel) { p.vx *= p.decel; p.vy *= p.decel; }
+          if (p.grow) { p.r += 12 * dt; p.dmg += p.grow * dt; } // gathering mass
           p.x += p.vx * dt; p.y += p.vy * dt;
           hitEnemies(G, p, dt);
           famTrail(p);
