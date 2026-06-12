@@ -491,6 +491,100 @@ const Quirks = (() => {
     onHit(G, e) { e.vulnT = G.time + 1.5; }, // its prey is marked for ALL your weapons
   };
 
+  // ===================== STEEL =====================
+  Q.saw = {
+    lore: 'It was a millwheel. The mill is gone. The work ethic survived.',
+    name: 'Whetted',
+    onFire(G, w) { w._edge = Math.min(0.3, (w._edge || 0) + 0.015); }, // every throw hones the edge
+    mod(s, w) { s.dmg *= 1 + (w._edge || 0); },
+  };
+  Q.saw_a = {
+    lore: 'Two blades, one grudge, perfect scheduling.',
+    name: 'Shear',
+    onHit(G, e, d) { // caught between discs
+      if (e._shearT > G.time) e.hp -= d * 0.5;
+      e._shearT = G.time + 0.5;
+    },
+  };
+  Q.saw_b = {
+    lore: 'The chain was a compromise. The ball was not.',
+    name: 'Momentum',
+    onHit(G, e, d) { // the wide arc hits hardest
+      if (Util.dist2(e.x, e.y, G.player.x, G.player.y) > 80 * 80) e.hp -= d * 0.4;
+    },
+  };
+
+  Q.flak = {
+    lore: 'A handful of the Adamant vat, thrown with feeling.',
+    name: 'Point Blank',
+    onHit(G, e, d) { // devastating up close
+      if (Util.dist2(e.x, e.y, G.player.x, G.player.y) < 110 * 110) e.hp -= d * 0.5;
+    },
+  };
+  Q.flak_a = {
+    lore: 'Every piece of it wants to be smaller pieces.',
+    name: 'Chain Reaction',
+    onHit(G, e, d, opts) { if (Math.random() < 0.15) G.explodeAt(e.x, e.y, 32, d * 0.4, { color: '#c9ccd6', ownerW: opts.w }); },
+  };
+  Q.flak_b = {
+    lore: 'What it catches, it keeps. What it keeps, it presents.',
+    name: 'Trophy Hook',
+    onHit(G, e) { e.vulnT = G.time + 2; }, // dragged prey is marked for everything
+  };
+
+  Q.sentry = {
+    lore: 'It asked for one order it could follow forever. It got it.',
+    name: 'Entrench',
+    onFire(G, w) { // each deployment hardens the standing line
+      for (const p of Projectiles.pool) {
+        if (p.active && p.kind === 'turret' && p.ownerW === w) p.dmg *= 1.12;
+      }
+    },
+  };
+  Q.sentry_a = {
+    lore: 'Doctrine: two guns are a crossfire. Three are a homeland.',
+    name: 'Overlapping Fields',
+    onFire(G, w) {
+      const mine = Projectiles.pool.filter(p => p.active && p.kind === 'turret' && p.ownerW === w);
+      if (mine.length >= 2) for (const p of mine) p.rof = 0.34;
+    },
+  };
+  Q.sentry_b = {
+    lore: 'It starts slow the way avalanches start slow.',
+    name: 'Spin-Up',
+    onFire(G, w) {
+      for (const p of Projectiles.pool) if (p.active && p.kind === 'turret' && p.ownerW === w) p.spinup = true;
+    },
+  };
+
+  Q.bladering = {
+    lore: 'A halo for the patron saint of standing too close.',
+    name: 'Shrapnel',
+    onHit(G, e, d, opts) {
+      if (Math.random() > 0.2) return;
+      const a = Math.random() * Math.PI * 2;
+      Projectiles.fire({ x: e.x, y: e.y, vx: Math.cos(a) * 340, vy: Math.sin(a) * 340, dmg: d * 0.4, r: 4, life: 0.5, color: '#c9ccd6', ownerW: opts.w, effects: [] });
+    },
+  };
+  Q.bladering_a = {
+    lore: 'The first cut is a greeting. The rest are the conversation.',
+    name: 'Lacerate',
+    onHit(G, e, d) {
+      if (e._lacT > G.time) e.hp -= d * 0.45;
+      e._lacT = G.time + 1.2;
+    },
+  };
+  Q.bladering_b = {
+    lore: 'The Loom\'s justice is a circle. It comes around.',
+    name: 'Execution Arc',
+    onHit(G, e) { // the orbit finishes the faltering
+      if (!e.boss && !e.elite && e.hp < e.maxHp * 0.1) {
+        e.hp = -1;
+        Particles.burst(e.x, e.y, '#c9ccd6', 8, { speed: 130 });
+      }
+    },
+  };
+
   // attach lore/quirk ids onto weapon defs
   for (const id in Q) {
     if (WEAPONS.defs[id]) {

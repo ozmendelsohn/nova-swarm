@@ -88,5 +88,22 @@ One entry per weapon: its Loomworld fiction and its unique mechanical quirk
 | Queen's Wrath | Her majesty does not grieve. She mobilizes. | **Protect the Queen** — swarm rages (+40%) while you're below half HP |
 | Murder Hornet | There is one of it. That has always been enough. | **Apex Mark** — its prey takes +20% from ALL your weapons |
 
-*(Steel, Arcane, and fusions follow in subsequent passes.
+## Steel — charms hammered from the adamant vat
+
+| Weapon | Lore | Quirk |
+|---|---|---|
+| Saw Disc | It was a millwheel. The mill is gone. The work ethic survived. | **Whetted** — every throw hones the edge (up to +30%) |
+| Twin Reapers | Two blades, one grudge, perfect scheduling. | **Shear** — caught between discs takes +50% |
+| Buzzkill | The chain was a compromise. The ball was not. | **Momentum** — the wide arc hits +40% harder |
+| Flak Cannon | A handful of the Adamant vat, thrown with feeling. | **Point Blank** — +50% up close |
+| Cluster Hell | Every piece of it wants to be smaller pieces. | **Chain Reaction** — fragments can mini-detonate |
+| Slug Driver | What it catches, it keeps. What it keeps, it presents. | **Trophy Hook** — dragged prey marked for ALL weapons |
+| Sentry Gun | It asked for one order it could follow forever. It got it. | **Entrench** — each deployment hardens standing turrets |
+| Firebase | Doctrine: two guns are a crossfire. Three are a homeland. | **Overlapping Fields** — 2+ turrets all fire faster |
+| Gatling Sentry | It starts slow the way avalanches start slow. | **Spin-Up** — fire rate climbs over the turret's life |
+| Blade Cyclone | A halo for the patron saint of standing too close. | **Shrapnel** — ring hits fling razor fragments |
+| Tornado of Knives | The first cut is a greeting. The rest are the conversation. | **Lacerate** — repeat hits within 1.2s cut +45% deeper |
+| Guillotine Orbit | The Loom's justice is a circle. It comes around. | **Execution Arc** — finishes common knots under 10% HP |
+
+*(Arcane and fusions follow in the final passes.
 Monsters are complete — see MONSTER_LORE.md.)*

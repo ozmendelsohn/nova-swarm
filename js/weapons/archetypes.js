@@ -345,8 +345,9 @@ const Archetypes = (() => {
         }
         case 'turret': {
           p.retT -= dt;
+          if (p.spinup) p.rof = Math.max(0.18, 0.5 - p.t * 0.05); // gatling spin-up
           if (p.retT <= 0) {
-            p.retT = 0.5;
+            p.retT = p.rof || 0.5;
             const e = G.nearestEnemy(p.x, p.y, 420);
             if (e) {
               const a = Util.angTo(p.x, p.y, e.x, e.y);
