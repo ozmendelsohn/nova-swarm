@@ -50,6 +50,16 @@ const UI = (() => {
       c.fillText(w.def.tier === 'fusion' ? '★' : w.lvl, wx + 24, 43);
       wx += 36;
     }
+    // virtual joystick (touch)
+    const t = Player.touch;
+    if (t.active) {
+      c.globalAlpha = 0.3;
+      c.strokeStyle = '#fff'; c.lineWidth = 3;
+      c.beginPath(); c.arc(t.ox, t.oy, 56, 0, Math.PI * 2); c.stroke();
+      c.globalAlpha = 0.55; c.fillStyle = '#3ae0ff';
+      c.beginPath(); c.arc(t.ox + t.dx, t.oy + t.dy, 26, 0, Math.PI * 2); c.fill();
+      c.globalAlpha = 1;
+    }
     // boss banner
     if (G.bossBanner > 0) {
       c.globalAlpha = Math.min(1, G.bossBanner);

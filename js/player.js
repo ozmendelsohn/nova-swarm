@@ -4,6 +4,42 @@ const Player = (() => {
   window.addEventListener('keydown', e => { keys[e.code] = true; });
   window.addEventListener('keyup', e => { keys[e.code] = false; });
 
+  // ---- touch: floating virtual joystick + second-finger dash ----
+  const touch = { active: false, id: null, ox: 0, oy: 0, dx: 0, dy: 0, dash: false };
+  const cvEl = document.getElementById('game');
+  cvEl.addEventListener('touchstart', ev => {
+    ev.preventDefault();
+    for (const t of ev.changedTouches) {
+      if (!touch.active) { // first finger: joystick anchors where you touch
+        touch.active = true; touch.id = t.identifier;
+        touch.ox = t.clientX; touch.oy = t.clientY; touch.dx = 0; touch.dy = 0;
+      } else { // any extra finger: dash
+        touch.dash = true;
+      }
+    }
+  }, { passive: false });
+  cvEl.addEventListener('touchmove', ev => {
+    ev.preventDefault();
+    for (const t of ev.changedTouches) {
+      if (t.identifier === touch.id) {
+        touch.dx = t.clientX - touch.ox; touch.dy = t.clientY - touch.oy;
+        const m = Math.hypot(touch.dx, touch.dy);
+        if (m > 70) { // joystick follows the finger so direction flips fast
+          touch.ox += (touch.dx / m) * (m - 70);
+          touch.oy += (touch.dy / m) * (m - 70);
+          touch.dx = (touch.dx / m) * 70; touch.dy = (touch.dy / m) * 70;
+        }
+      }
+    }
+  }, { passive: false });
+  const endTouch = ev => {
+    for (const t of ev.changedTouches) {
+      if (t.identifier === touch.id) { touch.active = false; touch.id = null; touch.dx = touch.dy = 0; }
+    }
+  };
+  cvEl.addEventListener('touchend', endTouch);
+  cvEl.addEventListener('touchcancel', endTouch);
+
   function create(ch) {
     return {
       x: 0, y: 0, r: 12, hp: ch.hp, maxHp: ch.hp,
@@ -23,9 +59,16 @@ const Player = (() => {
     if (keys.KeyS || keys.ArrowDown) dy += 1;
     if (keys.KeyA || keys.ArrowLeft) dx -= 1;
     if (keys.KeyD || keys.ArrowRight) dx += 1;
+    // virtual joystick (deadzone 12px)
+    if (touch.active && Math.hypot(touch.dx, touch.dy) > 12) {
+      const m = Math.hypot(touch.dx, touch.dy);
+      dx = touch.dx / m; dy = touch.dy / m;
+    }
+    const wantDash = keys.Space || touch.dash;
+    touch.dash = false;
 
     p.dashCd -= dt; p.dashT -= dt; p.hurtT -= dt;
-    if (keys.Space && p.dashCd <= 0 && (dx || dy)) {
+    if (wantDash && p.dashCd <= 0 && (dx || dy)) {
       p.dashT = 0.18; p.dashCd = 2.2 * p.mods.dashCd;
       Snd.play('dash');
       Particles.burst(p.x, p.y, p.char.pal.a, 14, { speed: 180 });
@@ -101,5 +144,5 @@ const Player = (() => {
     c.globalAlpha = 1;
   }
 
-  return { create, update, gainXp, hurt, draw, keys };
+  return { create, update, gainXp, hurt, draw, keys, touch };
 })();
