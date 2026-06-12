@@ -582,6 +582,209 @@ const Enemies = (() => {
     },
   });
 
+  // batch 5 — the deep bestiary's heavyweights + the Knot-Tyrants
+  Object.assign(MQUIRKS, {
+    barnacle: {
+      lore: 'It chose a spot. The spot was wrong. It is committed now.',
+      update(G, e, dt) { // anchored battery: never moves, lobs heavy shots
+        e.slowSelf = true;
+        e.shootT = 99;
+        e._lobT = (e._lobT || 2) - dt;
+        if (e._lobT <= 0 && Util.dist2(e.x, e.y, G.player.x, G.player.y) < 520 * 520) {
+          e._lobT = 2.8;
+          const a = Util.angTo(e.x, e.y, G.player.x, G.player.y);
+          Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a) * 110, vy: Math.sin(a) * 110, dmg: e.dmg, r: 9, life: 5, color: '#d65c8a' });
+        }
+      },
+    },
+    stormcrow: {
+      lore: 'Where two fly together, the weather takes sides.',
+      update(G, e) { // murmuration: pairs ride each other\'s tailwind
+        for (const o of list) {
+          if (o !== e && o.type.id === 'stormcrow' && Util.dist2(e.x, e.y, o.x, o.y) < 220 * 220) { e._hasteT = 0.3; break; }
+        }
+      },
+    },
+    magmite: {
+      lore: 'A kiln that walked out of its own firing.',
+      onDeath(G, e) { hazards.push({ x: e.x, y: e.y, r: 44, life: 5, type: 'lava' }); },
+    },
+    lurkfish: {
+      lore: 'The cloth ripples where it swims. Watch the ripples.',
+      update(G, e) { // breach: under the cloth at range, surfacing to strike
+        e.phased = Util.dist2(e.x, e.y, G.player.x, G.player.y) > 240 * 240;
+      },
+    },
+    rusthound: {
+      lore: 'It still answers to a whistle nobody living can make.',
+      update(G, e, dt) { // pack howl
+        e._howlT = (e._howlT || Util.rand(2, 8)) - dt;
+        if (e._howlT <= 0) {
+          e._howlT = 9;
+          let n = 0;
+          for (const o of list) if (o.type.id === 'rusthound') { o._hasteT = 2.5; n++; }
+          if (n > 1) Particles.text(e.x, e.y - 20, 'AWHOOO', '#b8703a', 13);
+        }
+      },
+    },
+    voideye: {
+      lore: 'It blinked once, and a village was never woven.',
+      update(G, e, dt) { // null gaze: stares, then a fast triple
+        e.shootT = 99;
+        e._gazeT = (e._gazeT || 3) - dt;
+        if (e._gazeT <= 0 && Util.dist2(e.x, e.y, G.player.x, G.player.y) < 460 * 460) {
+          e._gazeT = 3.6;
+          const a = Util.angTo(e.x, e.y, G.player.x, G.player.y);
+          for (let k = -1; k <= 1; k++) {
+            Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a + k * 0.1) * 260, vy: Math.sin(a + k * 0.1) * 260, dmg: e.dmg * 0.6, r: 5, life: 2, color: '#f05cf0' });
+          }
+        }
+      },
+    },
+    bloomling: {
+      lore: 'It flowers out of season because the seasons left.',
+      update(G, e, dt) { // pollen snare
+        e._polT = (e._polT || 2) - dt;
+        if (e._polT <= 0 && webs.length < 12) { e._polT = 3.5; webs.push({ x: e.x, y: e.y, life: 5, slime: true }); }
+      },
+    },
+    chimeling: {
+      lore: 'Cast as a bell for a tower the Loom never finished. It rings anyway.',
+      onHurt(G, e) { // resonance: each strike rings against your dash
+        G.player.dashCd = Math.min(G.player.dashCd + 0.15, 4);
+      },
+    },
+    boneworm: {
+      lore: 'Cut it in half and you have two arguments instead of one.',
+      onDeath(G, e) { // segmented: regrows once from the larger half
+        if (e._regrown) return;
+        const m = spawnAt(G, e.type);
+        m.x = e.x; m.y = e.y;
+        m.hp = m.maxHp = e.maxHp * 0.4; m.xp = 2; m._regrown = true;
+        Particles.burst(e.x, e.y, '#e8e3d5', 10, { speed: 100 });
+      },
+    },
+    ashwalker: {
+      lore: 'It was the fire brigade, once. Now it delivers.',
+      update(G, e, dt) { // cinder steps
+        e._cinT = (e._cinT || 1.4) - dt;
+        if (e._cinT <= 0 && hazards.length < 14) { e._cinT = 1.8; hazards.push({ x: e.x, y: e.y, r: 18, life: 2.2, type: 'lava' }); }
+      },
+    },
+    gravekite: {
+      lore: 'It carries what the battlefield no longer needs, and drops it where it will hurt.',
+      update(G, e, dt) { // pale cargo: bone bombs
+        e.shootT = 99;
+        e._cargoT = (e._cargoT || 2.5) - dt;
+        if (e._cargoT <= 0 && Util.dist2(e.x, e.y, G.player.x, G.player.y) < 260 * 260) {
+          e._cargoT = 3.5;
+          Projectiles.efire({ x: e.x, y: e.y, vx: 0, vy: 0, dmg: e.dmg, r: 11, life: 1.6, color: '#e8e3d5' });
+        }
+      },
+    },
+    bramblebear: {
+      lore: 'The forest sent its opinion of the Unraveling. It has claws.',
+      onHurt(G, e) { // overgrowth: hurting it grows thorns back at you
+        if (e.hp < e.maxHp * 0.5 && Math.random() < 0.3) {
+          const a = Util.angTo(e.x, e.y, G.player.x, G.player.y);
+          Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a) * 200, vy: Math.sin(a) * 200, dmg: e.dmg * 0.4, r: 4, life: 1.4, color: '#6b8a3a' });
+        }
+      },
+    },
+    maweater: {
+      lore: 'The Unraveling unravels too. Something has to eat the loose ends.',
+      update(G, e) { // devourer: consumes lesser knots to mend itself
+        for (const o of list) {
+          if (o === e || o.boss || o.elite) continue;
+          if (Util.dist2(e.x, e.y, o.x, o.y) < (e.r + o.r) * (e.r + o.r)) {
+            o._eaten = true; // swallowed whole — removed without drops
+            e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.08);
+            Particles.burst(o.x, o.y, '#8a3a6b', 10, { speed: 120 });
+            break;
+          }
+        }
+      },
+    },
+    // ---- the Knot-Tyrants ----
+    OMEGA_SLIME: {
+      lore: 'When enough spilled dye pools in one regret, it remembers every shape it stained.',
+      update(G, e, dt) { // tide of dye: sheds droplets
+        e._tideT = (e._tideT || 5) - dt;
+        if (e._tideT <= 0) {
+          e._tideT = 6;
+          for (let k = 0; k < 3; k++) {
+            const m = spawnAt(G, TYPES[0]);
+            m.x = e.x + Util.rand(-50, 50); m.y = e.y + Util.rand(-50, 50);
+          }
+        }
+      },
+    },
+    BONE_TYRANT: {
+      lore: 'Pale warp does not rot. It waits, and files its edges.',
+      update(G, e, dt) { // conscription: raises the dead-threaded
+        e._consT = (e._consT || 8) - dt;
+        if (e._consT <= 0) {
+          e._consT = 10;
+          const t = TYPES.find(x => x.id === 'boneworm') || TYPES[0];
+          for (let k = 0; k < 2; k++) {
+            const m = spawnAt(G, t);
+            m.x = e.x + Util.rand(-60, 60); m.y = e.y + Util.rand(-60, 60);
+          }
+          Particles.text(e.x, e.y - 50, 'RISE', '#e8e3d5', 16);
+        }
+      },
+    },
+    STORM_EYE: {
+      lore: 'The needle\'s eye through which the storm was threaded. It never closed.',
+      update(G, e, dt) { // the pull: you drift toward the eye
+        if (Util.dist2(e.x, e.y, G.player.x, G.player.y) < 420 * 420) {
+          const a = Util.angTo(G.player.x, G.player.y, e.x, e.y);
+          G.player.x += Math.cos(a) * 34 * dt; G.player.y += Math.sin(a) * 34 * dt;
+        }
+      },
+    },
+    HELL_BLOOM: {
+      lore: 'It was meant to be a rose on a queen\'s sleeve. The queen unraveled first.',
+      update(G, e, dt) { // pollen veil: rings itself in toxin
+        e._veilT = (e._veilT || 4) - dt;
+        if (e._veilT <= 0) {
+          e._veilT = 5;
+          for (let k = 0; k < 4; k++) {
+            const a = Math.random() * Math.PI * 2, d = Util.rand(60, 140);
+            hazards.push({ x: e.x + Math.cos(a) * d, y: e.y + Math.sin(a) * d, r: 30, life: 4, type: 'gas' });
+          }
+        }
+      },
+    },
+    VOID_MAW: {
+      lore: 'Where the pattern was, there is now an appetite.',
+      update(G, e) { // hunger: devours dye-gems off the field and grows fat on them
+        for (let i = World.gems.length - 1; i >= 0; i--) {
+          const g = World.gems[i];
+          if (!g.coin && !g.heal && Util.dist2(e.x, e.y, g.x, g.y) < 130 * 130) {
+            World.gems.splice(i, 1);
+            e.hp = Math.min(e.maxHp, e.hp + 25);
+            Particles.burst(e.x, e.y, '#f05cf0', 4, { speed: 60 });
+          }
+        }
+      },
+    },
+    NOVA_PRIME: {
+      lore: 'The last knot, tied around the last light. It does not hate you. It is holding on.',
+      update(G, e, dt) { // the tightening: folds space to stay close
+        e._foldT = (e._foldT || 9) - dt;
+        if (e._foldT <= 0 && Util.dist2(e.x, e.y, G.player.x, G.player.y) > 500 * 500) {
+          e._foldT = 11;
+          Particles.burst(e.x, e.y, '#ffd23e', 20, { speed: 200 });
+          const a = Math.random() * Math.PI * 2;
+          e.x = G.player.x + Math.cos(a) * 320; e.y = G.player.y + Math.sin(a) * 320;
+          Particles.burst(e.x, e.y, '#3ae0ff', 20, { speed: 200 });
+          G.shake(8);
+        }
+      },
+    },
+  });
+
   const hazards = []; // ground hazards left by monsters (lava wakes etc.)
 
   function quirkDeath(G, e) {
@@ -723,6 +926,7 @@ const Enemies = (() => {
     const P = G.player;
     for (let i = list.length - 1; i >= 0; i--) {
       const e = list[i];
+      if (e._eaten) { list.splice(i, 1); continue; } // swallowed by a maweater
       // safety net: anything that hit 0 HP through a side path dies properly
       if (e.hp <= 0 || !isFinite(e.x) || !isFinite(e.y)) { G.killEnemy(e, i); continue; }
       e.flash -= dt; e.anim += dt * 6;

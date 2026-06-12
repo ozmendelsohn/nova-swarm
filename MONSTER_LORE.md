@@ -79,4 +79,35 @@ One entry per knot of the Unraveling: its fiction and its unique behavior
 | Coilworm | It learned tunneling from the moths and ambition from no one. It is self-taught. | **Burrow** — submerges and surfaces closer to you |
 | Icefang | Winter, distilled to the part with teeth. | **Cold Bite** — contact grips you with frost |
 
-*(Remaining 13 monsters + 6 bosses follow in the final pass.)*
+
+## Batch 5 — heavyweights of the deep bestiary
+
+| Monster | Lore | Quirk |
+|---|---|---|
+| Barnacle | It chose a spot. The spot was wrong. It is committed now. | **Anchored Battery** — never moves, lobs heavy shells |
+| Stormcrow | Where two fly together, the weather takes sides. | **Murmuration** — pairs ride each other's tailwind |
+| Magmite | A kiln that walked out of its own firing. | **Molten Core** — death leaves a wide lava pool |
+| Lurkfish | The cloth ripples where it swims. Watch the ripples. | **Breach** — untouchable under the cloth until it surfaces to strike |
+| Rusthound | It still answers to a whistle nobody living can make. | **Pack Howl** — hastens every hound on the field |
+| Voideye | It blinked once, and a village was never woven. | **Null Gaze** — stares, then fires a fast triple |
+| Bloomling | It flowers out of season because the seasons left. | **Pollen Snare** — sheds slowing pollen patches |
+| Chimeling | Cast as a bell for a tower the Loom never finished. It rings anyway. | **Resonance** — striking it rings against your dash |
+| Boneworm | Cut it in half and you have two arguments instead of one. | **Segmented** — regrows once from the larger half |
+| Ashwalker | It was the fire brigade, once. Now it delivers. | **Cinder Steps** — burning footprints |
+| Gravekite | It carries what the battlefield no longer needs, and drops it where it will hurt. | **Pale Cargo** — drops bone bombs overhead |
+| Bramblebear | The forest sent its opinion of the Unraveling. It has claws. | **Overgrowth** — wounded, it grows thorns back at you |
+| Maweater | The Unraveling unravels too. Something has to eat the loose ends. | **Devourer** — swallows lesser knots whole to mend itself |
+
+## The Knot-Tyrants
+
+| Boss | Lore | Quirk |
+|---|---|---|
+| OMEGA SLIME | When enough spilled dye pools in one regret, it remembers every shape it stained. | **Tide of Dye** — sheds living droplets |
+| BONE TYRANT | Pale warp does not rot. It waits, and files its edges. | **Conscription** — raises boneworms mid-fight |
+| STORM EYE | The needle's eye through which the storm was threaded. It never closed. | **The Pull** — you drift helplessly toward the eye |
+| HELL BLOOM | It was meant to be a rose on a queen's sleeve. The queen unraveled first. | **Pollen Veil** — rings itself in toxin clouds |
+| VOID MAW | Where the pattern was, there is now an appetite. | **Hunger** — devours your dye-gems off the field to heal |
+| NOVA PRIME | The last knot, tied around the last light. It does not hate you. It is holding on. | **The Tightening** — folds space to stay close to you |
+
+**The bestiary pass is complete: all 66 monsters and 6 bosses have lore and a unique behavior.**
+
