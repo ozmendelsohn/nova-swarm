@@ -161,6 +161,8 @@ const Sprites = (() => {
     '.ga', 'gaa', '.aa', 'aaa', 'add', 'add', 'aaa', '.gg'] };
   const COCOON = { pal: { a: '#d8cfc0', b: '#a89a85', t: '#ff8c5c', e: '#5cf0c9' }, grid: [
     '.ta', 'taa', 'aaa', 'aea', 'aaa', 'aab', '.ab', '..t'] };
+  const SHRINE = { pal: { a: '#a8743a', b: '#6b4214', g: '#ffd23e', w: '#fff8d0' }, grid: [
+    'g..', '.g.', 'wgw', '.a.', 'aaa', 'a.a', 'a.a', 'bbb'] };
   const CHEST = { pal: { a: '#ffd23e', b: '#a8741f', w: '#fff' }, grid: ['.aaa', 'abba', 'awba', 'abba', '.aaa'] };
 
   function frame2(grid) { // simple 2nd frame: nudge bottom third
@@ -197,6 +199,8 @@ const Sprites = (() => {
       out = [render(URN.grid, URN.pal, 4, true)];
     } else if (name === 'cocoon') {
       out = [render(COCOON.grid, COCOON.pal, 4, true)];
+    } else if (name === 'shrine') {
+      out = [render(SHRINE.grid, SHRINE.pal, 4, true)];
     }
     cache[name] = out;
     return out;

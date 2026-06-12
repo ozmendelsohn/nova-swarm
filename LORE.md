@@ -66,6 +66,22 @@ The battlefield is the tapestry seen up close:
 - The tapestry is alive: hues breathe slowly, sigils glint. But the cloth is
   always dimmer than the things standing on it (layer contract).
 
+## Living-world canon (implemented features)
+- **Warp-thread Blessing** — standing on a golden warp-thread, the Weaver's
+  old power seeps up: faster steps, mending wounds, gold sparks.
+- **Dye Stains** — where an elite or Knot-Tyrant is unmade, its dye soaks the
+  cloth forever; a long run reads as a battlefield map of spilled color.
+- **Knot-Tyrant epithets** — every boss arrives with its lore name on a
+  woven banner (e.g. VOID MAW, *The Hole Where the Pattern Was*).
+- **Loom Shrines** — tiny looms the tapestry raises to help its champion.
+  Touched, never shot. They mend you, pay you, or call the threads home.
+- **The Moth Plague** — every few minutes a flock of cloth-eating moths
+  sweeps the field in a hungry line.
+- **Props of the cloth** — Dye Spools (mixed blessings), Dye Urns (coins),
+  Knot Cocoons (proto-enemies that never woke; burst with dye-gems).
+- **Unraveling deaths** — every slain knot spills literal thread strands.
+- **Dye-motes** — loose pigment drifts up from whichever province you cross.
+
 ## Tone
 Folk-tale told in an arcade cabinet: warm, a little strange, never grimdark.
 The Swarm is tragic, not evil. The palette grieves in color, never in grey.

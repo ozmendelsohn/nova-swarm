@@ -54,18 +54,18 @@ const Enemies = (() => {
   for (const k in ANIM) for (const id of ANIM[k]) ANIM_OF[id] = k;
 
   const BOSSES = [
-    { id: 'OMEGA_SLIME', name: 'OMEGA SLIME', hp: 1500,  spd: 45, dmg: 18, at: 180,  pattern: 'ring' },
-    { id: 'BONE_TYRANT', name: 'BONE TYRANT', hp: 3800,  spd: 50, dmg: 22, at: 420,  pattern: 'aimed' },
-    { id: 'STORM_EYE',   name: 'STORM EYE',   hp: 7500,  spd: 60, dmg: 26, at: 660,  pattern: 'spiral' },
-    { id: 'HELL_BLOOM',  name: 'HELL BLOOM',  hp: 13000, spd: 40, dmg: 30, at: 900,  pattern: 'flower' },
-    { id: 'VOID_MAW',    name: 'VOID MAW',    hp: 21000, spd: 70, dmg: 34, at: 1080, pattern: 'cross' },
-    { id: 'NOVA_PRIME',  name: 'NOVA PRIME',  hp: 40000, spd: 75, dmg: 40, at: 1185, pattern: 'all' },
+    { id: 'OMEGA_SLIME', name: 'OMEGA SLIME', title: 'The First Pooling of Spilled Dye', hp: 1500,  spd: 45, dmg: 18, at: 180,  pattern: 'ring' },
+    { id: 'BONE_TYRANT', name: 'BONE TYRANT', title: 'Knotted from Pale Warp', hp: 3800,  spd: 50, dmg: 22, at: 420,  pattern: 'aimed' },
+    { id: 'STORM_EYE',   name: 'STORM EYE',   title: 'A Needle\'s Eye, Watching Back', hp: 7500,  spd: 60, dmg: 26, at: 660,  pattern: 'spiral' },
+    { id: 'HELL_BLOOM',  name: 'HELL BLOOM',  title: 'Embroidery That Learned Hunger', hp: 13000, spd: 40, dmg: 30, at: 900,  pattern: 'flower' },
+    { id: 'VOID_MAW',    name: 'VOID MAW',    title: 'The Hole Where the Pattern Was', hp: 21000, spd: 70, dmg: 34, at: 1080, pattern: 'cross' },
+    { id: 'NOVA_PRIME',  name: 'NOVA PRIME',  title: 'The Knot Around the Dying Star', hp: 40000, spd: 75, dmg: 40, at: 1185, pattern: 'all' },
   ];
 
   let list = [];
-  let spawnT = 0, eliteT = 50, bossIdx = 0;
+  let spawnT = 0, eliteT = 50, bossIdx = 0, mothT = 150;
 
-  function reset() { list = []; spawnT = 0; eliteT = 50; bossIdx = 0; }
+  function reset() { list = []; spawnT = 0; eliteT = 50; bossIdx = 0; mothT = 150; }
 
   function spawnAt(G, type, elite = false) {
     const a = Math.random() * Math.PI * 2;
@@ -95,7 +95,7 @@ const Enemies = (() => {
       shootT: 2, patT: 0, patA: 0,
     };
     list.push(e);
-    G.announceBoss(bdef.name);
+    G.announceBoss(bdef.name, bdef.title);
     return e;
   }
 
@@ -126,6 +126,23 @@ const Enemies = (() => {
     }
     if (bossIdx < BOSSES.length && G.time >= BOSSES[bossIdx].at) {
       spawnBoss(G, BOSSES[bossIdx]); bossIdx++;
+    }
+    // the Moth Plague: every ~4 min a flock sweeps in to eat the cloth
+    mothT -= dt;
+    if (mothT <= 0) {
+      mothT = 240;
+      G.announceBoss('THE MOTH PLAGUE', 'They Come to Eat the Cloth');
+      const moth = TYPES.find(t => t.id === 'moth');
+      const a = Math.random() * Math.PI * 2;
+      for (let i = 0; i < 16 + (minute * 2 | 0); i++) {
+        const e = spawnAt(G, moth);
+        // line formation sweeping in from one side
+        const px = Math.cos(a + Math.PI / 2), py = Math.sin(a + Math.PI / 2);
+        e.x = G.player.x + Math.cos(a) * 700 + px * (i - 8) * 45;
+        e.y = G.player.y + Math.sin(a) * 700 + py * (i - 8) * 45;
+        e.spd *= 1.5;
+        e.hp *= 2; e.maxHp = e.hp;
+      }
     }
 
     const P = G.player;

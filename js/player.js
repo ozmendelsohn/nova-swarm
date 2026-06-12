@@ -85,7 +85,7 @@ const Player = (() => {
       }
     }
 
-    const spd = p.speed * (1 + 0.1 * (WeaponManager.passives.speed || 0)) * (p.dashT > 0 ? 3.2 : 1);
+    const spd = p.speed * (1 + 0.1 * (WeaponManager.passives.speed || 0)) * (p.dashT > 0 ? 3.2 : 1) * (p.warpBlessed ? 1.12 : 1);
     if (dx || dy) {
       const m = Math.hypot(dx, dy);
       p.x += (dx / m) * spd * dt;

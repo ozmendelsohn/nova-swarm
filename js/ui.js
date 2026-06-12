@@ -70,10 +70,20 @@ const UI = (() => {
     }
     // boss banner
     if (G.bossBanner > 0) {
-      c.globalAlpha = Math.min(1, G.bossBanner);
-      c.textAlign = 'center'; c.font = 'bold 42px monospace';
+      const al = Math.min(1, G.bossBanner);
+      c.globalAlpha = al * 0.45;
+      c.fillStyle = '#1a0820';
+      c.fillRect(0, G.h * 0.18, G.w, 86);
+      c.globalAlpha = al;
+      c.fillStyle = '#ffd23e';
+      c.fillRect(0, G.h * 0.18, G.w, 2); c.fillRect(0, G.h * 0.18 + 84, G.w, 2);
+      c.textAlign = 'center'; c.font = 'bold 40px monospace';
       c.fillStyle = '#ff3a5c';
-      c.fillText(`⚠ ${G.bossName} ⚠`, G.w / 2, G.h * 0.25 + Math.sin(G.time * 20) * 3);
+      c.fillText(`⚠ ${G.bossName} ⚠`, G.w / 2, G.h * 0.18 + 42 + Math.sin(G.time * 20) * 2);
+      if (G.bossTitle) {
+        c.font = 'italic 15px monospace'; c.fillStyle = '#e8d8b0';
+        c.fillText(`— ${G.bossTitle} —`, G.w / 2, G.h * 0.18 + 68);
+      }
       c.globalAlpha = 1;
     }
   }

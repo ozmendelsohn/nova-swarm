@@ -24,12 +24,19 @@ const Game = (() => {
   ];
   const hash = (x, y) => { let h = (x * 374761393 + y * 668265263) ^ (x * 1274126177); h = (h ^ (h >> 13)) * 1103515245; return ((h ^ (h >> 16)) >>> 0); };
   const dyeOf = (px, py) => hash(Math.floor(px / PROV), Math.floor(py / PROV)) % 7;
+  const WARP = PROV * 3; // the Weaver's golden warp-threads
+  const onWarpThread = (x, y) => {
+    const dx = Math.abs(((x % WARP) + WARP) % WARP), dy = Math.abs(((y % WARP) + WARP) % WARP);
+    return Math.min(dx, WARP - dx) < 14 || Math.min(dy, WARP - dy) < 14;
+  };
+  const stains = []; // spilled dye soaks the cloth where great knots died
+  let shrineT = 50; // loom shrines appear rarely
 
   function newGame() {
     WeaponManager.reset();
     Enemies.reset();
     Projectiles.clearAll();
-    gems.length = 0; zaps.length = 0; props.length = 0; propT = 4;
+    gems.length = 0; zaps.length = 0; props.length = 0; propT = 4; stains.length = 0; shrineT = 50;
     G = {
       state: 'play', time: 0, w: cv.width, h: cv.height,
       player: Player.create(Characters.selected), kills: 0, combo: 0, comboT: 0, coinsRun: 0,
@@ -123,6 +130,11 @@ const Game = (() => {
     if (i < 0) return;
     Enemies.list.splice(i, 1);
     G.kills++; G.combo++; G.comboT = 2.5;
+    if (e.elite || e.boss) { // spilled dye stains the cloth forever
+      if (stains.length > 50) stains.shift();
+      const [sh, ss] = DYES[dyeOf(e.x, e.y)];
+      stains.push({ x: e.x, y: e.y, r: e.boss ? 90 : 45, hue: (sh + 180) % 360, sat: ss + 20, rot: Math.random() * Math.PI });
+    }
     // the knot unravels: thread strands spill out (LORE.md), plus a dye puff
     const tcol = e.boss ? '#ffd23e' : (e.elite ? '#ffd23e' : '#ff8c5c');
     Particles.burst(e.x, e.y, tcol, e.boss ? 50 : 8, { speed: e.boss ? 350 : 140 });
@@ -166,8 +178,8 @@ const Game = (() => {
     zaps.push({ x1, y1, x2, y2, color, life: 0.15 });
   }
 
-  function announceBoss(name) {
-    G.bossName = name; G.bossBanner = 3;
+  function announceBoss(name, title) {
+    G.bossName = name; G.bossTitle = title || ''; G.bossBanner = 3.5;
     G.shakeAmt = 10;
     Snd.play('boss');
   }
@@ -196,10 +208,28 @@ const Game = (() => {
       const kind = Util.pick(['spool', 'spool', 'urn', 'cocoon']); // spools commonest
       props.push({ x: P.x + Math.cos(a) * d, y: P.y + Math.sin(a) * d, hp: kind === 'cocoon' ? 45 : 30, wob: 0, kind });
     }
+    shrineT -= dt;
+    if (shrineT <= 0) {
+      shrineT = 75;
+      const a = Math.random() * Math.PI * 2, d = Util.rand(400, 650);
+      props.push({ x: P.x + Math.cos(a) * d, y: P.y + Math.sin(a) * d, hp: 9999, wob: 0, kind: 'shrine' });
+    }
     for (let i = props.length - 1; i >= 0; i--) {
       const pr = props[i];
       pr.wob = Math.max(0, pr.wob - dt * 4);
       if (Util.dist2(pr.x, pr.y, P.x, P.y) > 1600 * 1600) { props.splice(i, 1); continue; } // left behind
+      if (pr.kind === 'shrine') { // shrines are touched, never shot
+        if (Util.dist2(pr.x, pr.y, P.x, P.y) < 34 * 34) {
+          props.splice(i, 1);
+          const bless = Util.pick(['heal', 'coins', 'magnet']);
+          Particles.burst(pr.x, pr.y, '#ffd23e', 26, { speed: 240 });
+          Snd.play('levelup');
+          if (bless === 'heal') { P.hp = Math.min(P.maxHp, P.hp + 50); Particles.text(P.x, P.y - 24, 'THE LOOM MENDS YOU', '#5cffb0', 15); }
+          else if (bless === 'coins') { G.coinsRun += 4; Meta.addCoins(4); Particles.text(P.x, P.y - 24, 'THE WEAVER PROVIDES +4⛀', '#ffd23e', 15); }
+          else { for (const o of gems) o.pull = true; Particles.text(P.x, P.y - 24, 'THREADS DRAW HOME', '#3ae0ff', 15); }
+        }
+        continue;
+      }
       // any player projectile cracks it
       for (const p of Projectiles.pool) {
         if (!p.active || p.kind === 'aura' || p.kind === 'totem') continue;
@@ -309,6 +339,13 @@ const Game = (() => {
       const mx = G.player.x + Util.rand(-G.w / 2, G.w / 2), my = G.player.y + Util.rand(-G.h / 2, G.h / 2);
       const [h, s] = DYES[dyeOf(mx, my)];
       Particles.spawn(mx, my, `hsl(${h},${s + 25}%,62%)`, { speed: 12, life: 1.6, size: 2, grav: -22, drag: 0.995 });
+    }
+    // warp-thread blessing: the Weaver's strings still carry power
+    const P2 = G.player;
+    P2.warpBlessed = onWarpThread(P2.x, P2.y);
+    if (P2.warpBlessed) {
+      P2.hp = Math.min(P2.maxHp, P2.hp + 1.2 * dt);
+      if (Math.random() < 0.25) Particles.spawn(P2.x + Util.rand(-12, 12), P2.y + Util.rand(-12, 12), '#ffd23e', { speed: 18, life: 0.5, size: 2, grav: -50 });
     }
     Player.update(G, dt);
     rebuildGrid();
@@ -425,6 +462,18 @@ const Game = (() => {
       c.fillRect(nx - 190, ny - 190, 380, 380);
     }
 
+    // spilled-dye stains soaked into the cloth
+    for (const st of stains) {
+      c.save();
+      c.translate(st.x, st.y); c.rotate(st.rot);
+      c.globalAlpha = 0.22;
+      c.fillStyle = `hsl(${st.hue},${st.sat}%,38%)`;
+      c.beginPath(); c.ellipse(0, 0, st.r, st.r * 0.7, 0, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.ellipse(st.r * 0.5, st.r * 0.3, st.r * 0.35, st.r * 0.22, 0, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.ellipse(-st.r * 0.55, -st.r * 0.25, st.r * 0.25, st.r * 0.18, 0, 0, Math.PI * 2); c.fill();
+      c.restore();
+    }
+    c.globalAlpha = 1;
     // breakable props (spools, urns, cocoons)
     for (const pr of props) {
       const prSpr = Sprites.get(pr.kind || 'spool')[0];
@@ -432,6 +481,12 @@ const Game = (() => {
       c.beginPath(); c.ellipse(pr.x, pr.y + 16, 16, 6, 0, 0, Math.PI * 2); c.fill();
       c.save();
       c.translate(pr.x, pr.y);
+      if (pr.kind === 'shrine') { // beckoning golden halo
+        c.globalAlpha = 0.25 + 0.12 * Math.sin(G.time * 3);
+        c.fillStyle = '#ffd23e';
+        c.beginPath(); c.arc(0, -6, 30, 0, Math.PI * 2); c.fill();
+        c.globalAlpha = 1;
+      }
       if (pr.kind === 'cocoon') c.rotate(Math.sin(G.time * 2.5) * 0.06); // it's alive...
       if (pr.wob > 0) c.rotate(Math.sin(G.time * 35) * 0.12 * pr.wob);
       c.drawImage(prSpr, -prSpr.width / 2, -prSpr.height / 2);
