@@ -92,6 +92,11 @@ const Player = (() => {
       p.y += (dy / m) * spd * dt;
       p.faceAng = Math.atan2(dy, dx);
       p.anim += dt * 8;
+      // engine exhaust in the character's accent color
+      if (Math.random() < 0.5) {
+        Particles.spawn(p.x - (dx / m) * 14, p.y - (dy / m) * 14, Math.random() < 0.3 ? '#fff' : p.char.pal.a,
+          { speed: 50, life: 0.3, size: 2, ang: Math.atan2(-dy, -dx) + Util.rand(-0.4, 0.4), drag: 0.9 });
+      }
     }
 
     // regen

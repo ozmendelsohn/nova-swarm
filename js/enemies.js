@@ -195,6 +195,13 @@ const Enemies = (() => {
       const a = Util.angTo(e.x, e.y, tgt.x, tgt.y);
       e.x += Math.cos(a) * e.spd * sl * dt;
       e.y += Math.sin(a) * e.spd * sl * dt;
+      // movement fx by animation style: dust kicks for walkers, wing shimmer for flyers
+      const st = ANIM_OF[e.type.id];
+      if (st === 'waddle' && Math.random() < dt * 3) {
+        Particles.spawn(e.x - Math.cos(a) * e.r, e.y + e.r * 0.7, '#bba88f', { speed: 22, life: 0.4, size: 2, grav: -16 });
+      } else if (st === 'flap' && Math.random() < dt * 4) {
+        Particles.spawn(e.x + Util.rand(-e.r, e.r), e.y, '#ffffff', { speed: 10, life: 0.25, size: 2 });
+      }
 
       // shooters & bosses fire bullet patterns
       if (e.boss) {

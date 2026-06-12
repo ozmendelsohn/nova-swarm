@@ -130,6 +130,26 @@ const World = (() => {
     }
   }
 
+  // draws the ~9px embroidered sigil of a dye at (ox,oy); fillStyle preset by caller
+  function drawSigil(c, dye, ox, oy) {
+    switch (dye) {
+      case 0: // Ember: flame knot
+        c.fillRect(ox + 3, oy, 3, 3); c.fillRect(ox, oy + 3, 9, 3); c.fillRect(ox + 3, oy + 6, 3, 3); break;
+      case 1: // Frost: six-point star stitch
+        c.fillRect(ox + 3, oy - 2, 3, 13); c.fillRect(ox - 2, oy + 3, 13, 3); c.fillRect(ox, oy, 3, 3); c.fillRect(ox + 6, oy + 6, 3, 3); break;
+      case 2: // Volt: zigzag stitch
+        c.fillRect(ox, oy, 4, 3); c.fillRect(ox + 3, oy + 3, 4, 3); c.fillRect(ox, oy + 6, 4, 3); break;
+      case 3: // Void: hollow eye
+        c.fillRect(ox, oy, 9, 2); c.fillRect(ox, oy + 7, 9, 2); c.fillRect(ox, oy, 2, 9); c.fillRect(ox + 7, oy, 2, 9); break;
+      case 4: // Verdant: leaf-work
+        c.fillRect(ox + 3, oy, 3, 9); c.fillRect(ox, oy + 2, 3, 3); c.fillRect(ox + 6, oy + 4, 3, 3); break;
+      case 5: // Adamant: rivet cross-stitch
+        c.fillRect(ox, oy, 3, 3); c.fillRect(ox + 6, oy, 3, 3); c.fillRect(ox + 3, oy + 3, 3, 3); c.fillRect(ox, oy + 6, 3, 3); c.fillRect(ox + 6, oy + 6, 3, 3); break;
+      case 6: // Arcane: spiral stitch
+        c.fillRect(ox, oy, 9, 2); c.fillRect(ox + 7, oy, 2, 9); c.fillRect(ox + 2, oy + 7, 7, 2); c.fillRect(ox + 2, oy + 3, 2, 5); c.fillRect(ox + 4, oy + 3, 3, 2); break;
+    }
+  }
+
   // ---------- ground rendering ----------
   function drawGround(G, c) {
     const P = G.player;
@@ -166,28 +186,40 @@ const World = (() => {
         // embroidered sigil of this dye (sparse, glinting)
         if (h2 === 5) {
           const sx2 = x + 14 + hash(x, y + 1) % (gs - 30), sy2 = y + 14 + hash(x + 1, y) % (gs - 30);
-          const glint = 0.55 + 0.3 * Math.sin(G.time * 2 + (x + y) * 0.01);
-          c.globalAlpha = glint;
+          c.globalAlpha = 0.55 + 0.3 * Math.sin(G.time * 2 + (x + y) * 0.01);
           c.fillStyle = `hsl(${hue},80%,64%)`;
-          switch (dye) {
-            case 0: // Ember: flame knot
-              c.fillRect(sx2 + 3, sy2, 3, 3); c.fillRect(sx2, sy2 + 3, 9, 3); c.fillRect(sx2 + 3, sy2 + 6, 3, 3); break;
-            case 1: // Frost: six-point star stitch
-              c.fillRect(sx2 + 3, sy2 - 2, 3, 13); c.fillRect(sx2 - 2, sy2 + 3, 13, 3); c.fillRect(sx2, sy2, 3, 3); c.fillRect(sx2 + 6, sy2 + 6, 3, 3); break;
-            case 2: // Volt: zigzag stitch
-              c.fillRect(sx2, sy2, 4, 3); c.fillRect(sx2 + 3, sy2 + 3, 4, 3); c.fillRect(sx2, sy2 + 6, 4, 3); break;
-            case 3: // Void: hollow eye
-              c.fillRect(sx2, sy2, 9, 2); c.fillRect(sx2, sy2 + 7, 9, 2); c.fillRect(sx2, sy2, 2, 9); c.fillRect(sx2 + 7, sy2, 2, 9); break;
-            case 4: // Verdant: leaf-work
-              c.fillRect(sx2 + 3, sy2, 3, 9); c.fillRect(sx2, sy2 + 2, 3, 3); c.fillRect(sx2 + 6, sy2 + 4, 3, 3); break;
-            case 5: // Adamant: rivet cross-stitch
-              c.fillRect(sx2, sy2, 3, 3); c.fillRect(sx2 + 6, sy2, 3, 3); c.fillRect(sx2 + 3, sy2 + 3, 3, 3); c.fillRect(sx2, sy2 + 6, 3, 3); c.fillRect(sx2 + 6, sy2 + 6, 3, 3); break;
-            case 6: // Arcane: spiral stitch
-              c.fillRect(sx2, sy2, 9, 2); c.fillRect(sx2 + 7, sy2, 2, 9); c.fillRect(sx2 + 2, sy2 + 7, 7, 2); c.fillRect(sx2 + 2, sy2 + 3, 2, 5); c.fillRect(sx2 + 4, sy2 + 3, 3, 2); break;
-          }
+          drawSigil(c, dye, sx2, sy2);
           c.globalAlpha = 1;
         }
       }
+    }
+    // great province emblems: each dye-field bears its sigil writ large,
+    // woven faintly into the center of the cloth
+    for (let px = Math.floor(x0 / PROV) * PROV; px < x1; px += PROV) {
+      for (let py = Math.floor(y0 / PROV) * PROV; py < y1; py += PROV) {
+        const dye = dyeOf(px + 1, py + 1);
+        const [hue, sat] = DYES[dye];
+        const cx = px + PROV / 2, cy = py + PROV / 2;
+        c.save();
+        c.translate(cx, cy);
+        c.rotate((hash(px, py) % 4) * Math.PI / 2); // varied orientation
+        c.scale(7, 7);
+        c.globalAlpha = 0.13 + 0.03 * Math.sin(G.time * 0.8 + px * 0.01);
+        c.fillStyle = `hsl(${hue},70%,70%)`;
+        drawSigil(c, dye, -5, -5);
+        c.restore();
+      }
+    }
+    c.globalAlpha = 1;
+    // cloud-shadows: soft darkness drifting over the cloth (depth layer)
+    for (let i = 0; i < 4; i++) {
+      const sx2 = P.x * 0.8 + Math.sin(i * 2.1 + G.time * 0.045) * 900 + i * 700;
+      const sy2 = P.y * 0.8 + Math.cos(i * 1.7 + G.time * 0.035) * 700 - i * 520;
+      const g = c.createRadialGradient(sx2, sy2, 40, sx2, sy2, 320);
+      g.addColorStop(0, 'rgba(16,6,32,0.16)');
+      g.addColorStop(1, 'transparent');
+      c.fillStyle = g;
+      c.fillRect(sx2 - 320, sy2 - 320, 640, 640);
     }
     // the Weaver's golden warp-threads, every 3 provinces (sacred gold)
     c.strokeStyle = '#ffd23e'; c.lineWidth = 2;
@@ -252,7 +284,12 @@ const World = (() => {
       const spr = g.heal ? chestSpr : g.magnet ? magSpr : g.coin ? Sprites.get('coin')[0] : gemSpr;
       if (g.magnet) { c.shadowColor = '#3ae0ff'; c.shadowBlur = 12; }
       if (g.coin) { c.shadowColor = '#ffd23e'; c.shadowBlur = 8; }
-      c.drawImage(spr, g.x - spr.width / 2, g.y - spr.height / 2 + bob);
+      c.save();
+      c.translate(g.x, g.y + bob);
+      if (g.coin) c.scale(Math.max(0.18, Math.abs(Math.sin(G.time * 4 + g.x * 0.1))), 1); // spinning coin
+      else if (!g.heal && !g.magnet) c.scale(1 + Math.sin(G.time * 7 + g.x) * 0.12, 1 + Math.cos(G.time * 7 + g.x) * 0.12); // gem pulse
+      c.drawImage(spr, -spr.width / 2, -spr.height / 2);
+      c.restore();
       c.shadowBlur = 0;
     }
   }
