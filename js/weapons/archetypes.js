@@ -179,6 +179,61 @@ const Archetypes = (() => {
     tether: { fire: (G, w, s) => { // sustained lock-on link that cooks one target
       Projectiles.fire({ kind: 'tether', x: G.player.x, y: G.player.y, dmg: s.dmg * 0.45, r: 12, life: 1.1 + s.dur * 0.3, color: w.def.color, ownerW: w, effects: w.def.effects, size: 340 + 40 * s.count });
     } },
+
+    comet: { fire: (G, w, s) => { // winds up in orbit, then slingshots at prey
+      for (let i = 0; i < s.count; i++) {
+        Projectiles.fire({ kind: 'comet', x: G.player.x, y: G.player.y, t: (i * TAU) / s.count, retT: 0.5 + i * 0.12, dmg: s.dmg * 1.3, r: 7 * s.area, life: 3, color: w.def.color, ownerW: w, effects: w.def.effects, orbitR: 55, pierce: 2 });
+      }
+    } },
+
+    pulsar: { fire: (G, w, s) => { // plants a star that pulses bullet rings
+      const e = G.nearestEnemy(G.player.x, G.player.y, 420);
+      Projectiles.fire({ kind: 'pulsar', x: e ? e.x : G.player.x + Util.rand(-150, 150), y: e ? e.y : G.player.y + Util.rand(-150, 150), dmg: s.dmg * 0.6, r: 10, life: 2 + s.dur * 0.5, color: w.def.color, ownerW: w, effects: w.def.effects, retT: 0.2, size: s.count });
+    } },
+
+    scythe: { fire: (G, w, s) => { // one full sweeping cut all the way around
+      Projectiles.fire({ kind: 'scythe', x: G.player.x, y: G.player.y, angle: G.player.faceAng, dmg: s.dmg * 1.2, r: 95 * s.area, life: 0.32, color: w.def.color, ownerW: w, effects: w.def.effects });
+    } },
+
+    wave: { fire: (G, w, s) => { // twin helix bullets weaving across each other
+      const a = aimAng(G);
+      for (let i = 0; i < s.count; i++) {
+        for (const ph of [0, Math.PI]) {
+          Projectiles.fire({ x: G.player.x, y: G.player.y, vx: Math.cos(a) * s.speed, vy: Math.sin(a) * s.speed, dmg: s.dmg * 0.8, r: 5 * s.area, life: s.dur, color: w.def.color, ownerW: w, effects: w.def.effects, wave: 9, retT: ph + i * 0.7, pierce: 1 });
+        }
+      }
+    } },
+
+    anchor: { fire: (G, w, s) => { // heavy anchor: drags the pack in, then shatters
+      const a = aimAng(G);
+      Projectiles.fire({ kind: 'anchor', x: G.player.x + Math.cos(a) * 150, y: G.player.y + Math.sin(a) * 150, dmg: s.dmg * 0.4, r: 70 * s.area, life: 1.4 + s.dur * 0.3, color: w.def.color, ownerW: w, effects: w.def.effects, vacuum: 420, explode: 80 * s.area });
+    } },
+
+    critter: { fire: (G, w, s) => { // skittering swarmlings crawl after prey
+      for (let i = 0; i < s.count + 2; i++) {
+        const a = Math.random() * TAU;
+        Projectiles.fire({ x: G.player.x, y: G.player.y, vx: Math.cos(a) * 110, vy: Math.sin(a) * 110, dmg: s.dmg * 0.7, r: 5, life: s.dur * 2.5, color: w.def.color, ownerW: w, effects: w.def.effects, homing: 3.5, wiggle: 1, spin: 0 });
+      }
+    } },
+
+    sticky: { fire: (G, w, s) => { // latches onto a victim, then detonates
+      shot(G, w, s, { sticky: true, explode: 60 * s.area, homing: 4 });
+    } },
+
+    harpoon: { fire: (G, w, s) => { // skewers and YANKS the victim to your feet
+      shot(G, w, { ...s, speed: s.speed * 1.6 }, { harpoon: true, r: 6 * s.area });
+    } },
+
+    jugger: { fire: (G, w, s) => { // slow colossal moon grinding through the horde
+      const a = aimAng(G);
+      Projectiles.fire({ kind: 'jugger', x: G.player.x, y: G.player.y, vx: Math.cos(a) * 90, vy: Math.sin(a) * 90, dmg: s.dmg * 0.8, r: 34 * s.area, life: 2.2 + s.dur * 0.5, color: w.def.color, ownerW: w, effects: w.def.effects });
+    } },
+
+    totem: { fire: (G, w, s) => { // decoy totem: taunts the horde, then erupts
+      const have = Projectiles.pool.some(q => q.active && q.kind === 'totem');
+      if (have) return;
+      Projectiles.fire({ kind: 'totem', x: G.player.x + Util.rand(-90, 90), y: G.player.y + Util.rand(-90, 90), dmg: s.dmg * 0.5, r: 60 * s.area, life: 2.5 + s.dur, color: w.def.color, ownerW: w, effects: w.def.effects, explode: 110 * s.area });
+    } },
   };
 
   // ---------- shared projectile update ----------
@@ -191,6 +246,7 @@ const Archetypes = (() => {
       if (p.life <= 0) {
         if (p.kind === 'mine') G.explodeAt(p.x, p.y, p.explode, p.dmg, p);
         if (p.kind === 'mortar') G.explodeAt(p.vx, p.vy, p.explode, p.dmg, p); // lands and detonates
+        if (p.kind === 'anchor' || p.kind === 'totem' || p.kind === 'stuck') G.explodeAt(p.x, p.y, p.explode, p.dmg * 2.5, p);
         p.active = false; continue;
       }
       switch (p.kind) {
@@ -214,6 +270,16 @@ const Archetypes = (() => {
               p.vx += Math.cos(a) * 1400 * dt; p.vy += Math.sin(a) * 1400 * dt;
               if (Util.dist2(p.x, p.y, P.x, P.y) < 400) p.active = false;
             }
+          }
+          if (p.wave) { // helix: oscillate perpendicular to flight path
+            const a = Math.atan2(p.vy, p.vx) + Math.PI / 2;
+            const off = Math.cos(p.t * p.wave + p.retT) * 130 * dt * p.wave * 0.4;
+            p.x += Math.cos(a) * off; p.y += Math.sin(a) * off;
+          }
+          if (p.wiggle) { // critter skitter
+            const a = Math.atan2(p.vy, p.vx) + Math.PI / 2;
+            const off = Math.sin(p.t * 16) * 60 * dt;
+            p.x += Math.cos(a) * off; p.y += Math.sin(a) * off;
           }
           if (p.curve) { // spiral arms: velocity rotates continuously
             const ca = Math.cos(p.curve * dt), sa = Math.sin(p.curve * dt);
@@ -304,6 +370,74 @@ const Archetypes = (() => {
           break;
         }
         case 'mortar': break; // pure flight, handled in draw + expiry
+        case 'comet': {
+          p.retT -= dt;
+          if (p.retT > 0) { // wind-up orbit
+            p.t += 11 * dt;
+            p.x = P.x + Math.cos(p.t) * p.orbitR;
+            p.y = P.y + Math.sin(p.t) * p.orbitR;
+          } else if (!p._launched) { // slingshot!
+            p._launched = true;
+            const e = G.nearestEnemy(p.x, p.y, 600);
+            const a = e ? Util.angTo(p.x, p.y, e.x, e.y) : p.t;
+            p.vx = Math.cos(a) * 640; p.vy = Math.sin(a) * 640;
+            Particles.burst(p.x, p.y, '#fff', 6, { speed: 120, life: 0.2 });
+          } else {
+            p.x += p.vx * dt; p.y += p.vy * dt;
+            hitEnemies(G, p, dt);
+            famTrail(p);
+          }
+          break;
+        }
+        case 'pulsar': {
+          p.retT -= dt;
+          if (p.retT <= 0) {
+            p.retT = 0.45;
+            const n = 6 + (p.size | 0) * 2;
+            for (let i = 0; i < n; i++) {
+              const a = (i / n) * TAU + p.life;
+              Projectiles.fire({ x: p.x, y: p.y, vx: Math.cos(a) * 220, vy: Math.sin(a) * 220, dmg: p.dmg, r: 4, life: 0.7, color: p.color, ownerW: p.ownerW, effects: p.effects });
+            }
+          }
+          break;
+        }
+        case 'scythe': {
+          p.x = P.x; p.y = P.y;
+          const ph = 1 - p.life / 0.32;
+          p._a = p.angle + ph * TAU; // blade sweeps a full revolution
+          G.enemiesInRange(p.x, p.y, p.r + 20, qtmp);
+          for (const e of qtmp) {
+            const ea = Util.angTo(p.x, p.y, e.x, e.y);
+            let d = ea - p._a; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU;
+            if (Math.abs(d) < 0.55 && Util.dist2(p.x, p.y, e.x, e.y) < p.r * p.r) tryHit(G, p, e, 99);
+          }
+          break;
+        }
+        case 'anchor': {
+          G.enemiesInRange(p.x, p.y, p.r * 2.6, qtmp);
+          for (const e of qtmp) {
+            if (e.boss) continue;
+            const a = Util.angTo(e.x, e.y, p.x, p.y);
+            e.x += Math.cos(a) * p.vacuum * dt; e.y += Math.sin(a) * p.vacuum * dt;
+          }
+          hitEnemies(G, p, dt, 0.3);
+          break;
+        }
+        case 'jugger': {
+          p.x += p.vx * dt; p.y += p.vy * dt;
+          hitEnemies(G, p, dt, 0.2);
+          if (Math.random() < 0.4) Particles.spawn(p.x + Util.rand(-p.r, p.r), p.y + p.r * 0.8, p.color, { speed: 30, life: 0.4, size: 3 });
+          break;
+        }
+        case 'totem': {
+          G.totem = p; // enemies in enemies.js walk to this instead of the player
+          hitEnemies(G, p, dt, 0.5);
+          break;
+        }
+        case 'stuck': { // sticky bomb riding its victim
+          if (p._e && p._e.hp > 0) { p.x = p._e.x; p.y = p._e.y - 8; }
+          break;
+        }
         case 'flail': {
           p.t += 5.5 * dt; // swing speed
           const R = p.orbitR * (0.55 + 0.45 * Math.sin(p.t * 1.3));
@@ -399,7 +533,16 @@ const Archetypes = (() => {
       if (p.kind === 'shot') {
         if (p.hitSet.has(e)) continue;
         p.hitSet.add(e);
+        if (p.sticky) { // latch on: become a riding bomb instead of damaging now
+          p.kind = 'stuck'; p._e = e; p.life = 0.8; p.sticky = false;
+          break;
+        }
         G.damageEnemy(e, p.dmg, { color: p.color, effects: p.effects, w: p.ownerW, knock: p.knock, from: p });
+        if (p.harpoon && !e.boss) { // reel the victim in
+          const a = Util.angTo(e.x, e.y, G.player.x, G.player.y);
+          e.x += Math.cos(a) * 150; e.y += Math.sin(a) * 150;
+          G.zap(G.player.x, G.player.y, e.x, e.y, p.color);
+        }
         if (p.split) { // shatter into a fan of shards (which don't re-split)
           const base = Math.atan2(p.vy, p.vx);
           for (let k = 0; k < p.split; k++) {
@@ -668,6 +811,111 @@ const Archetypes = (() => {
             c.strokeStyle = p.color; c.lineWidth = 2;
             c.beginPath(); c.arc(e.x, e.y, e.r + 5 + Math.sin(G.time * 14) * 2, 0, TAU); c.stroke();
           }
+          break;
+        }
+        case 'comet': {
+          c.translate(p.x, p.y);
+          c.shadowColor = p.color; c.shadowBlur = 14;
+          c.fillStyle = p.color;
+          c.beginPath(); c.arc(0, 0, p.r, 0, TAU); c.fill();
+          c.fillStyle = '#fff';
+          c.beginPath(); c.arc(p.r * 0.25, -p.r * 0.25, p.r * 0.4, 0, TAU); c.fill();
+          if (p._launched) { // streaking tail
+            const a = Math.atan2(p.vy, p.vx) + Math.PI;
+            c.globalAlpha = 0.5;
+            c.beginPath(); c.moveTo(Math.cos(a + 0.4) * p.r, Math.sin(a + 0.4) * p.r);
+            c.lineTo(Math.cos(a) * p.r * 4, Math.sin(a) * p.r * 4);
+            c.lineTo(Math.cos(a - 0.4) * p.r, Math.sin(a - 0.4) * p.r);
+            c.fillStyle = p.color; c.fill();
+          }
+          break;
+        }
+        case 'pulsar': {
+          c.translate(p.x, p.y); c.rotate(G.time * 2);
+          const pr = p.r * (1 + 0.25 * Math.sin(G.time * 10));
+          c.fillStyle = p.color;
+          c.beginPath();
+          for (let i = 0; i < 5; i++) { // 5-point star
+            const a = (i / 5) * TAU;
+            c.lineTo(Math.cos(a) * pr * 1.8, Math.sin(a) * pr * 1.8);
+            c.lineTo(Math.cos(a + TAU / 10) * pr * 0.7, Math.sin(a + TAU / 10) * pr * 0.7);
+          }
+          c.fill();
+          c.fillStyle = '#fff'; c.beginPath(); c.arc(0, 0, pr * 0.4, 0, TAU); c.fill();
+          c.globalAlpha = 0.35; c.strokeStyle = p.color; c.lineWidth = 2;
+          c.beginPath(); c.arc(0, 0, pr * (2.4 + (0.45 - p.retT) * 3), 0, TAU); c.stroke();
+          break;
+        }
+        case 'scythe': {
+          c.translate(p.x, p.y); c.rotate(p._a || p.angle);
+          c.globalAlpha = 0.9;
+          // crescent blade at sweep edge
+          c.strokeStyle = p.color; c.lineWidth = 14; c.lineCap = 'round';
+          c.beginPath(); c.arc(0, 0, p.r - 8, -0.5, 0.5); c.stroke();
+          c.strokeStyle = '#fff'; c.lineWidth = 4;
+          c.beginPath(); c.arc(0, 0, p.r - 4, -0.45, 0.45); c.stroke();
+          c.lineCap = 'butt';
+          // motion smear behind the blade
+          c.globalAlpha = 0.25; c.fillStyle = p.color;
+          c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, p.r - 8, -1.6, 0); c.fill();
+          break;
+        }
+        case 'anchor': {
+          c.translate(p.x, p.y);
+          // suction ring
+          c.globalAlpha = 0.4; c.strokeStyle = p.color; c.lineWidth = 2; c.setLineDash([8, 6]);
+          c.beginPath(); c.arc(0, 0, p.r * (1.4 - (G.time * 1.7) % 0.7), 0, TAU); c.stroke();
+          c.setLineDash([]); c.globalAlpha = 1;
+          // the anchor itself
+          c.rotate(Math.sin(G.time * 3) * 0.15);
+          c.strokeStyle = p.color; c.lineWidth = 5;
+          c.beginPath(); c.moveTo(0, -18); c.lineTo(0, 12); c.stroke(); // shank
+          c.beginPath(); c.arc(0, 8, 12, 0.3, Math.PI - 0.3); c.stroke(); // flukes
+          c.beginPath(); c.arc(0, -18, 5, 0, TAU); c.stroke(); // ring
+          c.fillStyle = '#fff'; c.fillRect(-7, -4, 14, 3); // stock
+          break;
+        }
+        case 'jugger': {
+          c.translate(p.x, p.y); c.rotate(p.t * 1.5);
+          c.shadowColor = p.color; c.shadowBlur = 18;
+          c.fillStyle = p.color;
+          c.beginPath(); c.arc(0, 0, p.r, 0, TAU); c.fill();
+          c.shadowBlur = 0;
+          // craters
+          c.fillStyle = '#24163655';
+          c.beginPath(); c.arc(-p.r * 0.35, -p.r * 0.2, p.r * 0.22, 0, TAU); c.fill();
+          c.beginPath(); c.arc(p.r * 0.3, p.r * 0.35, p.r * 0.16, 0, TAU); c.fill();
+          c.beginPath(); c.arc(p.r * 0.2, -p.r * 0.45, p.r * 0.12, 0, TAU); c.fill();
+          c.strokeStyle = '#fff'; c.lineWidth = 2; c.globalAlpha = 0.5;
+          c.beginPath(); c.arc(0, 0, p.r - 2, 0, TAU); c.stroke();
+          break;
+        }
+        case 'totem': {
+          c.translate(p.x, p.y);
+          // taunt radius
+          c.globalAlpha = 0.15; c.fillStyle = p.color;
+          c.beginPath(); c.arc(0, 0, p.r, 0, TAU); c.fill();
+          c.globalAlpha = 1;
+          // carved totem pole with glowing eyes
+          const wob = Math.sin(G.time * 6) * 0.08;
+          c.rotate(wob);
+          c.fillStyle = '#6b4214';
+          c.fillRect(-9, -26, 18, 40);
+          c.fillStyle = p.color;
+          c.fillRect(-12, -26, 24, 8); // headdress
+          c.fillRect(-9, -8, 18, 4);
+          c.fillStyle = '#fff';
+          const blink = Math.sin(G.time * 9) > -0.7 ? 1 : 0;
+          if (blink) { c.fillRect(-6, -18, 4, 4); c.fillRect(2, -18, 4, 4); }
+          break;
+        }
+        case 'stuck': {
+          c.translate(p.x, p.y);
+          const bl = Math.sin(p.life * 25) > 0;
+          c.fillStyle = bl ? '#fff' : p.color;
+          c.beginPath(); c.arc(0, 0, 6, 0, TAU); c.fill();
+          c.strokeStyle = p.color; c.lineWidth = 2; c.globalAlpha = 0.6;
+          c.beginPath(); c.arc(0, 0, 9 + (0.8 - p.life) * 8, 0, TAU); c.stroke();
           break;
         }
         case 'drone': {

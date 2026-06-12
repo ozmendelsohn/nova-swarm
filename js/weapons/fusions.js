@@ -26,6 +26,7 @@ const FUSIONS = (() => {
     orbit: 'Halo', beam: 'Ray', aura: 'Mantle', whip: 'Lash', mine: 'Trap',
     drone: 'Legion', turret: 'Bastion', blackhole: 'Abyss', wall: 'Bulwark',
     mirror: 'Duality', lance: 'Pike', storm: 'Tempest', bladering: 'Cyclone', splitter: 'Shatter', mortar: 'Meteor', flail: 'Flail', geyser: 'Geyser', tether: 'Leash',
+    comet: 'Comet', pulsar: 'Pulsar', scythe: 'Reaper', wave: 'Helix-Weave', anchor: 'Anchor', critter: 'Brood', sticky: 'Limpet', harpoon: 'Skewer', jugger: 'Moon', totem: 'Idol',
   };
   const ELEM = {
     'Fire,Fire': 'Infernal', 'Frost,Frost': 'Glacial', 'Volt,Volt': 'Fulminant',

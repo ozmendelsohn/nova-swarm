@@ -221,6 +221,7 @@ const Game = (() => {
     G.comboT -= dt; if (G.comboT <= 0) G.combo = 0;
     G.shakeAmt *= 0.88; G.flashAmt *= 0.92;
 
+    G.totem = null; // re-claimed each tick by an active totem projectile
     Player.update(G, dt);
     rebuildGrid();
     WeaponManager.update(G, dt);

@@ -116,7 +116,9 @@ const Enemies = (() => {
       if (e.freeze > 0) continue; // frozen solid
 
       const sl = e.slow > 0 ? 0.5 : 1;
-      const a = Util.angTo(e.x, e.y, P.x, P.y);
+      // a totem decoy taunts nearby non-boss enemies away from the player
+      const tgt = (G.totem && !e.boss && Util.dist2(e.x, e.y, G.totem.x, G.totem.y) < 480 * 480) ? G.totem : P;
+      const a = Util.angTo(e.x, e.y, tgt.x, tgt.y);
       e.x += Math.cos(a) * e.spd * sl * dt;
       e.y += Math.sin(a) * e.spd * sl * dt;
 

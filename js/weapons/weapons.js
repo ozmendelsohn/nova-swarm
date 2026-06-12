@@ -43,7 +43,7 @@ const WEAPONS = (() => {
     { id: 'ember_a', name: 'Hellstream', m: { cd: 0.35, dmg: 0.7 }, desc: 'Machine-gun fire rate.' },
     { id: 'ember_b', name: 'Meteor Bolt', arch: 'mortar', m: { dmg: 1.8, cd: 1.5, area: 1.5 }, fx: ['explode'], desc: 'Lobs burning meteors that crash down.' });
   W('flamewhip', 'Flame Whip', 'Fire', 'whip', [16, 1.1, 1, 0, 1.1], null, 'Lashes a cone of fire.',
-    { id: 'flamewhip_a', name: 'Inferno Lash', m: { count: 2, dmg: 1.2 }, desc: 'Strikes both sides.' },
+    { id: 'flamewhip_a', name: 'Inferno Lash', arch: 'scythe', m: { dmg: 1.2, area: 1.2 }, desc: 'One blazing sweep all the way around.' },
     { id: 'flamewhip_b', name: 'Solar Flare', arch: 'nova', m: { dmg: 0.9, cd: 1.2 }, desc: 'Erupts in a flame ring.' });
   W('firestorm', 'Pyre Rain', 'Fire', 'storm', [18, 1.6, 2, 0, 1.1], null, 'Fire crashes down on enemies.',
     { id: 'firestorm_a', name: 'Armageddon', m: { count: 2.5, cd: 1.2 }, desc: 'Blankets the field.' },
@@ -57,10 +57,10 @@ const WEAPONS = (() => {
     { id: 'shard_a', name: 'Glacier Volley', arch: 'splitter', m: { count: 1.5 }, desc: 'Shards shatter into razor fragments on impact.' },
     { id: 'shard_b', name: 'Permafrost Lance', arch: 'lance', m: { dmg: 1.8 }, desc: 'Piercing frozen spear.' });
   W('frostnova', 'Frost Nova', 'Frost', 'nova', [11, 1.5, 2, 340], null, 'Ring of freezing crystals.',
-    { id: 'frostnova_a', name: 'Absolute Zero', m: { area: 1.5, dmg: 1.3 }, fx: ['slow'], desc: 'Deep-freezes all it touches.' },
+    { id: 'frostnova_a', name: 'Absolute Zero', arch: 'pulsar', m: { dmg: 1.2 }, fx: ['slow'], desc: 'Plants a frozen star that pulses crystal rings.' },
     { id: 'frostnova_b', name: 'Hailstorm', arch: 'storm', m: { count: 1.5 }, desc: 'Hail hammers from above.' });
   W('icewall', 'Glacial Wall', 'Frost', 'wall', [9, 1.7, 1, 0, 1.1], null, 'Raises a wall of grinding ice.',
-    { id: 'icewall_a', name: 'Iceberg Rampart', m: { count: 2, dur: 1.6 }, desc: 'Longer, lasting walls.' },
+    { id: 'icewall_a', name: 'Dead Man\'s Anchor', arch: 'anchor', m: { dur: 1.4 }, desc: 'A frozen anchor drags the pack in, then shatters.' },
     { id: 'icewall_b', name: 'Avalanche', arch: 'spread', m: { dmg: 1.2, speed: 1 }, desc: 'The wall charges forward as debris.' });
   W('cryobeam', 'Cryo Beam', 'Frost', 'beam', [8, 1.2, 1, 0, 1], null, 'A lance of absolute cold.',
     { id: 'cryobeam_a', name: 'Diamond Ray', m: { dmg: 1.8, cd: 1.1 }, desc: 'Cuts like crystal.' },
@@ -77,7 +77,7 @@ const WEAPONS = (() => {
     { id: 'thunder_a', name: 'Ragnarok', m: { count: 3, cd: 1.3 }, desc: 'The sky falls.' },
     { id: 'thunder_b', name: 'Mjolnir', arch: 'boomerang', m: { dmg: 1.7 }, desc: 'A hammer that returns.' });
   W('zapdrone', 'Spark Drone', 'Volt', 'drone', [8, 3.0, 1, 0], null, 'A loyal zapping companion.',
-    { id: 'zapdrone_a', name: 'Drone Swarm', m: { count: 3 }, desc: 'A buzzing fleet.' },
+    { id: 'zapdrone_a', name: 'Drone Swarm', arch: 'critter', m: { count: 2 }, desc: 'A skittering swarm of spark-mites.' },
     { id: 'zapdrone_b', name: 'War Drone', m: { dmg: 2.6 }, desc: 'One heavily-armed unit.' });
 
   // ============ VOID ============
@@ -86,18 +86,18 @@ const WEAPONS = (() => {
     { id: 'voidshot_b', name: 'Event Bolt', arch: 'blackhole', m: { dmg: 1.2 }, desc: 'Bolts collapse into singularities.' });
   W('singularity', 'Singularity', 'Void', 'blackhole', [10, 2.6, 1, 0, 1], null, 'Tears a hole in space.',
     { id: 'singularity_a', name: 'Galaxy Engine', m: { count: 2, cd: 0.85 }, desc: 'Twin black holes.' },
-    { id: 'singularity_b', name: 'Big Crunch', m: { area: 1.7, dmg: 1.6 }, desc: 'One monstrous well.' });
+    { id: 'singularity_b', name: 'Big Crunch', arch: 'jugger', m: { area: 1.5, dmg: 1.4 }, desc: 'A collapsed moon grinds through everything.' });
   W('riftspiral', 'Rift Spiral', 'Void', 'spiral', [7, 0.25, 2, 300], null, 'Spirals of unreality.',
-    { id: 'riftspiral_a', name: 'Maelstrom', m: { count: 2 }, desc: 'A dense vortex.' },
+    { id: 'riftspiral_a', name: 'Maelstrom', arch: 'wave', m: { count: 1.5 }, desc: 'Twin rift-helixes weave through the horde.' },
     { id: 'riftspiral_b', name: 'Null Ray', arch: 'beam', m: { dmg: 1.6, cd: 4 }, desc: 'The spiral focuses into a beam.' });
   W('shadowlance', 'Shadow Lance', 'Void', 'lance', [15, 1.2, 1, 380], null, 'A spear of pure night.',
-    { id: 'shadowlance_a', name: 'Phantom Pike', m: { count: 3, cd: 1.2 }, desc: 'A volley of spears.' },
+    { id: 'shadowlance_a', name: 'Phantom Pike', arch: 'comet', m: { count: 2 }, desc: 'Pikes orbit, then slingshot at prey.' },
     { id: 'shadowlance_b', name: 'Umbra Mirror', arch: 'mirror', m: { dmg: 1.2 }, desc: 'Strikes ahead and behind.' });
 
   // ============ NATURE ============
   W('thorn', 'Thorn Shot', 'Nature', 'spread', [8, 0.9, 3, 380], null, 'A burst of venomous thorns.',
-    { id: 'thorn_a', name: 'Bramble Storm', m: { count: 2, cd: 0.9 }, desc: 'Thorn hurricane.' },
-    { id: 'thorn_b', name: 'Serpent Fang', arch: 'homing', m: { dmg: 1.7 }, desc: 'Thorns that hunt.' });
+    { id: 'thorn_a', name: 'Bramble Totem', arch: 'totem', m: { dmg: 1.3 }, desc: 'A decoy totem taunts the horde, then erupts.' },
+    { id: 'thorn_b', name: 'Serpent Fang', arch: 'sticky', m: { dmg: 1.5 }, desc: 'Venom pods latch on and burst.' });
   W('sporecloud', 'Spore Aura', 'Nature', 'aura', [7, 1.0, 1, 0, 1.1], null, 'Toxic spores surround you.',
     { id: 'sporecloud_a', name: 'Blight Garden', m: { area: 1.6 }, desc: 'A vast poison field.' },
     { id: 'sporecloud_b', name: 'Spore Mines', arch: 'mine', m: { dmg: 1.8 }, desc: 'Spores condense into pods.' });
@@ -114,7 +114,7 @@ const WEAPONS = (() => {
     { id: 'saw_b', name: 'Buzzkill', arch: 'flail', m: { dmg: 1.8, area: 1.5 }, desc: 'A chained shredder ball swung around you.' });
   W('flak', 'Flak Cannon', 'Steel', 'spread', [9, 1.0, 4, 420], null, 'Shrapnel everywhere.',
     { id: 'flak_a', name: 'Cluster Hell', arch: 'splitter', m: { count: 1.5 }, fx: ['explode'], desc: 'Flechettes burst into shrapnel fans.' },
-    { id: 'flak_b', name: 'Slug Driver', arch: 'projectile', m: { dmg: 3, cd: 1.2, speed: 1.3 }, desc: 'One brutal slug.' });
+    { id: 'flak_b', name: 'Slug Driver', arch: 'harpoon', m: { dmg: 2.2, cd: 1.2 }, desc: 'A harpoon slug that reels victims to your feet.' });
   W('sentry', 'Sentry Gun', 'Steel', 'turret', [10, 3.2, 1, 380], null, 'Deploys an autogun.',
     { id: 'sentry_a', name: 'Firebase', m: { count: 2, dur: 1.5 }, desc: 'A fortified position.' },
     { id: 'sentry_b', name: 'Gatling Sentry', m: { dmg: 1.4, speed: 1.4, cd: 0.9 }, desc: 'Faster everything.' });
