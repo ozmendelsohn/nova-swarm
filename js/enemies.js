@@ -243,13 +243,38 @@ const Enemies = (() => {
   }
 
   function bossAttack(G, e, dt) {
-    e.patT -= dt;
-    if (e.patT > 0) return;
+    // ENRAGE phase at half HP: faster, angrier, announced
+    if (!e.enraged && e.hp < e.maxHp * 0.5) {
+      e.enraged = true;
+      e.spd *= 1.3;
+      G.announceBoss(e.bdef.name + ' ENRAGES', 'The Knot Tightens');
+      G.shake(12);
+      Particles.burst(e.x, e.y, '#ff3a5c', 40, { speed: 320 });
+    }
+    if (e.enraged && Math.random() < dt * 6) { // seething embers
+      Particles.spawn(e.x + Util.rand(-e.r, e.r), e.y + Util.rand(-e.r, e.r), '#ff3a5c', { speed: 30, life: 0.5, size: 3, grav: -60 });
+    }
+    // telegraph: brief warning before each volley
+    if (e.teleT !== undefined) {
+      e.teleT -= dt;
+      if (e.teleT > 0) return;
+      e.teleT = undefined; // warning over — fire below using stored aim
+    } else {
+      e.patT -= dt;
+      if (e.patT > 0) return;
+      // pattern is ready: telegraph first (skip for rapid spiral)
+      if (e.bdef.pattern !== 'spiral') {
+        e.teleT = 0.4;
+        e.teleAim = Util.angTo(e.x, e.y, G.player.x, G.player.y);
+        return;
+      }
+    }
     const P = G.player;
+    const enr = e.enraged ? 0.72 : 1; // enraged: shorter cooldowns
     const pat = e.bdef.pattern === 'all' ? Util.pick(['ring', 'aimed', 'spiral', 'flower', 'cross']) : e.bdef.pattern;
     switch (pat) {
       case 'ring': {
-        e.patT = 2.4;
+        e.patT = 2.4 * enr;
         const n = 22;
         for (let i = 0; i < n; i++) {
           const a = (i / n) * Math.PI * 2 + e.patA;
@@ -259,15 +284,15 @@ const Enemies = (() => {
         break;
       }
       case 'aimed': {
-        e.patT = 1.5;
-        const a = Util.angTo(e.x, e.y, P.x, P.y);
+        e.patT = 1.5 * enr;
+        const a = e.teleAim ?? Util.angTo(e.x, e.y, P.x, P.y);
         for (let i = -2; i <= 2; i++) {
           Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a + i * 0.14) * 220, vy: Math.sin(a + i * 0.14) * 220, dmg: e.dmg * 0.7, r: 6, color: '#ffe96b' });
         }
         break;
       }
       case 'spiral': {
-        e.patT = 0.09;
+        e.patT = 0.09 * enr;
         for (let k = 0; k < 2; k++) {
           const a = e.patA + k * Math.PI;
           Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a) * 160, vy: Math.sin(a) * 160, dmg: e.dmg * 0.5, r: 5, color: '#7fb8f0' });
@@ -276,7 +301,7 @@ const Enemies = (() => {
         break;
       }
       case 'flower': {
-        e.patT = 1.1;
+        e.patT = 1.1 * enr;
         const n = 8;
         for (let i = 0; i < n; i++) {
           const a = (i / n) * Math.PI * 2 + e.patA;
@@ -288,7 +313,7 @@ const Enemies = (() => {
         break;
       }
       case 'cross': {
-        e.patT = 0.7;
+        e.patT = 0.7 * enr;
         for (let i = 0; i < 4; i++) {
           const a = e.patA + (i * Math.PI) / 2;
           Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a) * 240, vy: Math.sin(a) * 240, dmg: e.dmg * 0.6, r: 7, color: '#f05cf0' });
@@ -350,6 +375,27 @@ const Enemies = (() => {
         c.beginPath();
         c.ellipse(e.x, e.y - e.r - 8 + Math.sin(e.anim * 1.5) * 2, e.r * 0.55, e.r * 0.18, 0, 0, Math.PI * 2);
         c.stroke();
+        c.globalAlpha = 1;
+      }
+      // boss attack telegraph: red warning ring + dashed aim line
+      if (e.boss && e.teleT > 0) {
+        const ph = e.teleT / 0.4;
+        c.strokeStyle = '#ff3a5c'; c.lineWidth = 3;
+        c.globalAlpha = 0.4 + 0.5 * Math.sin(G.time * 30);
+        c.beginPath(); c.arc(e.x, e.y, e.r + 14 + ph * 26, 0, Math.PI * 2); c.stroke();
+        if (e.bdef.pattern === 'aimed' || e.bdef.pattern === 'all') {
+          c.setLineDash([10, 8]); c.lineWidth = 2;
+          c.beginPath(); c.moveTo(e.x, e.y);
+          c.lineTo(e.x + Math.cos(e.teleAim) * 420, e.y + Math.sin(e.teleAim) * 420);
+          c.stroke();
+          c.setLineDash([]);
+        }
+        c.globalAlpha = 1;
+      }
+      if (e.boss && e.enraged) { // enrage aura
+        c.strokeStyle = '#ff3a5c'; c.lineWidth = 2;
+        c.globalAlpha = 0.35 + 0.2 * Math.sin(G.time * 9);
+        c.beginPath(); c.arc(e.x, e.y, e.r + 8, 0, Math.PI * 2); c.stroke();
         c.globalAlpha = 1;
       }
       // boss / elite hp bar
