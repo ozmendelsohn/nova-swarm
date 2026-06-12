@@ -37,5 +37,22 @@ One entry per weapon: its Loomworld fiction and its unique mechanical quirk
 | Diamond Ray | Cut cold with cold and you get edges all the way down. | **Refraction** — hits scatter razor shards sideways |
 | Winter Aura | Stand in it long enough and you forget there were other seasons. | **Hoarfrost** — marked knots take +20% from ALL damage |
 
-*(Volt, Void, Nature, Steel, Arcane, fusions, and monsters follow in
-subsequent passes.)*
+## Volt — charms wound from the storm-seam
+
+| Weapon | Lore | Quirk |
+|---|---|---|
+| Arc Chain | The Weaver sewed with lightning exactly once. The seam is still arguing. | **Conduction** — hits bank charge; charge becomes extra chain hops |
+| Tesla Cascade | It has never touched the ground. It does not intend to start. | **Never Grounded** — every 4th cast doubles |
+| Gigavolt | Hold the wire long enough and the wire holds back. | **Capacitor Burn** — tether damage ramps on a held target |
+| Volt Orbiter | Moons of a planet that was never woven, still keeping their appointment. | **Static Leak** — orbit hits spark to a second knot |
+| Ion Ring | A halo, if saints hummed at fifty hertz. | **Magnetosphere** — the ring drags nearby dye-gems to you |
+| Railgun Orbit | It leaves orbit the way debts leave ledgers: suddenly, and at speed. | **Coilgun** — each impact charges the slug: later hits hit harder |
+| Sky Hammer | The sky keeps accounts. This is the collections department. | **Sky Tax** — elites and bosses take +35% |
+| Ragnarok | The first crack is a question. The rest are the argument. | **Rolling Thunder** — strikes cascade to neighbors |
+| Mjolnir | Whoever holds it is worthy. It is not picky. It is tired. | **Stunning Verdict** — flattens (stuns) what it strikes |
+| Spark Drone | It thinks you are its battery. It is half right. | **Loyal Battery** — drone hits recharge your dash |
+| Drone Swarm | One spark is a pet. A thousand are weather. | **Biting Static** — mite bites numb (slow) the legs |
+| War Drone | The Weaver built one soldier, felt ashamed, and hid it. It found you. | **Ordnance** — every 6th hit fires a rocket |
+
+*(Void, Nature, Steel, Arcane, and fusions follow in subsequent passes.
+Monsters are complete — see MONSTER_LORE.md.)*

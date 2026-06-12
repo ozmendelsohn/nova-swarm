@@ -221,6 +221,100 @@ const Quirks = (() => {
     onHit(G, e) { e.vulnT = G.time + 1.2; },
   };
 
+  // ===================== VOLT =====================
+  Q.arc = {
+    lore: 'The Weaver sewed with lightning exactly once. The seam is still arguing.',
+    name: 'Conduction',
+    // every hit banks charge; banked charge becomes extra chain hops
+    onHit(G, e, d, opts) { const w = opts.w; w._charge = Math.min(4, (w._charge || 0) + 0.2); },
+    mod(s, w) { s.count += Math.floor(w._charge || 0); if (w._charge >= 4) w._charge = 0; },
+  };
+  Q.arc_a = {
+    lore: 'It has never touched the ground. It does not intend to start.',
+    name: 'Never Grounded',
+    // every 4th cast doubles
+    onFire(G, w, s) { w._n4 = ((w._n4 || 0) + 1) % 4; if (w._n4 === 0) { w.echoT = 0.12; w.echoS = s; } },
+  };
+  Q.arc_b = {
+    lore: 'Hold the wire long enough and the wire holds back.',
+    name: 'Capacitor Burn',
+    // the tether ramps on a held target
+    onHit(G, e, d) {
+      e._giga = Math.min(6, (e._giga || 0) + 1);
+      e.hp -= d * 0.12 * e._giga;
+    },
+  };
+
+  Q.voltorb = {
+    lore: 'Moons of a planet that was never woven, still keeping their appointment.',
+    name: 'Static Leak',
+    // orbiting hits jump a spark to a second knot
+    onHit(G, e, d, opts) {
+      if (Math.random() > 0.35) return;
+      const ne = G.nearestEnemy(e.x, e.y, 150, new Set([e]));
+      if (ne) { G.zap(e.x, e.y, ne.x, ne.y, '#ffe93e'); G.damageEnemy(ne, d * 0.4, { color: '#ffe93e' }); }
+    },
+  };
+  Q.voltorb_a = {
+    lore: 'A halo, if saints hummed at fifty hertz.',
+    name: 'Magnetosphere',
+    // the ring drags loose dye-gems toward you
+    onFire(G) {
+      for (const g of World.gems) {
+        if (Util.dist2(g.x, g.y, G.player.x, G.player.y) < 170 * 170) g.pull = true;
+      }
+    },
+  };
+  Q.voltorb_b = {
+    lore: 'It leaves orbit the way debts leave ledgers: suddenly, and at speed.',
+    name: 'Coilgun',
+    // each impact charges the slug: later hits hit harder
+    onHit(G, e, d, opts) { if (opts.from) opts.from.dmg *= 1.18; },
+  };
+
+  Q.thunder = {
+    lore: 'The sky keeps accounts. This is the collections department.',
+    name: 'Sky Tax',
+    onHit(G, e, d) { if (e.elite || e.boss) e.hp -= d * 0.35; }, // the mighty owe more
+  };
+  Q.thunder_a = {
+    lore: 'The first crack is a question. The rest are the argument.',
+    name: 'Rolling Thunder',
+    // strikes cascade to neighbors
+    onHit(G, e, d, opts) {
+      if (Math.random() > 0.3) return;
+      const ne = G.nearestEnemy(e.x, e.y, 220, new Set([e]));
+      if (ne) Projectiles.fire({ kind: 'strike', x: ne.x, y: ne.y, dmg: d * 0.6, r: 38, life: 0.3, color: '#ffe93e', ownerW: opts.w, effects: ['shock'] });
+    },
+  };
+  Q.thunder_b = {
+    lore: 'Whoever holds it is worthy. It is not picky. It is tired.',
+    name: 'Stunning Verdict',
+    onHit(G, e) { if (!e.boss && !e.stoic) e.freeze = Math.max(e.freeze, 0.3); }, // flattens what it strikes
+  };
+
+  Q.zapdrone = {
+    lore: 'It thinks you are its battery. It is half right.',
+    name: 'Loyal Battery',
+    // drone hits feed your dash
+    onHit(G) { G.player.dashCd = Math.max(0, G.player.dashCd - 0.06); },
+  };
+  Q.zapdrone_a = {
+    lore: 'One spark is a pet. A thousand are weather.',
+    name: 'Biting Static',
+    onHit(G, e) { e.slow = Math.max(e.slow, 0.7); }, // mite bites numb the legs
+  };
+  Q.zapdrone_b = {
+    lore: 'The Weaver built one soldier, felt ashamed, and hid it. It found you.',
+    name: 'Ordnance',
+    // every 6th hit fires a rocket
+    onHit(G, e, d, opts) {
+      const w = opts.w;
+      w._ord = ((w._ord || 0) + 1) % 6;
+      if (w._ord === 0) G.explodeAt(e.x, e.y, 60, d * 1.2, { color: '#ffe93e', ownerW: w });
+    },
+  };
+
   // attach lore/quirk ids onto weapon defs
   for (const id in Q) {
     if (WEAPONS.defs[id]) {
