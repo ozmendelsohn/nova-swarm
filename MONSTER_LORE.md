@@ -21,4 +21,23 @@ One entry per knot of the Unraveling: its fiction and its unique behavior
 | Wraith | Weft with no warp: a direction with nothing to hold it. | **Phasewalk** — periodically untouchable (visibly faded) |
 | Serpent | One long thread that refused to be cut to length. | **Sidewinder** — weaves in S-curves |
 
-*(Remaining 26 monsters + 6 bosses follow in subsequent passes.)*
+
+## Batch 2 — knots of the middle hours
+
+| Monster | Lore | Quirk |
+|---|---|---|
+| Golem | Patchwork of every mend that did not hold. It is very patient about revenge. | **Wrath** — speeds up as it breaks |
+| Ghost King | He ruled a province the Weaver unwove. His court never noticed. | **Royal Decree** — hastens nearby knots |
+| Cyclops | One eye, because the Weaver ran out of thread one stitch early. | **Hurled Stone** — throws heavy boulders |
+| Reaper | It does not cut threads. It files them under "later". | **The Filing** — blinks behind you when far |
+| Lavaworm | It tunnels through the cloth with a mouth full of vat-fire. | **Burning Wake** — leaves magma pools that scorch you |
+| Frostling | A snowflake that survived the unmaking of its storm. It holds a grudge. | **Cold Presence** — chills (slows) you at close range |
+| Voidling | A hole shaped like an animal, or an animal shaped like a hole. | **Faint Gravity** — tugs you toward it |
+| Mimic | It pretended to be treasure so long it became some. | **Treasure Gut** — always drops 3 coins |
+| Seraph | Stitched to watch over the cloth. Nobody told it the war was over it. | **Mending Light** — heals nearby knots |
+| Boulder | The Loom wove a mountain once, to see if it could. This pebble escaped. | **Stoic** — immune to slow and freeze |
+| Hexer | It learned three words of the Weaver's language. All curses. | **Hex** — saps your dash cooldown from afar |
+| Scarab | It rolls the sun across the cloth each day. Nobody pays it. It drops change. | **Sun Change** — chance to drop a coin |
+| Raven | It arrives before bad news, out of professional courtesy. | **The Omen** — its death panics the flock into a frenzy |
+
+*(Remaining 40 monsters + 6 bosses follow in subsequent passes.)*

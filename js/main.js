@@ -90,7 +90,7 @@ const Game = (() => {
       switch (f) {
         case 'burn': if (Math.random() < 0.5) e.burn = 2; break;
         case 'poison': if (Math.random() < 0.5) e.poison = 3; break;
-        case 'freeze': if (Math.random() < 0.18 && !e.boss) e.freeze = 0.8; break;
+        case 'freeze': if (Math.random() < 0.18 && !e.boss && !e.stoic) e.freeze = 0.8; break;
         case 'slow': e.slow = 1.5; break;
         case 'shock': if (Math.random() < 0.3) {
           const ne = nearestEnemy(e.x, e.y, 180, new Set([e]));

@@ -221,6 +221,129 @@ const Enemies = (() => {
       },
     },
   };
+  // batch 2
+  Object.assign(MQUIRKS, {
+    golem: {
+      lore: 'Patchwork of every mend that did not hold. It is very patient about revenge.',
+      update(G, e) { // wrath: speeds up as it breaks
+        e.spd = e._spd0 || (e._spd0 = e.spd);
+        e.spd = e._spd0 * (1 + (1 - e.hp / e.maxHp) * 0.9);
+      },
+    },
+    ghostking: {
+      lore: 'He ruled a province the Weaver unwove. His court never noticed.',
+      update(G, e, dt) { // royal decree: hastens his courtiers
+        e._court = (e._court || 0) + dt;
+        if (e._court > 1) {
+          e._court = 0;
+          for (const o of list) {
+            if (o !== e && !o.boss && Util.dist2(e.x, e.y, o.x, o.y) < 180 * 180) o._hasteT = 1.2;
+          }
+        }
+      },
+    },
+    cyclops: {
+      lore: 'One eye, because the Weaver ran out of thread one stitch early.',
+      update(G, e, dt) { // hurls a boulder
+        e._rockT = (e._rockT || 3) - dt;
+        if (e._rockT <= 0 && Util.dist2(e.x, e.y, G.player.x, G.player.y) < 420 * 420) {
+          e._rockT = 4;
+          const a = Util.angTo(e.x, e.y, G.player.x, G.player.y);
+          Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a) * 130, vy: Math.sin(a) * 130, dmg: e.dmg * 1.2, r: 10, life: 4, color: '#8a7a6b' });
+        }
+      },
+    },
+    reaper: {
+      lore: 'It does not cut threads. It files them under "later".',
+      update(G, e, dt) { // flanks: blinks behind you when far
+        e._blinkT = (e._blinkT || 4) - dt;
+        if (e._blinkT <= 0 && Util.dist2(e.x, e.y, G.player.x, G.player.y) > 380 * 380) {
+          e._blinkT = 5;
+          Particles.burst(e.x, e.y, '#5cf0c9', 10, { speed: 120 });
+          const a = G.player.faceAng + Math.PI;
+          e.x = G.player.x + Math.cos(a) * 220; e.y = G.player.y + Math.sin(a) * 220;
+          Particles.burst(e.x, e.y, '#5cf0c9', 10, { speed: 120 });
+        }
+      },
+    },
+    lavaworm: {
+      lore: 'It tunnels through the cloth with a mouth full of vat-fire.',
+      update(G, e, dt) { // burning wake
+        e._lavaT = (e._lavaT || 0.8) - dt;
+        if (e._lavaT <= 0 && hazards.length < 14) {
+          e._lavaT = 0.9;
+          hazards.push({ x: e.x, y: e.y, r: 26, life: 3.5, type: 'lava' });
+        }
+      },
+    },
+    frostling: {
+      lore: 'A snowflake that survived the unmaking of its storm. It holds a grudge.',
+      update(G, e) { // cold presence: chills the Threadbound
+        if (Util.dist2(e.x, e.y, G.player.x, G.player.y) < 95 * 95) G.playerWebbed = true;
+      },
+    },
+    voidling: {
+      lore: 'A hole shaped like an animal, or an animal shaped like a hole.',
+      update(G, e, dt) { // faint gravity: tugs you toward it
+        if (Util.dist2(e.x, e.y, G.player.x, G.player.y) < 200 * 200) {
+          const a = Util.angTo(G.player.x, G.player.y, e.x, e.y);
+          G.player.x += Math.cos(a) * 26 * dt; G.player.y += Math.sin(a) * 26 * dt;
+        }
+      },
+    },
+    mimic: {
+      lore: 'It pretended to be treasure so long it became some.',
+      onDeath(G, e) { // treasure gut
+        for (let k = 0; k < 3; k++) World.gems.push({ x: e.x + Util.rand(-15, 15), y: e.y + Util.rand(-15, 15), v: 0, coin: 1, t: 0 });
+      },
+    },
+    seraph: {
+      lore: 'Stitched to watch over the cloth. Nobody told it the war was over it.',
+      update(G, e, dt) { // mends nearby knots
+        e._mendT = (e._mendT || 2.5) - dt;
+        if (e._mendT <= 0) {
+          e._mendT = 3;
+          for (const o of list) {
+            if (o !== e && Util.dist2(e.x, e.y, o.x, o.y) < 160 * 160) {
+              o.hp = Math.min(o.maxHp, o.hp + o.maxHp * 0.06);
+            }
+          }
+          Particles.burst(e.x, e.y, '#ffe9b0', 8, { speed: 70, life: 0.5 });
+        }
+      },
+    },
+    boulder: {
+      lore: 'The Loom wove a mountain once, to see if it could. This pebble escaped.',
+      update(G, e) { e.stoic = true; }, // unmoved by cold and current
+    },
+    hexer: {
+      lore: 'It learned three words of the Weaver\'s language. All curses.',
+      update(G, e, dt) { // hex: saps your dash
+        e._hexT = (e._hexT || 5) - dt;
+        if (e._hexT <= 0 && Util.dist2(e.x, e.y, G.player.x, G.player.y) < 320 * 320) {
+          e._hexT = 7;
+          G.player.dashCd += 1.5;
+          G.zap(e.x, e.y, G.player.x, G.player.y, '#3ad6b8');
+          Particles.text(G.player.x, G.player.y - 26, 'HEXED — dash sapped', '#3ad6b8', 13);
+        }
+      },
+    },
+    scarab: {
+      lore: 'It rolls the sun across the cloth each day. Nobody pays it. It drops change.',
+      onDeath(G, e) { if (Math.random() < 0.25) World.gems.push({ x: e.x, y: e.y, v: 0, coin: 1, t: 0 }); },
+    },
+    raven: {
+      lore: 'It arrives before bad news, out of professional courtesy.',
+      onDeath(G, e) { // the omen: the flock panics
+        for (const o of list) {
+          if (o.type.id === 'raven' && Util.dist2(e.x, e.y, o.x, o.y) < 300 * 300) o._hasteT = 2;
+        }
+      },
+    },
+  });
+
+  const hazards = []; // ground hazards left by monsters (lava wakes etc.)
+
   function quirkDeath(G, e) {
     const q = MQUIRKS[e.type.id];
     if (q && q.onDeath) q.onDeath(G, e);
@@ -242,7 +365,7 @@ const Enemies = (() => {
   let list = [];
   let spawnT = 0, eliteT = 50, bossIdx = 0, mothT = 150, gildT = 70;
 
-  function reset() { list = []; spawnT = 0; eliteT = 50; bossIdx = 0; mothT = 150; gildT = 70; webs.length = 0; }
+  function reset() { list = []; spawnT = 0; eliteT = 50; bossIdx = 0; mothT = 150; gildT = 70; webs.length = 0; hazards.length = 0; }
 
   // elite affixes: named modifiers with a visual tell (ring color)
   const AFFIXES = {
@@ -321,6 +444,12 @@ const Enemies = (() => {
       if (wb.life <= 0) { webs.splice(i, 1); continue; }
       if (Util.dist2(wb.x, wb.y, P.x, P.y) < 42 * 42) G.playerWebbed = true;
     }
+    // ground hazards (lava wakes): age out, scorch the Threadbound
+    for (let i = hazards.length - 1; i >= 0; i--) {
+      const hz = hazards[i]; hz.life -= dt;
+      if (hz.life <= 0) { hazards.splice(i, 1); continue; }
+      if (Util.dist2(hz.x, hz.y, P.x, P.y) < hz.r * hz.r) Player.hurt(G, 8);
+    }
     if (bossIdx < BOSSES.length && G.time >= BOSSES[bossIdx].at) {
       spawnBoss(G, BOSSES[bossIdx]); bossIdx++;
     }
@@ -364,7 +493,8 @@ const Enemies = (() => {
       e.freeze -= dt; e.slow -= dt;
       if (e.freeze > 0) continue; // frozen solid
 
-      const sl = (e.slow > 0 ? 0.5 : 1) * (e.slowSelf ? 0.15 : 1);
+      if (e._hasteT > 0) e._hasteT -= dt;
+      const sl = (e.slow > 0 && !e.stoic ? 0.5 : 1) * (e.slowSelf ? 0.15 : 1) * (e._hasteT > 0 ? 1.45 : 1);
       if (e.gilded) { // the Gilded Moth flees, trailing gold dust, then escapes
         e.fleeT -= dt;
         if (e.fleeT <= 0) { list.splice(i, 1); continue; }
@@ -512,6 +642,15 @@ const Enemies = (() => {
   }
 
   function draw(G, c) {
+    // ground hazards
+    for (const hz of hazards) {
+      c.globalAlpha = Math.min(0.55, hz.life * 0.4);
+      const g = c.createRadialGradient(hz.x, hz.y, 2, hz.x, hz.y, hz.r);
+      g.addColorStop(0, '#ffe96b'); g.addColorStop(0.5, '#ff6b2e'); g.addColorStop(1, 'transparent');
+      c.fillStyle = g;
+      c.beginPath(); c.arc(hz.x, hz.y, hz.r, 0, Math.PI * 2); c.fill();
+    }
+    c.globalAlpha = 1;
     // spider silk patches (under everything)
     for (const wb of webs) {
       c.save();
