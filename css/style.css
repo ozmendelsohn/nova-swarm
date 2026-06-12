@@ -179,3 +179,7 @@ body { touch-action: none; -webkit-tap-highlight-color: transparent; overscroll-
 #go-title { font-size: clamp(40px, 7vw, 72px); letter-spacing: 6px; text-shadow: 0 0 26px currentColor; }
 .go-stats { margin: 22px 0 30px; font-size: 16px; line-height: 2; color: #a8b8d6; }
 .go-stats b { color: #ffd23e; }
+
+/* ---- weapon lore & quirks ---- */
+.card-lore { font-size: 10px; font-style: italic; color: #8a7ab8; margin-top: 8px; line-height: 1.4; }
+.quirk-chip { color: #ffd23e; font-size: 10.5px; white-space: nowrap; }

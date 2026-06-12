@@ -105,7 +105,8 @@ const UI = (() => {
         <div class="card-tier">⬆ EVOLUTION PATH</div>
         <img class="card-icon" src="${Sprites.weaponIcon(d).toDataURL()}">
         <div class="card-name">${d.name}</div>
-        <div class="card-desc">${card.w.def.name} evolves: ${d.desc}</div></div>`;
+        <div class="card-desc">${card.w.def.name} evolves: ${d.desc}${d.quirkName ? ` <b class="quirk-chip">✶ ${d.quirkName}</b>` : ''}</div>
+        ${d.lore ? `<div class="card-lore">“${d.lore}”</div>` : ''}</div>`;
     }
     if (card.type === 'new') {
       const d = card.def;
@@ -113,7 +114,8 @@ const UI = (() => {
         <div class="card-tier">NEW · ${d.family}</div>
         <img class="card-icon" src="${Sprites.weaponIcon(d).toDataURL()}">
         <div class="card-name">${d.name}</div>
-        <div class="card-desc">${d.desc}</div></div>`;
+        <div class="card-desc">${d.desc}${d.quirkName ? ` <b class="quirk-chip">✶ ${d.quirkName}</b>` : ''}</div>
+        ${d.lore ? `<div class="card-lore">“${d.lore}”</div>` : ''}</div>`;
     }
     if (card.type === 'upgrade') {
       const w = card.w;
@@ -157,7 +159,7 @@ const UI = (() => {
       html += `<h3>${groups[tier]} (${items.filter(d => disc.has(d.id)).length}/${items.length})</h3><div class="codex-grid">`;
       for (const d of items) {
         const known = disc.has(d.id);
-        html += `<div class="codex-item ${known ? '' : 'unknown'}" title="${known ? d.desc : '???'}">
+        html += `<div class="codex-item ${known ? '' : 'unknown'}" title="${known ? d.desc + (d.lore ? ' — ' + d.lore : '') : '???'}">
           ${known ? `<img class="codex-icon" src="${Sprites.weaponIcon(d).toDataURL()}">` : '<span class="codex-dot" style="background:#333"></span>'}
           ${known ? d.name : '?????'}</div>`;
       }

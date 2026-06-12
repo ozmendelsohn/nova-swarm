@@ -43,17 +43,22 @@ const WeaponManager = (() => {
     const might = (1 + 0.12 * (passives.might || 0) + 0.18 * (lvl - 1)) * mods.dmg * Meta.fx.dmg();
     const haste = Math.max(0.3, (1 - 0.08 * (passives.haste || 0)) * (1 - 0.05 * (lvl - 1)) * mods.cd);
     const area = (1 + 0.1 * (passives.area || 0)) * d.area * (1 + 0.06 * (lvl - 1));
-    return {
+    const s = {
       dmg: d.dmg * might,
       cd: d.cd * haste,
       count: Math.round(d.count + Math.floor((lvl - 1) / 2)) + mods.count,
       speed: d.speed, area, dur: d.dur, pierce: d.pierce,
     };
+    const q = d.quirk && Quirks.get(d.quirk);
+    if (q && q.mod) q.mod(s, w);
+    return s;
   }
 
   function fireWeapon(G, w, s) {
     Archetypes.A[w.def.arch].fire(G, w, s);
     if (w.def.arch2) Archetypes.A[w.def.arch2].fire(G, w, s); // fusion: both archetypes
+    const q = w.def.quirk && Quirks.get(w.def.quirk);
+    if (q && q.onFire) q.onFire(G, w, s);
   }
 
   function update(G, dt) {

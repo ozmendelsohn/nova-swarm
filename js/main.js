@@ -108,6 +108,11 @@ const Game = (() => {
         case 'explode': if (opts.from && !opts.from._chainExp && Math.random() < 0.4) explodeAt(e.x, e.y, 55, d * 0.5, { color: opts.color, _chainExp: true, ownerW: opts.w }); break;
       }
     }
+    // per-weapon quirk: on-hit identity
+    if (e.hp > 0 && opts.w && opts.w.def.quirk) {
+      const q = Quirks.get(opts.w.def.quirk);
+      if (q && q.onHit) q.onHit(G, e, d, opts);
+    }
     if (e.hp <= 0) killEnemy(e);
   }
 
