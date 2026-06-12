@@ -449,6 +449,139 @@ const Enemies = (() => {
     },
   });
 
+  // batch 4 — the deep bestiary, first half
+  Object.assign(MQUIRKS, {
+    sparkmite: {
+      lore: 'Static that crawled off the storm and kept crawling.',
+      onDeath(G, e) { // static pop
+        if (Util.dist2(e.x, e.y, G.player.x, G.player.y) < 110 * 110) {
+          G.zap(e.x, e.y, G.player.x, G.player.y, '#ffe93e');
+          Player.hurt(G, 4, e);
+        }
+      },
+    },
+    tumbler: {
+      lore: 'It goes where the wind under the cloth goes. The wind is hungry today.',
+      update(G, e, dt) { // windblown: drifts on a fixed heading, barely steering
+        if (e._wind === undefined) e._wind = Math.random() * Math.PI * 2;
+        e.x += Math.cos(e._wind) * 60 * dt;
+        e.y += Math.sin(e._wind) * 60 * dt;
+      },
+    },
+    sunmote: {
+      lore: 'A dropped stitch of daylight, still warm.',
+      onDeath(G, e) { // flare: dies in a cross of light
+        for (let k = 0; k < 4; k++) {
+          const a = (k / 4) * Math.PI * 2 + Math.PI / 4;
+          Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a) * 160, vy: Math.sin(a) * 160, dmg: e.dmg * 0.6, r: 5, life: 1, color: '#ffd23e' });
+        }
+      },
+    },
+    lanternfly: {
+      lore: 'The Swarm follows its little light, believing it knows the way.',
+      update(G, e, dt) { // beacon: rallies the knots around it
+        e._beaconT = (e._beaconT || 1.5) - dt;
+        if (e._beaconT <= 0) {
+          e._beaconT = 2;
+          for (const o of list) {
+            if (o !== e && !o.boss && Util.dist2(e.x, e.y, o.x, o.y) < 150 * 150) o._hasteT = 1;
+          }
+          Particles.burst(e.x, e.y, '#ffe9a8', 5, { speed: 50, life: 0.5 });
+        }
+      },
+    },
+    glasswing: {
+      lore: 'So thin the world shows through it. The edges, however.',
+      onDeath(G, e) { // shatters into razors
+        for (let k = 0; k < 5; k++) {
+          const a = Math.random() * Math.PI * 2;
+          Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a) * 210, vy: Math.sin(a) * 210, dmg: e.dmg * 0.5, r: 3, life: 0.9, color: '#d8f0f5' });
+        }
+      },
+    },
+    pearlsnail: {
+      lore: 'Wound around an insult until the insult became jewelry.',
+      onHurt(G, e) { e.wardT = G.time + 0.6; }, // nacre: hits harden the shell
+    },
+    foxfire: {
+      lore: 'A fire that lies about where it is. All fires do. This one is better at it.',
+      update(G, e, dt) { // will-o: flickers forward in short blinks
+        e._flickT = (e._flickT || 2) - dt;
+        if (e._flickT <= 0) {
+          e._flickT = 2.2;
+          Particles.burst(e.x, e.y, '#ff9e3e', 8, { speed: 80, life: 0.4 });
+          const a = Util.angTo(e.x, e.y, G.player.x, G.player.y) + Util.rand(-0.5, 0.5);
+          e.x += Math.cos(a) * 90; e.y += Math.sin(a) * 90;
+        }
+      },
+    },
+    owlet: {
+      lore: 'It asks the only question worth asking, over and over.',
+      update(G, e) { // silent swoop: fades and quickens on approach
+        const near = Util.dist2(e.x, e.y, G.player.x, G.player.y) < 300 * 300;
+        e.phasedLook = near; // visually faded — still hittable
+        e._hasteT = near ? 0.2 : 0;
+      },
+    },
+    inkling: {
+      lore: 'The Loom keeps no records. This is what happened to them.',
+      onHurt(G, e) { // ink cloud: dims your sight when struck up close
+        if (Util.dist2(e.x, e.y, G.player.x, G.player.y) < 200 * 200 && Math.random() < 0.4) G.dreadT = G.time + 0.6;
+      },
+    },
+    pincer: {
+      lore: 'It has two opinions about everything, and both of them close.',
+      update(G, e) { // grip: brushing it locks you in the cold clamp
+        if (Util.dist2(e.x, e.y, G.player.x, G.player.y) < (e.r + 16) * (e.r + 16)) G.chillT = G.time + 1;
+      },
+    },
+    fumebat: {
+      lore: 'It exhales the dye it drowned in, one breath at a time, forever.',
+      update(G, e, dt) { // toxic wake
+        e._gasT = (e._gasT || 1.2) - dt;
+        if (e._gasT <= 0 && hazards.length < 14) {
+          e._gasT = 1.6;
+          hazards.push({ x: e.x, y: e.y, r: 24, life: 2.8, type: 'gas' });
+        }
+      },
+    },
+    thornling: {
+      lore: 'The hedge the Weaver planted to keep the Swarm out, gone over to them.',
+      update(G, e, dt) { // volley root: plants itself and fires bursts of three
+        e.shootT = 99;
+        const far = Util.dist2(e.x, e.y, G.player.x, G.player.y) > 240 * 240;
+        e.slowSelf = far;
+        e._volT = (e._volT || 2) - dt;
+        if (far && e._volT <= 0) {
+          e._volT = 3.4;
+          const a = Util.angTo(e.x, e.y, G.player.x, G.player.y);
+          for (let k = -1; k <= 1; k++) {
+            Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a + k * 0.18) * 180, vy: Math.sin(a + k * 0.18) * 180, dmg: e.dmg * 0.6, r: 4, life: 2.2, color: '#5ce86b' });
+          }
+        }
+      },
+    },
+    coilworm: {
+      lore: 'It learned tunneling from the moths and ambition from no one. It is self-taught.',
+      update(G, e, dt) { // burrow: submerges, surfaces closer
+        e._burT = (e._burT || 3.5) - dt;
+        if (e._burT <= 0) {
+          e._burT = 4;
+          Particles.burst(e.x, e.y, '#bba88f', 10, { speed: 90 });
+          const a = Util.angTo(e.x, e.y, G.player.x, G.player.y);
+          e.x += Math.cos(a) * 130; e.y += Math.sin(a) * 130;
+          Particles.burst(e.x, e.y, '#bba88f', 14, { speed: 130 });
+        }
+      },
+    },
+    icefang: {
+      lore: 'Winter, distilled to the part with teeth.',
+      update(G, e) { // cold bite: contact grips you with frost
+        if (Util.dist2(e.x, e.y, G.player.x, G.player.y) < (e.r + 16) * (e.r + 16)) G.chillT = G.time + 0.7;
+      },
+    },
+  });
+
   const hazards = []; // ground hazards left by monsters (lava wakes etc.)
 
   function quirkDeath(G, e) {
@@ -555,7 +688,7 @@ const Enemies = (() => {
     for (let i = hazards.length - 1; i >= 0; i--) {
       const hz = hazards[i]; hz.life -= dt;
       if (hz.life <= 0) { hazards.splice(i, 1); continue; }
-      if (Util.dist2(hz.x, hz.y, P.x, P.y) < hz.r * hz.r) Player.hurt(G, 8);
+      if (Util.dist2(hz.x, hz.y, P.x, P.y) < hz.r * hz.r) Player.hurt(G, hz.type === 'gas' ? 4 : 8);
     }
     if (bossIdx < BOSSES.length && G.time >= BOSSES[bossIdx].at) {
       spawnBoss(G, BOSSES[bossIdx]); bossIdx++;
@@ -753,7 +886,8 @@ const Enemies = (() => {
     for (const hz of hazards) {
       c.globalAlpha = Math.min(0.55, hz.life * 0.4);
       const g = c.createRadialGradient(hz.x, hz.y, 2, hz.x, hz.y, hz.r);
-      g.addColorStop(0, '#ffe96b'); g.addColorStop(0.5, '#ff6b2e'); g.addColorStop(1, 'transparent');
+      if (hz.type === 'gas') { g.addColorStop(0, '#d8ff8a'); g.addColorStop(0.5, '#5c8a3a'); g.addColorStop(1, 'transparent'); }
+      else { g.addColorStop(0, '#ffe96b'); g.addColorStop(0.5, '#ff6b2e'); g.addColorStop(1, 'transparent'); }
       c.fillStyle = g;
       c.beginPath(); c.arc(hz.x, hz.y, hz.r, 0, Math.PI * 2); c.fill();
     }

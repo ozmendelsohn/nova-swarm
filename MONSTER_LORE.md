@@ -59,4 +59,24 @@ One entry per knot of the Unraveling: its fiction and its unique behavior
 | Stalker | You have never seen one arrive. Neither has anyone else. | **Dread** — its nearness darkens your vision |
 | Gilded Moth | The Weaver paid its debts in gold thread. Some of it grew wings. | **Gilded** — flees with the treasure |
 
-*(Remaining 27 monsters + 6 bosses follow in subsequent passes.)*
+
+## Batch 4 — the deep bestiary, first half
+
+| Monster | Lore | Quirk |
+|---|---|---|
+| Sparkmite | Static that crawled off the storm and kept crawling. | **Static Pop** — zaps you if it dies close by |
+| Tumbler | It goes where the wind under the cloth goes. The wind is hungry today. | **Windblown** — drifts on a fixed heading, barely steering |
+| Sunmote | A dropped stitch of daylight, still warm. | **Flare** — dies in a cross of light |
+| Lanternfly | The Swarm follows its little light, believing it knows the way. | **Beacon** — rallies and hastens nearby knots |
+| Glasswing | So thin the world shows through it. The edges, however. | **Shatterglass** — sprays razors on death |
+| Pearlsnail | Wound around an insult until the insult became jewelry. | **Nacre** — hits briefly harden its shell |
+| Foxfire | A fire that lies about where it is. All fires do. This one is better at it. | **Will-o** — flickers forward in short blinks |
+| Owlet | It asks the only question worth asking, over and over. | **Silent Swoop** — fades and quickens on approach |
+| Inkling | The Loom keeps no records. This is what happened to them. | **Ink Cloud** — striking it up close dims your sight |
+| Pincer | It has two opinions about everything, and both of them close. | **Grip** — brushing it locks you in the clamp |
+| Fumebat | It exhales the dye it drowned in, one breath at a time, forever. | **Toxic Wake** — trails poison gas pockets |
+| Thornling | The hedge the Weaver planted to keep the Swarm out, gone over to them. | **Volley Root** — plants itself and fires three-thorn bursts |
+| Coilworm | It learned tunneling from the moths and ambition from no one. It is self-taught. | **Burrow** — submerges and surfaces closer to you |
+| Icefang | Winter, distilled to the part with teeth. | **Cold Bite** — contact grips you with frost |
+
+*(Remaining 13 monsters + 6 bosses follow in the final pass.)*
