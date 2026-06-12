@@ -115,10 +115,12 @@ const Game = (() => {
       }
     }
     if (e.hp > 0) Enemies.quirkHurt(G, e); // per-monster on-hurt reactions
-    // per-weapon quirk: on-hit identity
-    if (e.hp > 0 && opts.w && opts.w.def.quirk) {
-      const q = Quirks.get(opts.w.def.quirk);
-      if (q && q.onHit) q.onHit(G, e, d, opts);
+    // per-weapon quirk: on-hit identity (fusions inherit both parents')
+    if (e.hp > 0 && opts.w) {
+      for (const q of Quirks.list(opts.w.def)) {
+        if (q.onHit) q.onHit(G, e, d, opts);
+        if (e.hp <= 0) break;
+      }
     }
     if (e.hp <= 0) killEnemy(e);
   }

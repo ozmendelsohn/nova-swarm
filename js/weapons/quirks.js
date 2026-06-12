@@ -686,5 +686,36 @@ const Quirks = (() => {
     }
   }
 
-  return { get: id => Q[id] };
+  // ---- fusions: a knot-charm carries BOTH parents' quirks ----
+  const TWIST_LORE = {
+    echo: 'Tied twice through the same eye, it answers twice.',
+    titan: 'The knot took more cloth than the Weaver meant to give.',
+    frenzy: 'Two heartbeats in one charm, both racing.',
+    vampiric: 'The knot feeds its keeper. Do not ask what it keeps.',
+    volatile: 'Some knots are tied too tight. They object.',
+    swarm: 'Pull one thread and a hundred answer.',
+    executioner: 'Where two charms agree, the verdict is final.',
+    glacial: 'The space between two charms is the coldest place on the cloth.',
+    magnetar: 'A knot wants other things knotted. It insists.',
+    plague: 'Two dyes, mixed past recognition, past mercy.',
+    overload: 'Twice the thread, twice the lightning it remembers.',
+    colossus: 'Heavy as both its parents, and prouder.',
+    phantom: 'Tied so fine it passes through the world like a rumor.',
+    meteoric: 'A knot in a hurry, burning its own ends.',
+  };
+  for (const r of FUSIONS.recipes) {
+    const [pa, pb] = r.parents;
+    r.quirkIds = [pa, pb].filter(id => Q[id]);
+    if (Q[pa] && Q[pb]) r.quirkName = `${Q[pa].name} + ${Q[pb].name}`;
+    r.lore = TWIST_LORE[r.twist.id] || 'Two charms, one knot, no apologies.';
+  }
+
+  // every quirk that applies to this def (own, or inherited from fusion parents)
+  function list(def) {
+    if (def.quirk && Q[def.quirk]) return [Q[def.quirk]];
+    if (def.quirkIds) return def.quirkIds.map(id => Q[id]);
+    return [];
+  }
+
+  return { get: id => Q[id], list };
 })();
