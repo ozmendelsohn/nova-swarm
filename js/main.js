@@ -261,6 +261,14 @@ const Game = (() => {
     G.comboT -= dt; if (G.comboT <= 0) G.combo = 0;
     G.shakeAmt *= 0.88; G.flashAmt *= 0.92;
     G.totem = null; // re-claimed each tick by an active totem projectile
+    // music follows the danger: horde density, bosses, and your own blood
+    if ((G.time | 0) !== G._musT) {
+      G._musT = G.time | 0;
+      const bossUp = Enemies.list.some(e => e.boss);
+      let lvl = bossUp ? 3 : Enemies.list.length > 220 ? 2 : Enemies.list.length > 60 ? 1 : 0;
+      if (G.player.hp / G.player.maxHp < 0.3) lvl = Math.min(3, lvl + 1);
+      Snd.setIntensity(lvl);
+    }
     if (G.winT !== undefined) { // victory lap: golden rain, then the score screen
       G.winT -= dt;
       if (Math.random() < 0.4) Particles.spawn(G.player.x + Util.rand(-G.w / 3, G.w / 3), G.player.y - G.h / 2, '#ffd23e', { speed: 30, life: 2, size: 3, grav: 120 });

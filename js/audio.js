@@ -48,26 +48,36 @@ const Snd = (() => {
 
   function play(name) { if (ctx && SFX[name]) SFX[name](); }
 
-  // --- chiptune loop: simple bass + arp pattern in A minor ---
+  // --- chiptune loop with danger-reactive intensity (0 calm … 3 boss) ---
   const BASS = [110, 110, 130.8, 98, 110, 110, 87.3, 98];
   const ARP = [220, 261.6, 329.6, 440, 329.6, 261.6, 392, 329.6];
-  let step = 0, musicTimer = null;
+  let step = 0, musicTimer = null, intensity = 1;
+
+  function setIntensity(n) { intensity = Math.max(0, Math.min(3, n)); }
 
   function musicTick() {
     if (!ctx || muted) return;
     const t = ctx.currentTime;
-    // bass
-    const b = ctx.createOscillator(), bg = ctx.createGain();
-    b.type = 'triangle'; b.frequency.value = BASS[step % 8] / 2;
-    bg.gain.value = 0.5; bg.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
-    b.connect(bg); bg.connect(musicGain); b.start(t); b.stop(t + 0.24);
-    // arp
-    if (step % 2 === 0) {
+    // bass: sparse when calm, every step when hot, octave growl at boss pitch
+    if (intensity >= 1 || step % 2 === 0) {
+      const b = ctx.createOscillator(), bg = ctx.createGain();
+      b.type = 'triangle';
+      b.frequency.value = BASS[step % 8] / (intensity >= 3 ? 1 : 2);
+      bg.gain.value = intensity >= 3 ? 0.6 : 0.5;
+      bg.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      b.connect(bg); bg.connect(musicGain); b.start(t); b.stop(t + 0.24);
+    }
+    // arp: density scales with intensity
+    const arpEvery = intensity >= 2 ? 1 : 2;
+    if (step % arpEvery === 0) {
       const a = ctx.createOscillator(), ag = ctx.createGain();
-      a.type = 'square'; a.frequency.value = ARP[(step / 2 | 0) % 8] * (step % 16 < 8 ? 1 : 1.5);
+      a.type = 'square';
+      a.frequency.value = ARP[(step / 2 | 0) % 8] * (step % 16 < 8 ? 1 : 1.5) * (intensity >= 3 && step % 4 === 0 ? 2 : 1);
       ag.gain.value = 0.12; ag.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
       a.connect(ag); ag.connect(musicGain); a.start(t); a.stop(t + 0.14);
     }
+    // hi-hat ticks join the fray at intensity 2+
+    if (intensity >= 2 && step % 2 === 1) noise(0.03, intensity >= 3 ? 0.05 : 0.03);
     step++;
   }
 
@@ -79,5 +89,5 @@ const Snd = (() => {
 
   function toggleMute() { muted = !muted; return muted; }
 
-  return { init, play, startMusic, toggleMute };
+  return { init, play, startMusic, toggleMute, setIntensity };
 })();
