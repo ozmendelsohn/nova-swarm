@@ -342,6 +342,113 @@ const Enemies = (() => {
     },
   });
 
+  // batch 3 — the extended bestiary
+  Object.assign(MQUIRKS, {
+    toad: {
+      lore: 'It ate a dye-gem once and has been digesting the idea ever since.',
+      update(G, e) { // hops: bursts of motion, then sits
+        e._hopT = (e._hopT || 0) + 0.016;
+        e.slowSelf = (e._hopT % 1.4) > 0.5;
+      },
+    },
+    snail: {
+      lore: 'Slowest of the Unraveling. It is not worried. You will tire.',
+      update(G, e, dt) { // slick trail
+        e._slimeT = (e._slimeT || 1.5) - dt;
+        if (e._slimeT <= 0 && webs.length < 12) {
+          e._slimeT = 2.5;
+          webs.push({ x: e.x, y: e.y, life: 5, slime: true });
+        }
+      },
+    },
+    moth: {
+      lore: 'It eats cloth. You are wearing the world.',
+      onDeath(G, e) { // blinding powder
+        if (Util.dist2(e.x, e.y, G.player.x, G.player.y) < 160 * 160) G.flashAmt = Math.max(G.flashAmt, 0.3);
+      },
+    },
+    cactoid: {
+      lore: 'It practices patience the way deserts do: armed.',
+      onHurt(G, e) { // needle coat
+        if (Math.random() > 0.25) return;
+        for (let k = 0; k < 3; k++) {
+          const a = Math.random() * Math.PI * 2;
+          Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a) * 190, vy: Math.sin(a) * 190, dmg: e.dmg * 0.5, r: 4, life: 1.2, color: '#7ac95c' });
+        }
+      },
+    },
+    bomber: {
+      lore: 'A knot tied around a held breath.',
+      update(G, e, dt) { e.spd += 9 * dt; e.flash = Math.max(e.flash, Math.sin(G.time * (6 + e.spd * 0.05)) > 0.7 ? 0.05 : 0); },
+    },
+    mantis: {
+      lore: 'The cloth holds very still where it stands. So does it.',
+      update(G, e) { // ambush: dormant until you stray close
+        const near = Util.dist2(e.x, e.y, G.player.x, G.player.y) < 260 * 260;
+        e.slowSelf = !near;
+        e._hasteT = near ? 0.2 : 0;
+        e.phasedLook = !near; // faded while lurking (visual only)
+      },
+    },
+    banshee: {
+      lore: 'Her song is the sound a thread makes when it is about to give.',
+      update(G, e, dt) { // keening: chilling wails instead of plain shots
+        e.shootT = 99; // replaces the generic shooter
+        e._wailT = (e._wailT || 2.5) - dt;
+        if (e._wailT <= 0 && Util.dist2(e.x, e.y, G.player.x, G.player.y) < 420 * 420) {
+          e._wailT = 3.2;
+          const a = Util.angTo(e.x, e.y, G.player.x, G.player.y);
+          Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a) * 150, vy: Math.sin(a) * 150, dmg: e.dmg * 0.7, r: 7, life: 4, color: '#c9b8e8', chill: true });
+        }
+      },
+    },
+    knightling: {
+      lore: 'Sworn to a banner that was unwoven before its first oath ended.',
+      update(G, e) { // shieldwall: armored at range, soft up close
+        e.wardT = Util.dist2(e.x, e.y, G.player.x, G.player.y) > 200 * 200 ? G.time + 0.1 : 0;
+      },
+    },
+    krakenspawn: {
+      lore: 'The sea the Loom unwove still has children. They are looking for it.',
+      update(G, e) { // tangle: brushing it grips you cold
+        if (Util.dist2(e.x, e.y, G.player.x, G.player.y) < (e.r + 18) * (e.r + 18)) G.chillT = G.time + 0.8;
+      },
+    },
+    gargoyle: {
+      lore: 'Set to guard a gate. The gate unraveled. The watch continues.',
+      update(G, e, dt) { // stoneform: once, near death, turns to stone
+        if (!e._stoned && e.hp < e.maxHp * 0.3) { e._stoned = 1.5; }
+        if (e._stoned > 0) { e._stoned -= dt; e.phased = true; e.slowSelf = true; }
+        else if (e._stoned !== undefined && e._stoned <= 0) { e.phased = false; e.slowSelf = false; e._stoned = undefined; }
+      },
+    },
+    djinn: {
+      lore: 'It owes the Weaver three favors and intends to die still owing them.',
+      onHurt(G, e) { // three wishes: blinks at 75/50/25%
+        e._wishes = e._wishes === undefined ? 3 : e._wishes;
+        const th = [0.75, 0.5, 0.25][3 - e._wishes];
+        if (e._wishes > 0 && e.hp < e.maxHp * th) {
+          e._wishes--;
+          Particles.burst(e.x, e.y, '#5c8aff', 12, { speed: 140 });
+          const a = Math.random() * Math.PI * 2;
+          e.x += Math.cos(a) * 160; e.y += Math.sin(a) * 160;
+        }
+      },
+    },
+    stalker: {
+      lore: 'You have never seen one arrive. Neither has anyone else.',
+      update(G, e) { // dread: nearness darkens the world and quickens it
+        if (Util.dist2(e.x, e.y, G.player.x, G.player.y) < 170 * 170) {
+          G.dreadT = G.time + 0.3;
+          e._hasteT = 0.2;
+        }
+      },
+    },
+    gildedmoth: {
+      lore: 'The Weaver paid its debts in gold thread. Some of it grew wings.',
+    },
+  });
+
   const hazards = []; // ground hazards left by monsters (lava wakes etc.)
 
   function quirkDeath(G, e) {
@@ -656,7 +763,7 @@ const Enemies = (() => {
       c.save();
       c.translate(wb.x, wb.y);
       c.globalAlpha = Math.min(0.5, wb.life * 0.3);
-      c.strokeStyle = '#e8e3f5'; c.lineWidth = 1.5;
+      c.strokeStyle = wb.slime ? '#b8e8a0' : '#e8e3f5'; c.lineWidth = 1.5;
       for (let i = 0; i < 4; i++) {
         c.rotate(Math.PI / 4);
         c.beginPath(); c.moveTo(-40, 0); c.lineTo(40, 0); c.stroke();
@@ -681,7 +788,7 @@ const Enemies = (() => {
       c.translate(e.x, e.y);
       if (e.flash > 0) { c.globalAlpha = 0.9; c.filter = 'brightness(3)'; }
       if (e.freeze > 0) c.filter = 'saturate(0.2) brightness(1.6)';
-      if (e.phased) c.globalAlpha = 0.25; // wraith between the threads
+      if (e.phased || e.phasedLook) c.globalAlpha = 0.25; // phased or lurking
       const flip = G.player.x < e.x ? -1 : 1;
       // animation personality
       const style = e.boss ? 'float' : ANIM_OF[e.type.id];

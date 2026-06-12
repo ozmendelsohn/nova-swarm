@@ -40,4 +40,23 @@ One entry per knot of the Unraveling: its fiction and its unique behavior
 | Scarab | It rolls the sun across the cloth each day. Nobody pays it. It drops change. | **Sun Change** — chance to drop a coin |
 | Raven | It arrives before bad news, out of professional courtesy. | **The Omen** — its death panics the flock into a frenzy |
 
-*(Remaining 40 monsters + 6 bosses follow in subsequent passes.)*
+
+## Batch 3 — the extended bestiary
+
+| Monster | Lore | Quirk |
+|---|---|---|
+| Toad | It ate a dye-gem once and has been digesting the idea ever since. | **Hop** — bursts of motion, then sits |
+| Snail | Slowest of the Unraveling. It is not worried. You will tire. | **Slick Trail** — leaves slime that slows you |
+| Moth | It eats cloth. You are wearing the world. | **Blinding Powder** — dies in a flash of dust |
+| Cactoid | It practices patience the way deserts do: armed. | **Needle Coat** — sprays needles when struck |
+| Bomber | A knot tied around a held breath. | **Short Fuse** — accelerates, blinking faster, until it blows |
+| Mantis | The cloth holds very still where it stands. So does it. | **Ambush** — dormant and faded until you stray close |
+| Banshee | Her song is the sound a thread makes when it is about to give. | **Keening** — wails that CHILL you on hit |
+| Knightling | Sworn to a banner that was unwoven before its first oath ended. | **Shieldwall** — armored at range, soft up close |
+| Krakenspawn | The sea the Loom unwove still has children. They are looking for it. | **Tangle** — brushing it grips you cold |
+| Gargoyle | Set to guard a gate. The gate unraveled. The watch continues. | **Stoneform** — once, near death, turns to invulnerable stone |
+| Djinn | It owes the Weaver three favors and intends to die still owing them. | **Three Wishes** — blinks away at 75/50/25% HP |
+| Stalker | You have never seen one arrive. Neither has anyone else. | **Dread** — its nearness darkens your vision |
+| Gilded Moth | The Weaver paid its debts in gold thread. Some of it grew wings. | **Gilded** — flees with the treasure |
+
+*(Remaining 27 monsters + 6 bosses follow in subsequent passes.)*

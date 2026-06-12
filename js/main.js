@@ -228,6 +228,7 @@ const Game = (() => {
       if (Util.dist2(b.x, b.y, P.x, P.y) < (b.r + P.r) * (b.r + P.r)) {
         b.active = false;
         Player.hurt(G, b.dmg);
+        if (b.chill) { G.chillT = G.time + 1.2; Particles.text(P.x, P.y - 26, 'CHILLED', '#c9b8e8', 13); }
       }
     }
   }
@@ -359,6 +360,12 @@ const Game = (() => {
     const vg = c.createRadialGradient(G.w / 2, G.h / 2, G.h * 0.45, G.w / 2, G.h / 2, G.h * 0.85);
     vg.addColorStop(0, 'transparent'); vg.addColorStop(1, 'rgba(26,8,46,0.5)');
     c.fillStyle = vg; c.fillRect(0, 0, G.w, G.h);
+    // dread: a stalker is close — the cloth dims around you
+    if (G.dreadT > G.time) {
+      const dv = c.createRadialGradient(G.w / 2, G.h / 2, G.h * 0.2, G.w / 2, G.h / 2, G.h * 0.7);
+      dv.addColorStop(0, 'transparent'); dv.addColorStop(1, 'rgba(8,2,16,0.45)');
+      c.fillStyle = dv; c.fillRect(0, 0, G.w, G.h);
+    }
     // low-HP heartbeat: the edges of the cloth bleed red
     if (G.player.hp / G.player.maxHp < 0.3 && G.state !== 'over') {
       const beat = 0.22 + 0.16 * Math.max(0, Math.sin(G.time * 5.5));
