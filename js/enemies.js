@@ -84,6 +84,7 @@ const Enemies = (() => {
   // ---- per-monster lore + behavioral quirks ----
   // update(G,e,dt) runs each tick after movement; onDeath(G,e) on kill.
   const webs = []; // spider silk patches that slow the player
+  const qb = []; // shared spatial-query buffer for quirks (perf: avoid full-list scans)
   const MQUIRKS = {
     slime: {
       lore: 'Spilled dye that learned to want.',
@@ -180,7 +181,8 @@ const Enemies = (() => {
         if (e._wardT2 <= 0) {
           e._wardT2 = 4;
           let best = null, bd = 200 * 200;
-          for (const o of list) {
+          G.enemiesInRange(e.x, e.y, 200, qb);
+          for (const o of qb) {
             if (o === e || o.boss) continue;
             const d2 = Util.dist2(e.x, e.y, o.x, o.y);
             if (d2 < bd) { bd = d2; best = o; }
@@ -236,9 +238,8 @@ const Enemies = (() => {
         e._court = (e._court || 0) + dt;
         if (e._court > 1) {
           e._court = 0;
-          for (const o of list) {
-            if (o !== e && !o.boss && Util.dist2(e.x, e.y, o.x, o.y) < 180 * 180) o._hasteT = 1.2;
-          }
+          G.enemiesInRange(e.x, e.y, 180, qb);
+          for (const o of qb) if (o !== e && !o.boss) o._hasteT = 1.2;
         }
       },
     },
@@ -303,11 +304,8 @@ const Enemies = (() => {
         e._mendT = (e._mendT || 2.5) - dt;
         if (e._mendT <= 0) {
           e._mendT = 3;
-          for (const o of list) {
-            if (o !== e && Util.dist2(e.x, e.y, o.x, o.y) < 160 * 160) {
-              o.hp = Math.min(o.maxHp, o.hp + o.maxHp * 0.06);
-            }
-          }
+          G.enemiesInRange(e.x, e.y, 160, qb);
+          for (const o of qb) if (o !== e) o.hp = Math.min(o.maxHp, o.hp + o.maxHp * 0.06);
           Particles.burst(e.x, e.y, '#ffe9b0', 8, { speed: 70, life: 0.5 });
         }
       },
@@ -483,9 +481,8 @@ const Enemies = (() => {
         e._beaconT = (e._beaconT || 1.5) - dt;
         if (e._beaconT <= 0) {
           e._beaconT = 2;
-          for (const o of list) {
-            if (o !== e && !o.boss && Util.dist2(e.x, e.y, o.x, o.y) < 150 * 150) o._hasteT = 1;
-          }
+          G.enemiesInRange(e.x, e.y, 150, qb);
+          for (const o of qb) if (o !== e && !o.boss) o._hasteT = 1;
           Particles.burst(e.x, e.y, '#ffe9a8', 5, { speed: 50, life: 0.5 });
         }
       },
@@ -599,9 +596,10 @@ const Enemies = (() => {
     },
     stormcrow: {
       lore: 'Where two fly together, the weather takes sides.',
-      update(G, e) { // murmuration: pairs ride each other\'s tailwind
-        for (const o of list) {
-          if (o !== e && o.type.id === 'stormcrow' && Util.dist2(e.x, e.y, o.x, o.y) < 220 * 220) { e._hasteT = 0.3; break; }
+      update(G, e) { // murmuration: pairs ride each other's tailwind
+        G.enemiesInRange(e.x, e.y, 220, qb);
+        for (const o of qb) {
+          if (o !== e && o.type.id === 'stormcrow') { e._hasteT = 0.3; break; }
         }
       },
     },
@@ -694,7 +692,8 @@ const Enemies = (() => {
     maweater: {
       lore: 'The Unraveling unravels too. Something has to eat the loose ends.',
       update(G, e) { // devourer: consumes lesser knots to mend itself
-        for (const o of list) {
+        G.enemiesInRange(e.x, e.y, e.r + 30, qb);
+        for (const o of qb) {
           if (o === e || o.boss || o.elite) continue;
           if (Util.dist2(e.x, e.y, o.x, o.y) < (e.r + o.r) * (e.r + o.r)) {
             o._eaten = true; // swallowed whole — removed without drops

@@ -379,6 +379,16 @@ const Game = (() => {
     }
 
     UI.drawHUD(G, c);
+
+    if (G.state === 'pause') {
+      c.fillStyle = 'rgba(10,4,20,0.55)';
+      c.fillRect(0, 0, G.w, G.h);
+      c.textAlign = 'center';
+      c.font = 'bold 44px monospace'; c.fillStyle = '#ffd23e';
+      c.fillText('THE LOOM HOLDS ITS BREATH', G.w / 2, G.h / 2 - 10);
+      c.font = 'bold 15px monospace'; c.fillStyle = '#a8b8d6';
+      c.fillText('— PAUSED · press P to resume —', G.w / 2, G.h / 2 + 26);
+    }
   }
 
   // ---------- wiring ----------
