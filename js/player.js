@@ -130,10 +130,23 @@ const Player = (() => {
     if (p.hp <= 0) { p.hp = 0; G.gameOver(); }
   }
 
+  const ghosts = []; // dash afterimages
   function draw(G, c) {
     const p = G.player;
     if (!p._spr) p._spr = Characters.sprite(p.char);
     const spr = p._spr;
+    // dash afterimages: drop a ghost every frame while dashing
+    if (p.dashT > 0) ghosts.push({ x: p.x, y: p.y, ang: p.faceAng, life: 0.3 });
+    for (let i = ghosts.length - 1; i >= 0; i--) {
+      const g = ghosts[i]; g.life -= 1 / 60;
+      if (g.life <= 0) { ghosts.splice(i, 1); continue; }
+      c.save();
+      c.translate(g.x, g.y); c.rotate(g.ang + Math.PI / 2);
+      c.globalAlpha = g.life * 1.6;
+      c.drawImage(spr, -spr.width / 2, -spr.height / 2);
+      c.restore();
+    }
+    c.globalAlpha = 1;
     c.fillStyle = 'rgba(20,8,40,0.35)';
     c.beginPath();
     c.ellipse(p.x, p.y + 16, 13, 5, 0, 0, Math.PI * 2);

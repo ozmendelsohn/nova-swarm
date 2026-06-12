@@ -46,7 +46,7 @@ const Enemies = (() => {
   // animation personality per monster (ART_STYLE.md: idle motion everywhere)
   const ANIM = {
     bounce: ['slime', 'jelly', 'toad', 'shroom', 'voidling', 'krakenspawn'],  // squash & stretch
-    flap:   ['bat', 'raven', 'moth', 'hornet', 'gargoyle', 'seraph'],         // vertical wing pump
+    flap:   ['bat', 'raven', 'moth', 'hornet', 'gargoyle', 'seraph', 'gildedmoth'], // vertical wing pump
     float:  ['wraith', 'banshee', 'ghostking', 'djinn', 'reaper', 'skullmage', 'eyeball', 'stalker'], // sine hover + shimmer
     waddle: ['beetle', 'crab', 'golem', 'boulder', 'knightling', 'cyclops', 'snail', 'cactoid', 'mimic'], // rocking gait
   };
@@ -63,9 +63,9 @@ const Enemies = (() => {
   ];
 
   let list = [];
-  let spawnT = 0, eliteT = 50, bossIdx = 0, mothT = 150;
+  let spawnT = 0, eliteT = 50, bossIdx = 0, mothT = 150, gildT = 70;
 
-  function reset() { list = []; spawnT = 0; eliteT = 50; bossIdx = 0; mothT = 150; }
+  function reset() { list = []; spawnT = 0; eliteT = 50; bossIdx = 0; mothT = 150; gildT = 70; }
 
   function spawnAt(G, type, elite = false) {
     const a = Math.random() * Math.PI * 2;
@@ -127,6 +127,15 @@ const Enemies = (() => {
     if (bossIdx < BOSSES.length && G.time >= BOSSES[bossIdx].at) {
       spawnBoss(G, BOSSES[bossIdx]); bossIdx++;
     }
+    // the Gilded Moth: a fleeing treasure — catch it before it escapes
+    gildT -= dt;
+    if (gildT <= 0) {
+      gildT = 95;
+      const e = spawnAt(G, { id: 'gildedmoth', hp: 24, spd: 150, dmg: 0, xp: 5, tier: 0 });
+      e.hp = e.maxHp = 24 + minute * 18; // scale so it stays catchable-but-tense
+      e.gilded = true; e.fleeT = 9;
+      Particles.text(e.x, e.y - 20, '✦ GILDED MOTH ✦', '#ffd23e', 15);
+    }
     // the Moth Plague: every ~4 min a flock sweeps in to eat the cloth
     mothT -= dt;
     if (mothT <= 0) {
@@ -158,6 +167,15 @@ const Enemies = (() => {
       if (e.freeze > 0) continue; // frozen solid
 
       const sl = e.slow > 0 ? 0.5 : 1;
+      if (e.gilded) { // the Gilded Moth flees, trailing gold dust, then escapes
+        e.fleeT -= dt;
+        if (e.fleeT <= 0) { list.splice(i, 1); continue; }
+        const fa = Util.angTo(P.x, P.y, e.x, e.y) + Math.sin(e.anim * 2) * 0.6;
+        e.x += Math.cos(fa) * e.spd * sl * dt;
+        e.y += Math.sin(fa) * e.spd * sl * dt;
+        if (Math.random() < 0.5) Particles.spawn(e.x, e.y, '#ffd23e', { speed: 25, life: 0.5, size: 2, grav: 40 });
+        continue; // no contact damage, no shooting
+      }
       // a totem decoy taunts nearby non-boss enemies away from the player
       const tgt = (G.totem && !e.boss && Util.dist2(e.x, e.y, G.totem.x, G.totem.y) < 480 * 480) ? G.totem : P;
       const a = Util.angTo(e.x, e.y, tgt.x, tgt.y);

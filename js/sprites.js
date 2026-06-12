@@ -129,6 +129,8 @@ const Sprites = (() => {
       'ww..ww', 'wwwwww', 'wwaaww', 'w.aea.', '..aa..', '..aa..', '...a..', '..a...'] },
     stalker: { pal: { a: '#4a2c66', b: '#2a1440', e: '#5cf0c9', t: '#8a5cb8' }, grid: [
       't....t', '.t..t.', '..aa..', '.aaaa.', '.aeae.', '.aaaa.', 't.aa.t', '..tt..'] },
+    gildedmoth: { pal: { a: '#ffd23e', b: '#a8741f', e: '#fff', w: '#fff3c4' }, grid: [
+      'ww..ww', 'wwwwww', 'wwaaww', 'w.aea.', '..aa..', '..aa..', '...a..', '..a...'] },
     toad: { pal: { a: '#8ac93a', b: '#4a8a14', e: '#ffd23e', u: '#d8ffb0' }, grid: [
       '.a..a.', '.aaaa.', 'aaeaea', 'aaaaaa', 'auuuua', 'auuuua', '.aaaa.', 'b....b'] },
   };

@@ -17,6 +17,7 @@ const Particles = (() => {
     p.size = opts.size ?? 3; p.color = color;
     p.drag = opts.drag ?? 0.92; p.grav = opts.grav ?? 0;
     p.thread = opts.thread ?? false; // draws as a wiggling thread strand
+    p.ring = opts.ring ?? 0;         // >0: expanding impact ring of this max radius
   }
 
   function burst(x, y, color, n = 8, opts = {}) {
@@ -48,7 +49,10 @@ const Particles = (() => {
       const a = p.life / p.maxLife;
       c.globalAlpha = a;
       c.fillStyle = p.color;
-      if (p.thread) { // unraveled thread: short strand along its motion, wiggling
+      if (p.ring) { // expanding impact ring
+        c.strokeStyle = p.color; c.lineWidth = 2.5 * a;
+        c.beginPath(); c.arc(p.x, p.y, p.ring * (1 - a), 0, Math.PI * 2); c.stroke();
+      } else if (p.thread) { // unraveled thread: short strand along its motion, wiggling
         const ang = Math.atan2(p.vy, p.vx) + Math.sin(p.life * 30) * 0.5;
         const len = p.size * 3.2;
         c.save();

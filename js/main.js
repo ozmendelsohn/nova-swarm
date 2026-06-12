@@ -76,6 +76,7 @@ const Game = (() => {
     e.flash = 0.08;
     if (Math.random() < 0.4 || crit) Particles.text(e.x + Util.rand(-8, 8), e.y - e.r, Math.round(d), crit ? '#ffe93e' : '#fff', crit ? 16 : 12);
     Particles.burst(e.x, e.y, opts.color || '#fff', 3, { speed: 80, life: 0.3 });
+    if (crit) Particles.spawn(e.x, e.y, opts.color || '#ffe93e', { speed: 0, life: 0.3, ring: e.r + 22 });
     Snd.play('hit');
     // on-hit effects
     for (const f of fx) {
@@ -131,6 +132,7 @@ const Game = (() => {
     if (e.elite || e.boss) World.gems.push({ x: e.x, y: e.y, v: 0, heal: 25, t: 0 });
     // Weaver's Coins: elites a few, bosses a pile, NOVA PRIME a fortune
     let coinDrop = 0;
+    if (e.gilded) { coinDrop = 8 + (Util.rand(0, 6) | 0); Particles.text(e.x, e.y - 24, 'CAUGHT!', '#ffd23e', 18); }
     if (e.elite) coinDrop = Util.rand(2, 5) | 0;
     if (e.boss) coinDrop = e.bdef.id === 'NOVA_PRIME' ? 60 : 12 + (Enemies.BOSSES.findIndex(b => b.id === e.bdef.id)) * 6;
     for (let k = 0; k < coinDrop; k++) {
@@ -298,6 +300,13 @@ const Game = (() => {
     const vg = c.createRadialGradient(G.w / 2, G.h / 2, G.h * 0.45, G.w / 2, G.h / 2, G.h * 0.85);
     vg.addColorStop(0, 'transparent'); vg.addColorStop(1, 'rgba(26,8,46,0.5)');
     c.fillStyle = vg; c.fillRect(0, 0, G.w, G.h);
+    // low-HP heartbeat: the edges of the cloth bleed red
+    if (G.player.hp / G.player.maxHp < 0.3 && G.state !== 'over') {
+      const beat = 0.22 + 0.16 * Math.max(0, Math.sin(G.time * 5.5));
+      const hv = c.createRadialGradient(G.w / 2, G.h / 2, G.h * 0.35, G.w / 2, G.h / 2, G.h * 0.8);
+      hv.addColorStop(0, 'transparent'); hv.addColorStop(1, `rgba(180,20,40,${beat})`);
+      c.fillStyle = hv; c.fillRect(0, 0, G.w, G.h);
+    }
 
     UI.drawHUD(G, c);
   }
