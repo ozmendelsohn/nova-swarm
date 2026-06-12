@@ -103,6 +103,34 @@ const Sprites = (() => {
       '.bbbb.', 'baaaab', 'baeaeb', 'baaaab', 'baaaab', '.bbbb.'] },
     hexer: { pal: { a: '#3ad6b8', b: '#1f7a66', e: '#ffd23e', h: '#14443a' }, grid: [
       'h..h..', '.hh...', '.aaaa.', 'aaeaea', 'aaaaaa', '.haah.', 'h.aa.h'] },
+    scarab: { pal: { a: '#3aa8d6', b: '#1f5c8a', e: '#ffd23e', g: '#7fe8ff' }, grid: [
+      '..gg..', '.aaaa.', 'agaaga', 'aaeaea', 'agaaga', '.aaaa.', 'b..b..'] },
+    raven: { pal: { a: '#2e2e44', b: '#15152a', e: '#ff8c42', k: '#ffd23e' }, grid: [
+      'b.....', 'bb.aa.', 'bbbaaa', '.baaea', '..aaak', '..aa..', '.b.b..'] },
+    banshee: { pal: { a: '#c9b8e8', b: '#7a5ca8', e: '#3ae0ff', h: '#f0eaff' }, grid: [
+      '.hhh..', 'haaah.', 'haeaeh', '.aaaa.', '.aeea.', '.aaaa.', '.a.a..', '..a...'] },
+    cactoid: { pal: { a: '#7ac95c', b: '#3a8a2c', e: '#ffd23e', f: '#ff5cd6' }, grid: [
+      '..f...', '.aaa..', 'aaeaa.', 'aaaaa.', 'b.a.b.', 'b.a.b.', '..a...', '.bbb..'] },
+    snail: { pal: { a: '#e8a85c', b: '#a8642c', e: '#1f1f2e', s: '#d65cb1' }, grid: [
+      'a.....', 'ae.sss', 'a.ssss', 'aassbs', 'aasssb', 'aaaaaa', '.aaaaa'] },
+    mantis: { pal: { a: '#5ce8a8', b: '#1f8a5c', e: '#1a1a2e', c: '#bfffdd' }, grid: [
+      'c..a..', '.caea.', '..aaa.', '.aaa..', 'a.ab..', 'a.ab..', '..b.b.', '.b...b'] },
+    gargoyle: { pal: { a: '#8a8aa0', b: '#4a4a5e', e: '#ff3a3a', w: '#b8b8cc' }, grid: [
+      'w....w', 'ww..ww', '.waaw.', '.aeae.', '.aaaa.', '.abba.', 'b.bb.b', 'b....b'] },
+    djinn: { pal: { a: '#5c8aff', b: '#2a4aa8', e: '#ffd23e', s: '#bfd8ff' }, grid: [
+      '.sss..', 'saaas.', 'saeaes', '.aaaa.', '.aaaa.', '..ab..', '...b..', '..b...'] },
+    krakenspawn: { pal: { a: '#d65c8a', b: '#8a2c5c', e: '#ffe96b' }, grid: [
+      '.aaaa.', 'aaeaea', 'aaaaaa', '.aaaa.', 'a.a.a.', '.a.a.a', 'a.a.a.', '.a..a.'] },
+    bomber: { pal: { a: '#ff5c2e', b: '#a82c14', e: '#fff', f: '#ffe93e' }, grid: [
+      '..f...', '..b...', '.aaaa.', 'aaaaaa', 'aaeaea', 'aaaaaa', '.aaaa.', '..bb..'] },
+    knightling: { pal: { a: '#c9ccd6', b: '#6e7282', e: '#3ae0ff', p: '#ff5c5c' }, grid: [
+      '..p...', '.aaaa.', '.aeae.', '.aaaa.', 'baaaab', 'b.aa.b', '..aa..', '.b..b.'] },
+    moth: { pal: { a: '#e8d65c', b: '#a8942c', e: '#f05cf0', w: '#fff0bf' }, grid: [
+      'ww..ww', 'wwwwww', 'wwaaww', 'w.aea.', '..aa..', '..aa..', '...a..', '..a...'] },
+    stalker: { pal: { a: '#4a2c66', b: '#2a1440', e: '#5cf0c9', t: '#8a5cb8' }, grid: [
+      't....t', '.t..t.', '..aa..', '.aaaa.', '.aeae.', '.aaaa.', 't.aa.t', '..tt..'] },
+    toad: { pal: { a: '#8ac93a', b: '#4a8a14', e: '#ffd23e', u: '#d8ffb0' }, grid: [
+      '.a..a.', '.aaaa.', 'aaeaea', 'aaaaaa', 'auuuua', 'auuuua', '.aaaa.', 'b....b'] },
   };
 
   const BOSSES = {

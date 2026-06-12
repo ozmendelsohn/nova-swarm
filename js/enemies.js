@@ -26,7 +26,32 @@ const Enemies = (() => {
     { id: 'ghostking', hp: 100, spd: 80,  dmg: 16, xp: 10, tier: 15, shoots: true },
     { id: 'seraph',    hp: 140, spd: 95,  dmg: 18, xp: 14, tier: 16, shoots: true },
     { id: 'reaper',    hp: 200, spd: 85,  dmg: 22, xp: 18, tier: 17 },
+    // -- extended bestiary --
+    { id: 'toad',        hp: 10,  spd: 60,  dmg: 6,  xp: 1, tier: 0 },
+    { id: 'snail',       hp: 20,  spd: 25,  dmg: 8,  xp: 2, tier: 1 },
+    { id: 'moth',        hp: 7,   spd: 100, dmg: 6,  xp: 1, tier: 1 },
+    { id: 'scarab',      hp: 18,  spd: 55,  dmg: 9,  xp: 2, tier: 2 },
+    { id: 'raven',       hp: 12,  spd: 110, dmg: 8,  xp: 2, tier: 3 },
+    { id: 'cactoid',     hp: 26,  spd: 45,  dmg: 11, xp: 3, tier: 4, shoots: true },
+    { id: 'bomber',      hp: 16,  spd: 95,  dmg: 20, xp: 3, tier: 5, kamikaze: true },
+    { id: 'mantis',      hp: 30,  spd: 90,  dmg: 12, xp: 4, tier: 6 },
+    { id: 'banshee',     hp: 36,  spd: 70,  dmg: 12, xp: 5, tier: 7, shoots: true },
+    { id: 'knightling',  hp: 60,  spd: 50,  dmg: 14, xp: 6, tier: 8 },
+    { id: 'krakenspawn', hp: 48,  spd: 65,  dmg: 13, xp: 6, tier: 10 },
+    { id: 'gargoyle',    hp: 80,  spd: 75,  dmg: 15, xp: 8, tier: 12 },
+    { id: 'djinn',       hp: 90,  spd: 85,  dmg: 16, xp: 9, tier: 14, shoots: true },
+    { id: 'stalker',     hp: 150, spd: 95,  dmg: 20, xp: 14, tier: 16 },
   ];
+
+  // animation personality per monster (ART_STYLE.md: idle motion everywhere)
+  const ANIM = {
+    bounce: ['slime', 'jelly', 'toad', 'shroom', 'voidling', 'krakenspawn'],  // squash & stretch
+    flap:   ['bat', 'raven', 'moth', 'hornet', 'gargoyle', 'seraph'],         // vertical wing pump
+    float:  ['wraith', 'banshee', 'ghostking', 'djinn', 'reaper', 'skullmage', 'eyeball', 'stalker'], // sine hover + shimmer
+    waddle: ['beetle', 'crab', 'golem', 'boulder', 'knightling', 'cyclops', 'snail', 'cactoid', 'mimic'], // rocking gait
+  };
+  const ANIM_OF = {};
+  for (const k in ANIM) for (const id of ANIM[k]) ANIM_OF[id] = k;
 
   const BOSSES = [
     { id: 'OMEGA_SLIME', name: 'OMEGA SLIME', hp: 1500,  spd: 45, dmg: 18, at: 180,  pattern: 'ring' },
@@ -134,6 +159,15 @@ const Enemies = (() => {
         }
       }
 
+      // kamikaze bombers detonate near the player
+      if (e.type.kamikaze && Util.dist2(e.x, e.y, P.x, P.y) < 70 * 70) {
+        Particles.burst(e.x, e.y, '#ff5c2e', 22, { speed: 260 });
+        Particles.burst(e.x, e.y, '#ffe93e', 12, { speed: 180 });
+        Snd.play('explode'); G.shake(7);
+        if (Util.dist2(e.x, e.y, P.x, P.y) < 110 * 110) Player.hurt(G, e.dmg, e);
+        e.hp = 0; G.killEnemy(e, i);
+        continue;
+      }
       // contact damage
       if (Util.dist2(e.x, e.y, P.x, P.y) < (e.r + P.r) * (e.r + P.r)) {
         Player.hurt(G, e.dmg, e);
@@ -226,8 +260,31 @@ const Enemies = (() => {
       if (e.flash > 0) { c.globalAlpha = 0.9; c.filter = 'brightness(3)'; }
       if (e.freeze > 0) c.filter = 'saturate(0.2) brightness(1.6)';
       const flip = G.player.x < e.x ? -1 : 1;
-      c.scale(flip, 1);
-      c.drawImage(f, -f.width / 2, -f.height / 2 + Math.sin(e.anim) * 2);
+      // animation personality
+      const style = e.boss ? 'float' : ANIM_OF[e.type.id];
+      let oy = Math.sin(e.anim) * 2, sx2 = 1, sy2 = 1;
+      switch (style) {
+        case 'bounce': { // squash & stretch hop
+          const ph = Math.abs(Math.sin(e.anim * 1.4));
+          sy2 = 0.82 + ph * 0.3; sx2 = 1.18 - ph * 0.25; oy = -ph * 6 + 3;
+          break;
+        }
+        case 'flap': { // wing pump: vertical stretch pulse + lift
+          sy2 = 1 + Math.sin(e.anim * 3.2) * 0.16;
+          oy = Math.sin(e.anim * 1.6) * 5 - 3;
+          break;
+        }
+        case 'float': { // slow hover with spectral shimmer
+          oy = Math.sin(e.anim * 0.9) * 5;
+          if (e.flash <= 0 && e.freeze <= 0) c.globalAlpha = 0.85 + 0.15 * Math.sin(e.anim * 2.3);
+          break;
+        }
+        case 'waddle': // rocking gait
+          c.rotate(Math.sin(e.anim * 1.8) * 0.09 * flip);
+          break;
+      }
+      c.scale(flip * sx2, sy2);
+      c.drawImage(f, -f.width / 2, -f.height / 2 + oy / sy2);
       c.restore();
       c.filter = 'none';
       // elites wear a floating gold halo (rarity language, ART_STYLE.md)
