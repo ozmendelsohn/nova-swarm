@@ -66,6 +66,11 @@ const Game = (() => {
   // ---------- combat ----------
   function damageEnemy(e, dmg, opts = {}) {
     if (e.hp <= 0) return;
+    if (e.phased) { // a wraith between the threads cannot be touched
+      Particles.text(e.x, e.y - e.r, 'whiff', '#8a9ab8', 10);
+      return;
+    }
+    if (e.wardT > G.time) dmg *= 0.5; // skullmage warding
     let d = dmg;
     let crit = false;
     const luck = 0.08 * (WeaponManager.passives.luck || 0) + G.player.mods.crit;
@@ -109,6 +114,7 @@ const Game = (() => {
         case 'explode': if (opts.from && !opts.from._chainExp && Math.random() < 0.4) explodeAt(e.x, e.y, 55, d * 0.5, { color: opts.color, _chainExp: true, ownerW: opts.w }); break;
       }
     }
+    if (e.hp > 0) Enemies.quirkHurt(G, e); // per-monster on-hurt reactions
     // per-weapon quirk: on-hit identity
     if (e.hp > 0 && opts.w && opts.w.def.quirk) {
       const q = Quirks.get(opts.w.def.quirk);
@@ -123,6 +129,7 @@ const Game = (() => {
     Enemies.list.splice(i, 1);
     G.kills++; G.combo++; G.comboT = 2.5;
     if (e.elite || e.boss) World.addStain(e); // spilled dye stains the cloth forever
+    Enemies.quirkDeath(G, e); // per-monster death behavior
     if (e.splits) { // SPLITTING affix: bursts into weakened copies
       for (let k = 0; k < e.splits; k++) {
         const s = Enemies.spawnAt(G, e.type);

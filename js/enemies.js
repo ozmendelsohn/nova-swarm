@@ -53,6 +53,155 @@ const Enemies = (() => {
   const ANIM_OF = {};
   for (const k in ANIM) for (const id of ANIM[k]) ANIM_OF[id] = k;
 
+  // ---- per-monster lore + behavioral quirks ----
+  // update(G,e,dt) runs each tick after movement; onDeath(G,e) on kill.
+  const webs = []; // spider silk patches that slow the player
+  const MQUIRKS = {
+    slime: {
+      lore: 'Spilled dye that learned to want.',
+      onDeath(G, e) { // pools split into droplets
+        if (e._mini || e.elite) return;
+        for (let k = 0; k < 2; k++) {
+          const m = spawnAt(G, e.type);
+          m.x = e.x + Util.rand(-16, 16); m.y = e.y + Util.rand(-16, 16);
+          m.hp = m.maxHp = e.maxHp * 0.25; m.r = 8; m.xp = 0; m._mini = true;
+        }
+      },
+    },
+    bat: {
+      lore: 'A scrap of night the Weaver trimmed off and never swept up.',
+      update(G, e, dt) { // skittish: flutters in erratic arcs
+        const a = Util.angTo(e.x, e.y, G.player.x, G.player.y) + Math.PI / 2;
+        const off = Math.sin(e.anim * 4.2) * 85 * dt;
+        e.x += Math.cos(a) * off; e.y += Math.sin(a) * off;
+      },
+    },
+    beetle: {
+      lore: 'It carries a tile of the old pattern on its back and lets nothing touch it.',
+      update(G, e, dt) { // hunkers periodically: slow but armored
+        e._shellT = (e._shellT || 0) + dt;
+        const hunk = (e._shellT % 4) > 2.8;
+        e.wardT = hunk ? G.time + 0.1 : 0;
+        if (hunk) e.x -= 0; // (stays put visually via slow)
+        e.slowSelf = hunk;
+        if (hunk && Math.random() < 0.1) Particles.spawn(e.x, e.y - 8, '#c9ccd6', { speed: 8, life: 0.3, size: 2 });
+      },
+    },
+    shroom: {
+      lore: 'It grew in the dark between two stitches and thinks the dark is coming back.',
+      onDeath(G, e) { // spore burst: slow ring of drifting toxin
+        for (let k = 0; k < 5; k++) {
+          const a = (k / 5) * Math.PI * 2;
+          Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a) * 55, vy: Math.sin(a) * 55, dmg: e.dmg * 0.5, r: 5, life: 1.6, color: '#d65cb1' });
+        }
+      },
+    },
+    eyeball: {
+      lore: 'The Loom needed to see what was eating it. It regrets looking.',
+      update(G, e, dt) { // fixating lunge every few seconds
+        e._lungeT = (e._lungeT || Util.rand(1, 3)) - dt;
+        if (e._lungeT <= 0) { e._lungeT = 3; e._lungeV = 1.2; }
+        if (e._lungeV > 0) {
+          e._lungeV -= dt;
+          const a = Util.angTo(e.x, e.y, G.player.x, G.player.y);
+          e.x += Math.cos(a) * 130 * dt; e.y += Math.sin(a) * 130 * dt;
+        }
+      },
+    },
+    imp: {
+      lore: 'A knot tied as a joke. The joke kept going.',
+      onHurt(G, e) { // mischief: blinks away when struck
+        if (Math.random() < 0.18) {
+          Particles.burst(e.x, e.y, '#e35050', 6, { speed: 90, life: 0.25 });
+          const a = Math.random() * Math.PI * 2;
+          e.x += Math.cos(a) * 70; e.y += Math.sin(a) * 70;
+        }
+      },
+    },
+    crab: {
+      lore: 'It walks sideways because the weft runs that way. Obviously.',
+      update(G, e, dt) { // strafing approach
+        const a = Util.angTo(e.x, e.y, G.player.x, G.player.y) + Math.PI / 2;
+        const off = Math.sin(e.anim * 1.1) * 95 * dt;
+        e.x += Math.cos(a) * off; e.y += Math.sin(a) * off;
+      },
+    },
+    spider: {
+      lore: 'The only knot that learned to weave back. It weaves badly, on purpose.',
+      update(G, e, dt) { // spins silk patches that slow YOU
+        e._webT = (e._webT || 2) - dt;
+        if (e._webT <= 0 && webs.length < 12) {
+          e._webT = 3.2;
+          webs.push({ x: e.x, y: e.y, life: 6 });
+        }
+      },
+    },
+    jelly: {
+      lore: 'Dye and water and a rumor of a soul.',
+      onDeath(G, e) { // pops into a drifting stinging current
+        for (let k = 0; k < 4; k++) {
+          const a = Math.random() * Math.PI * 2;
+          Projectiles.efire({ x: e.x, y: e.y, vx: Math.cos(a) * 40, vy: Math.sin(a) * 40, dmg: e.dmg * 0.4, r: 4, life: 2.2, color: '#5cc9e8' });
+        }
+      },
+    },
+    skullmage: {
+      lore: 'It remembers being embroidery on a funeral shroud. It misses the work.',
+      update(G, e, dt) { // wards a nearby knot with pale light
+        e._wardT2 = (e._wardT2 || 3) - dt;
+        if (e._wardT2 <= 0) {
+          e._wardT2 = 4;
+          let best = null, bd = 200 * 200;
+          for (const o of list) {
+            if (o === e || o.boss) continue;
+            const d2 = Util.dist2(e.x, e.y, o.x, o.y);
+            if (d2 < bd) { bd = d2; best = o; }
+          }
+          if (best) { best.wardT = G.time + 2; G.zap(e.x, e.y, best.x, best.y, '#7b54c9'); }
+        }
+      },
+    },
+    hornet: {
+      lore: 'The Weaver kept bees once. These are not those.',
+      update(G, e, dt) { // committed dive: locks a line and charges
+        if (e._diveT === undefined) e._diveT = Util.rand(1, 2.5);
+        e._diveT -= dt;
+        if (e._diveT <= 0 && !e._diving) {
+          e._diving = 0.45;
+          e._diveA = Util.angTo(e.x, e.y, G.player.x, G.player.y);
+        }
+        if (e._diving) {
+          e._diving -= dt;
+          e.x += Math.cos(e._diveA) * 320 * dt; e.y += Math.sin(e._diveA) * 320 * dt;
+          if (e._diving <= 0) { e._diving = null; e._diveT = 2.5; }
+        }
+      },
+    },
+    wraith: {
+      lore: 'Weft with no warp: a direction with nothing to hold it.',
+      update(G, e, dt) { // phases out of the world on a cycle
+        e._phT = (e._phT || 0) + dt;
+        e.phased = (e._phT % 3.5) > 2.7;
+      },
+    },
+    serpent: {
+      lore: 'One long thread that refused to be cut to length.',
+      update(G, e, dt) { // sidewinds in S-curves
+        const a = Util.angTo(e.x, e.y, G.player.x, G.player.y) + Math.PI / 2;
+        const off = Math.sin(e.anim * 2.4) * 120 * dt;
+        e.x += Math.cos(a) * off; e.y += Math.sin(a) * off;
+      },
+    },
+  };
+  function quirkDeath(G, e) {
+    const q = MQUIRKS[e.type.id];
+    if (q && q.onDeath) q.onDeath(G, e);
+  }
+  function quirkHurt(G, e) {
+    const q = MQUIRKS[e.type.id];
+    if (q && q.onHurt) q.onHurt(G, e);
+  }
+
   const BOSSES = [
     { id: 'OMEGA_SLIME', name: 'OMEGA SLIME', title: 'The First Pooling of Spilled Dye', hp: 1500,  spd: 45, dmg: 18, at: 180,  pattern: 'ring' },
     { id: 'BONE_TYRANT', name: 'BONE TYRANT', title: 'Knotted from Pale Warp', hp: 3800,  spd: 50, dmg: 22, at: 420,  pattern: 'aimed' },
@@ -65,7 +214,7 @@ const Enemies = (() => {
   let list = [];
   let spawnT = 0, eliteT = 50, bossIdx = 0, mothT = 150, gildT = 70;
 
-  function reset() { list = []; spawnT = 0; eliteT = 50; bossIdx = 0; mothT = 150; gildT = 70; }
+  function reset() { list = []; spawnT = 0; eliteT = 50; bossIdx = 0; mothT = 150; gildT = 70; webs.length = 0; }
 
   // elite affixes: named modifiers with a visual tell (ring color)
   const AFFIXES = {
@@ -137,6 +286,13 @@ const Enemies = (() => {
       for (let i = 0; i < nE; i++) spawnAt(G, avail[avail.length - 1 - (i % 2)], true);
       Snd.play('elite');
     }
+    // spider silk: patches age out; standing in one slows the player
+    G.playerWebbed = false;
+    for (let i = webs.length - 1; i >= 0; i--) {
+      const wb = webs[i]; wb.life -= dt;
+      if (wb.life <= 0) { webs.splice(i, 1); continue; }
+      if (Util.dist2(wb.x, wb.y, P.x, P.y) < 42 * 42) G.playerWebbed = true;
+    }
     if (bossIdx < BOSSES.length && G.time >= BOSSES[bossIdx].at) {
       spawnBoss(G, BOSSES[bossIdx]); bossIdx++;
     }
@@ -180,7 +336,7 @@ const Enemies = (() => {
       e.freeze -= dt; e.slow -= dt;
       if (e.freeze > 0) continue; // frozen solid
 
-      const sl = e.slow > 0 ? 0.5 : 1;
+      const sl = (e.slow > 0 ? 0.5 : 1) * (e.slowSelf ? 0.15 : 1);
       if (e.gilded) { // the Gilded Moth flees, trailing gold dust, then escapes
         e.fleeT -= dt;
         if (e.fleeT <= 0) { list.splice(i, 1); continue; }
@@ -195,6 +351,9 @@ const Enemies = (() => {
       const a = Util.angTo(e.x, e.y, tgt.x, tgt.y);
       e.x += Math.cos(a) * e.spd * sl * dt;
       e.y += Math.sin(a) * e.spd * sl * dt;
+      // per-monster behavioral quirk
+      const mq = MQUIRKS[e.type.id];
+      if (mq && mq.update) mq.update(G, e, dt);
       // movement fx by animation style: dust kicks for walkers, wing shimmer for flyers
       const st = ANIM_OF[e.type.id];
       if (st === 'waddle' && Math.random() < dt * 3) {
@@ -325,6 +484,21 @@ const Enemies = (() => {
   }
 
   function draw(G, c) {
+    // spider silk patches (under everything)
+    for (const wb of webs) {
+      c.save();
+      c.translate(wb.x, wb.y);
+      c.globalAlpha = Math.min(0.5, wb.life * 0.3);
+      c.strokeStyle = '#e8e3f5'; c.lineWidth = 1.5;
+      for (let i = 0; i < 4; i++) {
+        c.rotate(Math.PI / 4);
+        c.beginPath(); c.moveTo(-40, 0); c.lineTo(40, 0); c.stroke();
+      }
+      c.beginPath(); c.arc(0, 0, 18, 0, Math.PI * 2); c.stroke();
+      c.beginPath(); c.arc(0, 0, 34, 0, Math.PI * 2); c.stroke();
+      c.restore();
+    }
+    c.globalAlpha = 1;
     // drop shadows first so they never overlap sprites
     c.fillStyle = 'rgba(20,8,40,0.35)';
     for (const e of list) {
@@ -340,6 +514,7 @@ const Enemies = (() => {
       c.translate(e.x, e.y);
       if (e.flash > 0) { c.globalAlpha = 0.9; c.filter = 'brightness(3)'; }
       if (e.freeze > 0) c.filter = 'saturate(0.2) brightness(1.6)';
+      if (e.phased) c.globalAlpha = 0.25; // wraith between the threads
       const flip = G.player.x < e.x ? -1 : 1;
       // animation personality
       const style = e.boss ? 'float' : ANIM_OF[e.type.id];
@@ -416,5 +591,5 @@ const Enemies = (() => {
     }
   }
 
-  return { get list() { return list; }, TYPES, BOSSES, reset, update, draw, spawnAt };
+  return { get list() { return list; }, TYPES, BOSSES, MQUIRKS, reset, update, draw, spawnAt, quirkDeath, quirkHurt };
 })();
