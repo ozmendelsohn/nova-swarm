@@ -221,10 +221,11 @@ const Game = (() => {
       if (d2 < range * range || g.pull) {
         g.pull = true;
         const a = Util.angTo(g.x, g.y, P.x, P.y);
-        const sp = 320 + g.t * 600;
-        g.x += Math.cos(a) * sp * dt; g.y += Math.sin(a) * sp * dt;
+        const sp = Math.min(1400, 320 + g.t * 600);
+        const step = Math.min(sp * dt, Math.sqrt(d2)); // never overshoot the player
+        g.x += Math.cos(a) * step; g.y += Math.sin(a) * step;
       }
-      if (d2 < 22 * 22) {
+      if (d2 < 26 * 26) {
         gems.splice(i, 1);
         if (g.heal) { P.hp = Math.min(P.maxHp, P.hp + g.heal); Particles.text(P.x, P.y - 20, '+' + g.heal, '#5cffb0'); }
         else if (g.coin) {
