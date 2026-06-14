@@ -1,5 +1,15 @@
 // ---- main.js : game loop, state machine, combat API, DOM wiring ----
 // Ground/pickups/props live in world.js; weapon drawing in weapons/weaponfx.js.
+// persisted accessibility settings (screen shake scale)
+const Settings = {
+  _shakeIdx: +(localStorage.getItem('ns_shake') ?? 2), // 0 off, 1 reduced, 2 full
+  SHAKE_OPTS: [0, 0.4, 1],
+  SHAKE_LABELS: ['OFF', 'REDUCED', 'FULL'],
+  get shake() { return this.SHAKE_OPTS[this._shakeIdx]; },
+  cycleShake() { this._shakeIdx = (this._shakeIdx + 1) % 3; localStorage.setItem('ns_shake', this._shakeIdx); return this.SHAKE_LABELS[this._shakeIdx]; },
+  shakeLabel() { return this.SHAKE_LABELS[this._shakeIdx]; },
+};
+
 const Game = (() => {
   const cv = document.getElementById('game');
   const c = cv.getContext('2d');
@@ -334,8 +344,9 @@ const Game = (() => {
     c.setTransform(1, 0, 0, 1, 0, 0);
     c.fillStyle = '#2a1a4a';
     c.fillRect(0, 0, G.w, G.h);
-    // camera + shake
-    const sx = Util.rand(-G.shakeAmt, G.shakeAmt), sy = Util.rand(-G.shakeAmt, G.shakeAmt);
+    // camera + shake (scaled by accessibility setting)
+    const sa = G.shakeAmt * Settings.shake;
+    const sx = Util.rand(-sa, sa), sy = Util.rand(-sa, sa);
     c.translate(G.w / 2 - P.x + sx, G.h / 2 - P.y + sy);
 
     World.drawGround(G, c);
@@ -434,6 +445,10 @@ const Game = (() => {
   });
   document.getElementById('btn-codex').addEventListener('click', () => UI.showCodex());
   document.getElementById('btn-shop').addEventListener('click', () => { Meta.renderShop(); UI.showScreen('shop'); });
+  const shakeBtn = document.getElementById('btn-shake');
+  const updShake = () => { shakeBtn.textContent = `🎥 SCREEN SHAKE: ${Settings.shakeLabel()}`; };
+  shakeBtn.addEventListener('click', () => { Settings.cycleShake(); updShake(); });
+  updShake();
   document.getElementById('btn-shop-back').addEventListener('click', () => UI.showScreen('menu'));
   document.getElementById('btn-codex-back').addEventListener('click', () => UI.showScreen('menu'));
   document.getElementById('btn-retry').addEventListener('click', () => newGame());
