@@ -865,6 +865,7 @@ const Enemies = (() => {
   }
 
   function update(G, dt) {
+    const P = G.player;
     const minute = G.time / 60;
     // spawn budget ramps with time
     spawnT -= dt;
@@ -932,7 +933,6 @@ const Enemies = (() => {
       }
     }
 
-    const P = G.player;
     for (let i = list.length - 1; i >= 0; i--) {
       const e = list[i];
       if (e._eaten) { list.splice(i, 1); continue; } // swallowed by a maweater
