@@ -22,35 +22,47 @@ const Sprites = (() => {
     cv.width = (w + 2) * scale; cv.height = (rows + 2) * scale;
     const c = cv.getContext('2d');
     c.imageSmoothingEnabled = false;
-    // outline pass: any empty cell touching a filled cell gets a dark plum outline
+    const put = (x, y, col) => { c.fillStyle = col; c.fillRect((x + 1) * scale, (y + 1) * scale, scale, scale); };
+    // outline pass: selective outlining (selout) — lighter plum toward the
+    // light (top-left), darker toward the shadow (bottom-right). Reads as volume.
     for (let y = -1; y <= rows; y++) for (let x = -1; x <= w; x++) {
       if (filled(x, y)) continue;
-      if (filled(x - 1, y) || filled(x + 1, y) || filled(x, y - 1) || filled(x, y + 1)) {
-        c.fillStyle = '#241636';
-        c.fillRect((x + 1) * scale, (y + 1) * scale, scale, scale);
-      }
+      const touches = filled(x - 1, y) || filled(x + 1, y) || filled(x, y - 1) || filled(x, y + 1)
+        || filled(x - 1, y - 1) || filled(x + 1, y - 1) || filled(x - 1, y + 1) || filled(x + 1, y + 1);
+      if (!touches) continue;
+      const litScore = (filled(x, y + 1) ? 1 : 0) + (filled(x + 1, y) ? 1 : 0); // sprite is below/right → this edge faces the light
+      const shadeScore = (filled(x, y - 1) ? 1 : 0) + (filled(x - 1, y) ? 1 : 0);
+      const o = litScore > shadeScore ? '#4a3a66' : shadeScore > litScore ? '#160a26' : '#241636';
+      put(x, y, o);
     }
-    // color pass with auto-shading: highlight on top edges, shadow on bottom edges
+    // color pass: directional light from top-left, warm highlights / cool shadows
     for (let y = 0; y < rows; y++) for (let x = 0; x < w; x++) {
       const ch = px[y][x];
       if (ch === '.') continue;
-      let col = palette[ch];
-      if (!filled(x, y - 1)) col = shift(col, 48);       // lit from above
-      else if (!filled(x, y + 1)) col = shift(col, -38); // shaded below
-      c.fillStyle = col;
-      c.fillRect((x + 1) * scale, (y + 1) * scale, scale, scale);
+      const base = palette[ch];
+      const eAbove = !filled(x, y - 1), eLeft = !filled(x - 1, y);
+      const eBelow = !filled(x, y + 1), eRight = !filled(x + 1, y);
+      let col;
+      if (eAbove && eLeft) col = shade(base, 70, 12);        // specular corner (top-left)
+      else if (eAbove || eLeft) col = shade(base, 46, 9);    // lit edge — warm
+      else if (eBelow && eRight) col = shade(base, -52, -14);// deep shadow corner — cool
+      else if (eBelow || eRight) col = shade(base, -34, -9); // shaded edge — cool
+      else col = base;
+      put(x, y, col);
     }
     return cv;
   }
 
-  function shift(hex, amt) { // lighten/darken hex color
+  // lighten/darken with optional warm/cool tint (+warm = redder, -warm = bluer)
+  function shade(hex, amt, warm = 0) {
     let h = hex.slice(1);
     if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
     const n = parseInt(h, 16);
-    let r = (n >> 16) + amt, g = ((n >> 8) & 255) + amt, b = (n & 255) + amt;
+    let r = (n >> 16) + amt + warm, g = ((n >> 8) & 255) + amt, b = (n & 255) + amt - warm;
     r = Math.max(0, Math.min(255, r)); g = Math.max(0, Math.min(255, g)); b = Math.max(0, Math.min(255, b));
     return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
   }
+  const shift = shade; // back-compat alias for elite/icon recolors
 
   // ---- Monster definitions: 24 types. Grids are LEFT HALF, mirrored. ----
   // frame2 is derived by shifting bottom rows when not given.
