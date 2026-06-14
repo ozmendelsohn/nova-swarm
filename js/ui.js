@@ -79,6 +79,34 @@ const UI = (() => {
       c.beginPath(); c.arc(t.ox + t.dx, t.oy + t.dy, 26, 0, Math.PI * 2); c.fill();
       c.globalAlpha = 1;
     }
+    // off-screen threat & treasure arrows: bosses (red) and the gilded moth (gold)
+    const P2 = G.player, cx = G.w / 2, cy = G.h / 2, marg = 48;
+    for (const e of Enemies.list) {
+      if (!e.boss && !e.gilded) continue;
+      const sx = cx + (e.x - P2.x), sy = cy + (e.y - P2.y);
+      if (sx >= marg && sx <= G.w - marg && sy >= marg && sy <= G.h - marg) continue; // on-screen
+      const ang = Math.atan2(e.y - P2.y, e.x - P2.x);
+      // clamp the indicator onto the screen-edge rectangle along that angle
+      const hw = G.w / 2 - marg, hh = G.h / 2 - marg;
+      const t = Math.min(hw / Math.abs(Math.cos(ang) || 1e-6), hh / Math.abs(Math.sin(ang) || 1e-6));
+      const ix = cx + Math.cos(ang) * t, iy = cy + Math.sin(ang) * t;
+      const col = e.boss ? '#ff3a5c' : '#ffd23e';
+      const pulse = 0.7 + 0.3 * Math.sin(G.time * 8);
+      c.save();
+      c.translate(ix, iy); c.rotate(ang);
+      c.globalAlpha = pulse;
+      c.fillStyle = col; c.shadowColor = col; c.shadowBlur = 12;
+      c.beginPath(); c.moveTo(16, 0); c.lineTo(-10, -11); c.lineTo(-4, 0); c.lineTo(-10, 11); c.closePath(); c.fill();
+      c.restore();
+      // distance readout under the arrow (bosses only)
+      if (e.boss) {
+        const dist = Math.round(Math.sqrt(Util.dist2(e.x, e.y, P2.x, P2.y)) / 10);
+        c.globalAlpha = pulse; c.fillStyle = col; c.font = 'bold 10px monospace'; c.textAlign = 'center';
+        const lx = Math.max(marg, Math.min(G.w - marg, ix)), ly = Math.max(marg + 14, Math.min(G.h - 6, iy + 22));
+        c.fillText(`${dist}m`, lx, ly);
+      }
+    }
+    c.globalAlpha = 1; c.shadowBlur = 0; c.textAlign = 'left';
     // boss banner
     if (G.bossBanner > 0) {
       const al = Math.min(1, G.bossBanner);
