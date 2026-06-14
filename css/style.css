@@ -180,6 +180,28 @@ body { touch-action: none; -webkit-tap-highlight-color: transparent; overscroll-
 .go-stats { margin: 22px 0 30px; font-size: 16px; line-height: 2; color: #a8b8d6; }
 .go-stats b { color: #ffd23e; }
 
+/* ---- score submission form ---- */
+.go-submit { display: flex; flex-direction: column; gap: 10px; max-width: 420px; margin: 0 auto 22px; }
+.go-submit input, .go-submit textarea {
+  background: #0d1430; border: 1px solid #2a3a66; border-radius: 8px;
+  color: #dfe8ff; font-family: inherit; font-size: 13px; padding: 10px 12px;
+  letter-spacing: 1px; outline: none; resize: vertical;
+}
+.go-submit input { text-transform: uppercase; }
+.go-submit textarea { min-height: 46px; text-transform: none; }
+.go-submit input:focus, .go-submit textarea:focus { border-color: #3ae0ff; box-shadow: 0 0 12px #3ae0ff44; }
+
+/* ---- leaderboard ---- */
+.board { max-width: 460px; margin: 0 auto 22px; text-align: left; }
+.board-title { font-size: 12px; letter-spacing: 3px; color: #3ae0ff; text-align: center; margin-bottom: 10px; text-shadow: 0 0 10px #3ae0ff66; }
+.board-loading { font-size: 11px; color: #6a7aa6; text-align: center; }
+.board-row { display: grid; grid-template-columns: 26px 1fr auto; gap: 8px; align-items: baseline;
+  padding: 6px 8px; border-bottom: 1px solid #1c2848; font-size: 13px; }
+.board-rank { color: #ffd23e; font-weight: bold; }
+.board-name { color: #dfe8ff; letter-spacing: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.board-time { color: #5cffb0; }
+.board-cmt { grid-column: 2 / 4; font-size: 11px; font-style: italic; color: #8a7ab8; margin-top: 2px; }
+
 /* ---- weapon lore & quirks ---- */
 .card-lore { font-size: 10px; font-style: italic; color: #8a7ab8; margin-top: 8px; line-height: 1.4; }
 .quirk-chip { color: #ffd23e; font-size: 10.5px; white-space: nowrap; }

@@ -20,6 +20,7 @@
   <div id="parade"></div>
   <div id="menu-coins"></div>
   <div id="charsel"></div>
+  <div id="menu-board" class="board"></div>
   <button id="btn-start" class="btn big">▶ START RUN</button>
   <button id="btn-shop" class="btn">⛀ LOOM SHOP</button>
   <button id="btn-codex" class="btn">📖 WEAPON CODEX</button>
@@ -54,10 +55,19 @@
 <div id="gameover" class="screen">
   <h1 id="go-title">YOU DIED</h1>
   <div id="go-stats" class="go-stats"></div>
+  <div id="go-submit" class="go-submit">
+    <input id="go-name" maxlength="24" placeholder="YOUR NAME (public)" autocomplete="off">
+    <textarea id="go-comment" maxlength="280" placeholder="Public comment (optional)"></textarea>
+    <textarea id="go-private" maxlength="1000" placeholder="Private feedback to the dev (optional)"></textarea>
+    <button id="btn-submit-score" class="btn">⬆ SUBMIT TO LEADERBOARD</button>
+  </div>
+  <div id="go-board" class="board"></div>
   <button id="btn-retry" class="btn big">↻ RETRY</button>
   <button id="btn-menu" class="btn">MENU</button>
 </div>
 
+<script src="js/config.js"></script>
+<script src="js/leaderboard.js"></script>
 <script src="js/util.js"></script>
 <script src="js/sprites.js"></script>
 <script src="js/particles.js"></script>

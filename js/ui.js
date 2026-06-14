@@ -15,6 +15,7 @@ const UI = (() => {
           ? `BEST ${fmtTime(b.time)} · LV ${b.lvl}${b.wins ? ` · ★×${b.wins}` : ''}`
           : 'UNTESTED';
       });
+      renderBoard($('menu-board'));
     }
   }
 
@@ -231,6 +232,33 @@ const UI = (() => {
     showScreen('codex');
   }
 
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  }
+
+  // Render the top-scores leaderboard into a container element.
+  async function renderBoard(el) {
+    if (!el) return;
+    if (!Leaderboard.ready()) { el.innerHTML = ''; return; }
+    el.innerHTML = '<div class="board-title">GLOBAL WEAVERS</div><div class="board-loading">loading…</div>';
+    const rows = await Leaderboard.top(10);
+    if (!rows.length) {
+      el.innerHTML = '<div class="board-title">GLOBAL WEAVERS</div><div class="board-loading">no runs yet — be the first</div>';
+      return;
+    }
+    const list = rows.map((r, i) => {
+      const cmt = r.comment ? `<div class="board-cmt">“${esc(r.comment)}”</div>` : '';
+      const win = r.won ? ' ★' : '';
+      return `<div class="board-row">
+        <span class="board-rank">${i + 1}</span>
+        <span class="board-name">${esc(r.name)}${win}</span>
+        <span class="board-time">${fmtTime(r.time_sec)}</span>
+        ${cmt}
+      </div>`;
+    }).join('');
+    el.innerHTML = '<div class="board-title">GLOBAL WEAVERS</div>' + list;
+  }
+
   function showGameOver(G, won) {
     $('go-title').textContent = won ? '★ VICTORY ★' : 'YOU DIED';
     $('go-title').style.color = won ? '#5cffb0' : '#ff3a5c';
@@ -249,8 +277,50 @@ const UI = (() => {
        ${mvpLine}
        WEAVER'S COINS EARNED: <b>⛀ ${G.coinsRun}</b> (bank: ⛀ ${Meta.coins})<br>
        WEAPONS DISCOVERED: <b>${WeaponManager.discovered.size}/252</b>`;
+
+    // run summary captured for leaderboard submission
+    const run = {
+      character: Characters.selected.id,
+      time_sec: G.time,
+      level: G.player.lvl,
+      kills: G.kills,
+      coins: G.coinsRun,
+      won: !!won,
+      weapons: WeaponManager.discovered.size,
+      deadliest: mvp || null
+    };
+
+    const submitBox = $('go-submit');
+    const btn = $('btn-submit-score');
+    if (Leaderboard.ready()) {
+      submitBox.style.display = '';
+      $('go-name').value = localStorage.getItem('ns_name') || '';
+      $('go-comment').value = '';
+      $('go-private').value = '';
+      btn.disabled = false;
+      btn.textContent = '⬆ SUBMIT TO LEADERBOARD';
+      btn.onclick = async () => {
+        const name = $('go-name').value.trim();
+        if (!name) { $('go-name').focus(); return; }
+        localStorage.setItem('ns_name', name);
+        btn.disabled = true;
+        btn.textContent = 'SUBMITTING…';
+        const ok = await Leaderboard.submit(Object.assign({
+          name,
+          comment: $('go-comment').value.trim() || null,
+          private_note: $('go-private').value.trim() || null
+        }, run));
+        btn.textContent = ok ? 'SUBMITTED ✓' : 'SUBMIT FAILED — RETRY';
+        btn.disabled = !ok;
+        if (ok) renderBoard($('go-board'));
+      };
+    } else {
+      submitBox.style.display = 'none';
+    }
+
+    renderBoard($('go-board'));
     showScreen('gameover');
   }
 
-  return { showScreen, drawHUD, showLevelUp, showCodex, showGameOver, fmtTime };
+  return { showScreen, drawHUD, showLevelUp, showCodex, showGameOver, renderBoard, fmtTime };
 })();

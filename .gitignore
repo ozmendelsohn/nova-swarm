@@ -1,3 +1,9 @@
 .netlify/
 .playwright-mcp/
 *.png
+
+# Supabase secrets (DB password, local CLI state) — never commit
+.supabase-dbpass.txt
+.env
+supabase/.temp/
+supabase/.branches/

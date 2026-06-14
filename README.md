@@ -58,6 +58,21 @@ for f in js/*.js js/weapons/*.js; do node --check "$f" || break; done
 node scripts/validate.js
 ```
 
+## Global scoreboard + comments (Supabase)
+The end-of-run screen submits the player's name, run stats, an optional public
+comment, and an optional private note (dev-only feedback) to Supabase. The top
+runs show on the main menu and game-over screens. To enable:
+
+1. Create a Supabase project and run `supabase/schema.sql` in the SQL editor.
+   This makes the `scores` table (RLS: anon may insert, never select) and a
+   `public_scores` view that omits `private_note`.
+2. Paste your project URL + anon key into `js/config.js`. The anon key is safe
+   to ship — RLS protects the data, and private notes are only readable from the
+   Supabase dashboard.
+
+If `js/config.js` is left blank the game runs fully offline (the submit form and
+leaderboard simply hide).
+
 ## Deploy
 Push to `main` → Render auto-deploys the static site (config in
 `render.yaml`). Nothing else to do.
