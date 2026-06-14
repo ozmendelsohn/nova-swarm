@@ -4,6 +4,7 @@
 
 # Supabase secrets (DB password, local CLI state) — never commit
 .supabase-dbpass.txt
+js/config.js
 .env
 supabase/.temp/
 supabase/.branches/

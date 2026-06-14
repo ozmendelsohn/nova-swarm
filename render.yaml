@@ -3,9 +3,15 @@ services:
     runtime: static
     name: nova-swarm
     plan: free
-    buildCommand: echo "static site - no build"
+    # Generate js/config.js at build time from env vars so no keys live in git.
+    buildCommand: printf "window.SB_URL='%s';window.SB_ANON='%s';\n" "$SB_URL" "$SB_ANON" > js/config.js
     staticPublishPath: .
     autoDeploy: true
+    envVars:
+      - key: SB_URL
+        sync: false   # set in Render dashboard
+      - key: SB_ANON
+        sync: false   # set in Render dashboard (anon/public key)
     headers:
       - path: /*
         name: X-Frame-Options
