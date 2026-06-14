@@ -870,7 +870,7 @@ const Enemies = (() => {
     // spawn budget ramps with time
     spawnT -= dt;
     const interval = Math.max(0.05, 0.38 - minute * 0.03);
-    if (spawnT <= 0 && list.length < 650) {
+    if (spawnT <= 0 && list.length < 5000) { // EXTREME horde cap
       spawnT = interval;
       const avail = TYPES.filter(t => t.tier <= minute + 0.01);
       const t = avail[Math.max(0, avail.length - 1 - (Math.random() * Math.min(5, avail.length) | 0))];
@@ -1120,21 +1120,24 @@ const Enemies = (() => {
       c.restore();
     }
     c.globalAlpha = 1;
+    // off-screen cull: extreme hordes spawn far off-camera — only draw what's visible
+    const P = G.player, cullX = G.w / 2 + 90, cullY = G.h / 2 + 90;
+    const onScreen = e => Math.abs(e.x - P.x) <= cullX && Math.abs(e.y - P.y) <= cullY;
     // drop shadows first so they never overlap sprites
     c.fillStyle = 'rgba(20,8,40,0.35)';
     for (const e of list) {
+      if (!onScreen(e)) continue;
       c.beginPath();
       c.ellipse(e.x, e.y + e.r * 0.9, e.r * 0.9, e.r * 0.35, 0, 0, Math.PI * 2);
       c.fill();
     }
     for (const e of list) {
+      if (!onScreen(e)) continue;
       const frames = e.boss ? Sprites.get(e.bdef.id) : e.elite ? Sprites.getElite(e.type.id) : Sprites.get(e.type.id);
       if (!frames) continue; // never let a bad sprite lookup kill the render loop
       const f = frames[(e.anim * 1.5 | 0) % frames.length];
       c.save();
       c.translate(e.x, e.y);
-      if (e.flash > 0) { c.globalAlpha = 0.9; c.filter = 'brightness(3)'; }
-      if (e.freeze > 0) c.filter = 'saturate(0.2) brightness(1.6)';
       if (e.phased || e.phasedLook) c.globalAlpha = 0.25; // phased or lurking
       const flip = G.player.x < e.x ? -1 : 1;
       // animation personality
@@ -1161,9 +1164,14 @@ const Enemies = (() => {
           break;
       }
       c.scale(flip * sx2, sy2);
-      c.drawImage(f, -f.width / 2, -f.height / 2 + oy / sy2);
+      const dx = -f.width / 2, dy = -f.height / 2 + oy / sy2;
+      if (e.boss) { c.shadowColor = e.enraged ? '#ff3a5c' : '#ffd23e'; c.shadowBlur = 18; } // imposing rim glow
+      c.drawImage(f, dx, dy);
+      c.shadowBlur = 0;
+      // clean tint overlays (replace slow canvas filters)
+      if (e.freeze > 0) { c.globalAlpha = 0.5; c.drawImage(Sprites.tinted(f, '#bfeaff'), dx, dy); c.globalAlpha = 1; }
+      if (e.flash > 0) { c.globalAlpha = Math.min(1, e.flash / 0.08) * 0.9; c.drawImage(Sprites.tinted(f, '#ffffff'), dx, dy); c.globalAlpha = 1; }
       c.restore();
-      c.filter = 'none';
       // elites wear a floating gold halo (rarity language, ART_STYLE.md)
       if (e.elite) {
         c.strokeStyle = '#ffd23e'; c.lineWidth = 2.5;

@@ -276,7 +276,7 @@ const Game = (() => {
     if ((G.time | 0) !== G._musT) {
       G._musT = G.time | 0;
       const bossUp = Enemies.list.some(e => e.boss);
-      let lvl = bossUp ? 3 : Enemies.list.length > 220 ? 2 : Enemies.list.length > 60 ? 1 : 0;
+      let lvl = bossUp ? 3 : Enemies.list.length > 1200 ? 2 : Enemies.list.length > 60 ? 1 : 0;
       if (G.player.hp / G.player.maxHp < 0.3) lvl = Math.min(3, lvl + 1);
       Snd.setIntensity(lvl);
     }
