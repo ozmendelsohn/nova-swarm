@@ -235,9 +235,18 @@ const UI = (() => {
     $('go-title').textContent = won ? '★ VICTORY ★' : 'YOU DIED';
     $('go-title').style.color = won ? '#5cffb0' : '#ff3a5c';
     const broke = G.recordsBroken || [];
+    // deadliest charm: highest share of total damage this run
+    const log = G.dmgLog || {};
+    const total = Object.values(log).reduce((a, b) => a + b, 0);
+    let mvp = '', mvpPct = 0;
+    for (const [name, dmg] of Object.entries(log)) if (dmg > mvpPct) { mvpPct = dmg; mvp = name; }
+    const mvpLine = mvp
+      ? `DEADLIEST CHARM: <b style="color:#ff5cd6">${mvp}</b> (${Math.round(mvpPct / total * 100)}% of all damage)<br>`
+      : '';
     $('go-stats').innerHTML =
       `SURVIVED <b>${fmtTime(G.time)}</b> · LEVEL <b>${G.player.lvl}</b> · KILLS <b>${G.kills}</b><br>
        ${broke.length ? `<span class="new-best">★ NEW BEST: ${broke.join(' · ')} ★</span><br>` : ''}
+       ${mvpLine}
        WEAVER'S COINS EARNED: <b>⛀ ${G.coinsRun}</b> (bank: ⛀ ${Meta.coins})<br>
        WEAPONS DISCOVERED: <b>${WeaponManager.discovered.size}/252</b>`;
     showScreen('gameover');

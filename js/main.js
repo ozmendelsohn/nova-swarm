@@ -23,7 +23,7 @@ const Game = (() => {
     zaps.length = 0;
     G = {
       state: 'play', time: 0, w: cv.width, h: cv.height,
-      player: Player.create(Characters.selected), kills: 0, combo: 0, comboT: 0, coinsRun: 0,
+      player: Player.create(Characters.selected), kills: 0, combo: 0, comboT: 0, coinsRun: 0, dmgLog: {},
       shakeAmt: 0, flashAmt: 0, freezeT: 0, levelUpQueue: 0,
       bossBanner: 0, bossName: '', bossTitle: '', won: false,
       // API used by weapons/enemies:
@@ -80,6 +80,7 @@ const Game = (() => {
     if (e.dr) d *= e.dr; // BULWARK elite affix
     if (e.vulnT > G.time) d *= 1.2; // hoarfrost-style vulnerability marks
     e.hp -= d;
+    if (opts.w) { const n = opts.w.def.name; G.dmgLog[n] = (G.dmgLog[n] || 0) + d; } // run damage tally
     e.flash = 0.08;
     if (Math.random() < 0.4 || crit) Particles.text(e.x + Util.rand(-8, 8), e.y - e.r, Math.round(d), crit ? '#ffe93e' : '#fff', crit ? 16 : 12);
     Particles.burst(e.x, e.y, opts.color || '#fff', 3, { speed: 80, life: 0.3 });
