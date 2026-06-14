@@ -95,9 +95,22 @@ const World = (() => {
   }
 
   // ---------- pickups ----------
+  const GEM_CAP = 1200; // loose gems never despawn; cap the field so long runs don't stall
   function updateGems(G, dt) {
     const P = G.player;
     const range = 70 * (1 + 0.3 * (WeaponManager.passives.magnet || 0)) * Meta.fx.magnet();
+    // Overflow guard: auto-bank the oldest gems (left far behind) so the array stays bounded.
+    // Credits their value instantly — the player loses nothing but the trail of stragglers.
+    // Batched splice keeps this O(n) even if a big overflow ever accrues at once.
+    if (gems.length > GEM_CAP) {
+      const drained = gems.splice(0, gems.length - GEM_CAP);
+      let coins = 0;
+      for (const g of drained) {
+        if (g.coin) coins += Math.round(g.coin * Meta.fx.greed());
+        else if (!g.heal && !g.magnet) Player.gainXp(G, g.v);
+      }
+      if (coins) { G.coinsRun += coins; Meta.addCoins(coins); }
+    }
     for (let i = gems.length - 1; i >= 0; i--) {
       const g = gems[i]; g.t += dt;
       if (Math.random() < 0.008) Particles.spawn(g.x, g.y - 4, g.heal ? '#ffd23e' : '#fff', { speed: 15, life: 0.4, size: 2 });
@@ -279,7 +292,10 @@ const World = (() => {
       c.restore();
     }
     const gemSpr = Sprites.get('gem')[0], chestSpr = Sprites.get('chest')[0], magSpr = Sprites.get('magnet')[0];
+    // cull to the visible area (plus a margin) — long runs leave thousands of gems off-screen
+    const P = G.player, mx = G.w / 2 + 40, my = G.h / 2 + 40;
     for (const g of gems) {
+      if (Math.abs(g.x - P.x) > mx || Math.abs(g.y - P.y) > my) continue;
       const bob = Math.sin(G.time * 5 + g.x) * 3;
       const spr = g.heal ? chestSpr : g.magnet ? magSpr : g.coin ? Sprites.get('coin')[0] : gemSpr;
       if (g.magnet) { c.shadowColor = '#3ae0ff'; c.shadowBlur = 12; }
