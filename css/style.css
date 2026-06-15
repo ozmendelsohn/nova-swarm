@@ -36,7 +36,10 @@ body { touch-action: none; -webkit-tap-highlight-color: transparent; overscroll-
 /* ---- screens ---- */
 .screen {
   position: fixed; inset: 0; z-index: 100; display: none;
-  flex-direction: column; align-items: center; justify-content: center;
+  flex-direction: column; align-items: center;
+  /* safe center: vertically centered when it fits, but scrolls from the top
+     instead of clipping/overlapping when content is taller than the viewport */
+  justify-content: safe center; overflow-y: auto;
   background:
     radial-gradient(ellipse at 20% 10%, rgba(90,40,160,0.55), transparent 55%),
     radial-gradient(ellipse at 85% 85%, rgba(20,120,150,0.5), transparent 55%),
@@ -49,6 +52,8 @@ body { touch-action: none; -webkit-tap-highlight-color: transparent; overscroll-
 }
 @keyframes bgflow { 0% { background-position: 0% 0%; } 100% { background-position: 100% 100%; } }
 .screen.visible { display: flex; }
+/* never let stacked sections compress into one another when space is tight */
+.screen > * { flex-shrink: 0; }
 
 .logo {
   font-size: clamp(48px, 9vw, 96px); letter-spacing: 8px; color: #3ae0ff;
