@@ -45,9 +45,10 @@ const UI = (() => {
     c.fillStyle = '#9be8ff'; c.fillText(`☠ ${G.kills}`, 80, 52);
     c.fillStyle = '#ffd23e'; c.fillText(`⛀ ${G.coinsRun}`, 150, 52);
     if (G.combo > 5) {
-      c.textAlign = 'right'; c.font = `bold ${Math.min(28, 14 + G.combo / 8)}px monospace`;
+      // centered under the timer — keeps clear of the weapon slots in the top-right
+      c.textAlign = 'center'; c.font = `bold ${Math.min(24, 13 + G.combo / 8)}px monospace`;
       c.fillStyle = `hsl(${(G.time * 120) % 360},90%,65%)`;
-      c.fillText(`${G.combo} COMBO`, G.w - 20, 60);
+      c.fillText(`${G.combo} COMBO`, G.w / 2, 66);
     }
     // weapon icons
     c.textAlign = 'left';
