@@ -8,6 +8,14 @@ const Settings = {
   get shake() { return this.SHAKE_OPTS[this._shakeIdx]; },
   cycleShake() { this._shakeIdx = (this._shakeIdx + 1) % 3; localStorage.setItem('ns_shake', this._shakeIdx); return this.SHAKE_LABELS[this._shakeIdx]; },
   shakeLabel() { return this.SHAKE_LABELS[this._shakeIdx]; },
+
+  // how big the horde is allowed to get — opt-in chaos
+  _swarmIdx: +(localStorage.getItem('ns_swarm') ?? 1), // default EXTREME
+  SWARM_OPTS: [1500, 5000, 20000],
+  SWARM_LABELS: ['NORMAL', 'EXTREME', 'TOO MANY!!'],
+  get enemyCap() { return this.SWARM_OPTS[this._swarmIdx]; },
+  cycleSwarm() { this._swarmIdx = (this._swarmIdx + 1) % 3; localStorage.setItem('ns_swarm', this._swarmIdx); return this.SWARM_LABELS[this._swarmIdx]; },
+  swarmLabel() { return this.SWARM_LABELS[this._swarmIdx]; },
 };
 
 const Game = (() => {
@@ -449,6 +457,10 @@ const Game = (() => {
   const updShake = () => { shakeBtn.textContent = `🎥 SCREEN SHAKE: ${Settings.shakeLabel()}`; };
   shakeBtn.addEventListener('click', () => { Settings.cycleShake(); updShake(); });
   updShake();
+  const swarmBtn = document.getElementById('btn-swarm');
+  const updSwarm = () => { swarmBtn.textContent = `🐛 ENEMY SWARM: ${Settings.swarmLabel()}`; };
+  swarmBtn.addEventListener('click', () => { Settings.cycleSwarm(); updSwarm(); });
+  updSwarm();
   document.getElementById('btn-shop-back').addEventListener('click', () => UI.showScreen('menu'));
   document.getElementById('btn-codex-back').addEventListener('click', () => UI.showScreen('menu'));
   document.getElementById('btn-retry').addEventListener('click', () => newGame());

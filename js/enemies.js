@@ -870,7 +870,7 @@ const Enemies = (() => {
     // spawn budget ramps with time
     spawnT -= dt;
     const interval = Math.max(0.05, 0.38 - minute * 0.03);
-    if (spawnT <= 0 && list.length < 5000) { // EXTREME horde cap
+    if (spawnT <= 0 && list.length < Settings.enemyCap) { // horde cap (menu setting)
       spawnT = interval;
       const avail = TYPES.filter(t => t.tier <= minute + 0.01);
       const t = avail[Math.max(0, avail.length - 1 - (Math.random() * Math.min(5, avail.length) | 0))];
