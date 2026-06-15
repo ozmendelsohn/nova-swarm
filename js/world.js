@@ -98,7 +98,9 @@ const World = (() => {
   const GEM_CAP = 1200; // loose gems never despawn; cap the field so long runs don't stall
   function updateGems(G, dt) {
     const P = G.player;
-    const range = 70 * (1 + 0.3 * (WeaponManager.passives.magnet || 0)) * Meta.fx.magnet();
+    // magnet range also grows over the run — survive longer, sweep wider (caps at +120% by 12 min)
+    const tGrowth = 1 + Math.min(1.2, G.time / 600);
+    const range = 70 * (1 + 0.3 * (WeaponManager.passives.magnet || 0)) * Meta.fx.magnet() * tGrowth;
     // Overflow guard: auto-bank the oldest gems (left far behind) so the array stays bounded.
     // Credits their value instantly — the player loses nothing but the trail of stragglers.
     // Batched splice keeps this O(n) even if a big overflow ever accrues at once.
