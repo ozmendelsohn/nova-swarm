@@ -50,34 +50,38 @@ const UI = (() => {
     else if (horde >= 1000) c.fillStyle = '#ff8c42';
     else c.fillStyle = '#c9b8e8';
     c.fillText(`🐛 ${horde}`, 220, 52);
-    if (G.combo > 5) {
-      // centered BELOW the timer + stats band; font scales with width so it never
-      // crowds the timer/slots on a narrow phone screen
-      const cf = Math.min(24, 13 + G.combo / 8, G.w / 20);
-      c.textAlign = 'center'; c.font = `bold ${cf}px monospace`;
-      c.fillStyle = `hsl(${(G.time * 120) % 360},90%,65%)`;
-      c.fillText(`${G.combo} COMBO`, G.w / 2, 84);
-    }
-    // weapon icons
-    c.textAlign = 'left';
+    // weapon-slot geometry, computed early so the combo readout can dodge it on mobile
     const ws = WeaponManager.weapons;
     const slotMax = WeaponManager.maxWeapons(G);
     // shrink slots so a maxed-out arsenal still fits on screen
     const sz = Math.max(18, Math.min(32, ((G.w * 0.55) / Math.max(1, ws.length)) - 4 | 0));
+    // on narrow phone screens the right-aligned slot row reaches past centre and
+    // collides with the centred timer — drop it below the timer/stats band there
+    const narrow = G.w < 560;
+    const slotY = narrow ? 64 : 12;
+    if (G.combo > 5) {
+      const cf = Math.min(24, 13 + G.combo / 8, G.w / 20);
+      const comboY = narrow ? slotY + sz + 40 : 84;
+      c.textAlign = 'center'; c.font = `bold ${cf}px monospace`;
+      c.fillStyle = `hsl(${(G.time * 120) % 360},90%,65%)`;
+      c.fillText(`${G.combo} COMBO`, G.w / 2, comboY);
+    }
+    // weapon icons
+    c.textAlign = 'left';
     let wx = G.w - 24 - ws.length * (sz + 4);
     for (const w of ws) {
-      c.fillStyle = '#1a0e2eee'; c.fillRect(wx, 12, sz, sz);
+      c.fillStyle = '#1a0e2eee'; c.fillRect(wx, slotY, sz, sz);
       c.strokeStyle = w.def.tier === 'fusion' ? '#ffd23e' : w.def.color;
-      c.lineWidth = 1.5; c.strokeRect(wx + 0.5, 12.5, sz - 1, sz - 1);
+      c.lineWidth = 1.5; c.strokeRect(wx + 0.5, slotY + 0.5, sz - 1, sz - 1);
       const ic = Sprites.weaponIcon(w.def);
       c.imageSmoothingEnabled = false;
-      c.drawImage(ic, wx + 2, 14, sz - 4, sz - 4);
+      c.drawImage(ic, wx + 2, slotY + 2, sz - 4, sz - 4);
       c.fillStyle = '#ffd23e'; c.font = 'bold 10px monospace';
-      c.fillText(w.def.tier === 'fusion' ? '★' : w.lvl, wx + sz - 8, 12 + sz + 11);
+      c.fillText(w.def.tier === 'fusion' ? '★' : w.lvl, wx + sz - 8, slotY + sz + 11);
       wx += sz + 4;
     }
     c.fillStyle = '#9a8ac9'; c.font = 'bold 10px monospace'; c.textAlign = 'right';
-    c.fillText(`SLOTS ${ws.length}/${slotMax} · +1 @ LV ${(((G.player.lvl / WeaponManager.SLOT_EVERY) | 0) + 1) * WeaponManager.SLOT_EVERY}`, G.w - 24, 12 + sz + 24);
+    c.fillText(`SLOTS ${ws.length}/${slotMax} · +1 @ LV ${(((G.player.lvl / WeaponManager.SLOT_EVERY) | 0) + 1) * WeaponManager.SLOT_EVERY}`, G.w - 24, slotY + sz + 24);
     c.textAlign = 'left';
     // virtual joystick (touch)
     const t = Player.touch;
