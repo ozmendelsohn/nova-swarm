@@ -38,6 +38,7 @@ const Game = (() => {
     Enemies.reset();
     Projectiles.clearAll();
     World.reset();
+    Weave.reset();
     zaps.length = 0;
     G = {
       state: 'play', time: 0, w: cv.width, h: cv.height,
@@ -334,6 +335,7 @@ const Game = (() => {
     }
 
     Player.update(G, dt);
+    Weave.update(G, dt); // thread weaving: encircle enemies to ensnare them
     rebuildGrid();
     WeaponManager.update(G, dt);
     Archetypes.updateProjectiles(G, dt);
@@ -369,6 +371,7 @@ const Game = (() => {
     World.drawGround(G, c);
     World.drawPickups(G, c);
     Enemies.draw(G, c);
+    Weave.draw(G, c); // the glowing thread + weave snaps, over enemies
     WeaponFX.drawProjectiles(G, c);
 
     // enemy bullets
