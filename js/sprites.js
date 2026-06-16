@@ -368,5 +368,22 @@ const Sprites = (() => {
     return cv;
   }
 
-  return { get, getElite, MONSTERS, BOSSES, render, weaponIcon };
+  // solid-color silhouette of a sprite (cached) — for hit-flash / freeze tint
+  const tintCache = new WeakMap();
+  function tinted(cv, color) {
+    let m = tintCache.get(cv);
+    if (m && m._color === color) return m;
+    const t = document.createElement('canvas');
+    t.width = cv.width; t.height = cv.height;
+    const tc = t.getContext('2d');
+    tc.imageSmoothingEnabled = false;
+    tc.drawImage(cv, 0, 0);
+    tc.globalCompositeOperation = 'source-atop';
+    tc.fillStyle = color; tc.fillRect(0, 0, t.width, t.height);
+    t._color = color;
+    tintCache.set(cv, t);
+    return t;
+  }
+
+  return { get, getElite, MONSTERS, BOSSES, render, weaponIcon, tinted };
 })();
