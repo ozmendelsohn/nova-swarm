@@ -51,10 +51,12 @@ const UI = (() => {
     else c.fillStyle = '#c9b8e8';
     c.fillText(`🐛 ${horde}`, 220, 52);
     if (G.combo > 5) {
-      // centered under the timer — keeps clear of the weapon slots in the top-right
-      c.textAlign = 'center'; c.font = `bold ${Math.min(24, 13 + G.combo / 8)}px monospace`;
+      // centered BELOW the timer + stats band; font scales with width so it never
+      // crowds the timer/slots on a narrow phone screen
+      const cf = Math.min(24, 13 + G.combo / 8, G.w / 20);
+      c.textAlign = 'center'; c.font = `bold ${cf}px monospace`;
       c.fillStyle = `hsl(${(G.time * 120) % 360},90%,65%)`;
-      c.fillText(`${G.combo} COMBO`, G.w / 2, 66);
+      c.fillText(`${G.combo} COMBO`, G.w / 2, 84);
     }
     // weapon icons
     c.textAlign = 'left';
