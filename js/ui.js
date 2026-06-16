@@ -44,6 +44,12 @@ const UI = (() => {
     c.fillStyle = '#ffd23e'; c.fillText(`LV ${p.lvl}`, 20, 52);
     c.fillStyle = '#9be8ff'; c.fillText(`☠ ${G.kills}`, 80, 52);
     c.fillStyle = '#ffd23e'; c.fillText(`⛀ ${G.coinsRun}`, 150, 52);
+    // live horde size — escalates in colour as the swarm grows (TOO MANY!! territory pulses red)
+    const horde = Enemies.list.length;
+    if (horde >= 5000) c.fillStyle = `hsl(0,90%,${60 + 25 * Math.sin(G.time * 10)}%)`;
+    else if (horde >= 1000) c.fillStyle = '#ff8c42';
+    else c.fillStyle = '#c9b8e8';
+    c.fillText(`🐛 ${horde}`, 220, 52);
     if (G.combo > 5) {
       // centered under the timer — keeps clear of the weapon slots in the top-right
       c.textAlign = 'center'; c.font = `bold ${Math.min(24, 13 + G.combo / 8)}px monospace`;
