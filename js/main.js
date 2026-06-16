@@ -261,16 +261,25 @@ const Game = (() => {
   let last = 0, acc = 0;
   const STEP = 1 / 60;
 
+  let loopErrLogged = false;
   function frame(ts) {
     requestAnimationFrame(frame);
     const dt = Math.min(0.1, (ts - last) / 1000); last = ts;
     if (!G || G.state === 'menu') return;
-    if (G.state === 'play') {
-      acc += dt;
-      let steps = 0;
-      while (acc >= STEP && steps++ < 4) { acc -= STEP; tick(STEP); }
+    // Guard the per-frame work: a single tick/render exception must not brick the
+    // game (a thrown render froze the camera-shake → full-screen strobe). Log once,
+    // keep the loop alive so the game degrades instead of seizing.
+    try {
+      if (G.state === 'play') {
+        acc += dt;
+        let steps = 0;
+        while (acc >= STEP && steps++ < 4) { acc -= STEP; tick(STEP); }
+      }
+      render();
+    } catch (e) {
+      if (!loopErrLogged) { console.error('Nova Swarm frame error (suppressed after first):', e); loopErrLogged = true; }
+      G.shakeAmt = 0; // never let a mid-render throw leave the camera jittering
     }
-    render();
   }
 
   function tick(dt) {
