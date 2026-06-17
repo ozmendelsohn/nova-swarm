@@ -67,6 +67,14 @@ const UI = (() => {
       c.textAlign = 'center'; c.font = `bold ${cf}px monospace`;
       c.fillStyle = `hsl(${(G.time * 120) % 360},90%,65%)`;
       c.fillText(`${G.combo} COMBO`, G.w / 2, comboY);
+      // combo timer bar: shrinks as your streak window runs out
+      const bw = 70, frac = Math.max(0, Math.min(1, G.comboT / 2.5));
+      c.fillStyle = '#0008'; c.fillRect(G.w / 2 - bw / 2, comboY + 5, bw, 3);
+      c.fillStyle = `hsl(${(G.time * 120) % 360},90%,65%)`; c.fillRect(G.w / 2 - bw / 2, comboY + 5, bw * frac, 3);
+    }
+    if (Snd.isMuted && Snd.isMuted()) { // mute indicator
+      c.textAlign = 'right'; c.font = 'bold 12px monospace'; c.fillStyle = '#ff8c42';
+      c.fillText('🔇 MUTED', G.w - 20, narrow ? 92 : 76);
     }
     // weapon icons
     c.textAlign = 'left';

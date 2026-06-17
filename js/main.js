@@ -34,6 +34,15 @@ const Game = (() => {
   const zaps = []; // lightning visuals
   // kill-count milestone titles (feature: escalating Weaver ranks)
   const KILL_RANKS = { 25: 'THREAD NOVICE', 100: 'WEAVER ADEPT', 250: 'LOOM KNIGHT', 500: 'PATTERN MASTER', 1000: 'GRAND WEAVER', 2500: 'THE TAPESTRY ITSELF' };
+  const TIPS = [
+    'Circle enemies with your movement to WEAVE — ensnare and tear them.',
+    'Weave inside a dye field to charge the snap: fire burns, frost ensnares longer.',
+    'Max two weapons with a shared destiny to trigger a JOINT EVOLUTION.',
+    'Stacking one element mutates your form — lean into a theme.',
+    'Dash through danger for invulnerability frames.',
+    'Drag hordes onto a volt field, then weave for +50% tear.',
+    'The Gilded Moth flees — catch it before it escapes for a coin windfall.',
+  ];
 
   function newGame() {
     WeaponManager.reset();
@@ -45,7 +54,7 @@ const Game = (() => {
     G = {
       state: 'play', time: 0, w: cv.width, h: cv.height,
       player: Player.create(Characters.selected), kills: 0, combo: 0, comboT: 0, coinsRun: 0, dmgLog: {},
-      shakeAmt: 0, flashAmt: 0, hurtFlash: 0, lvlFlash: 0, _minMark: 0, freezeT: 0, levelUpQueue: 0,
+      shakeAmt: 0, flashAmt: 0, hurtFlash: 0, lvlFlash: 0, _minMark: 0, _hbT: 0, hurtDir: 0, hurtDirT: 0, freezeT: 0, levelUpQueue: 0,
       bossBanner: 0, bossName: '', bossTitle: '', won: false,
       // API used by weapons/enemies:
       nearestEnemy, enemiesInRange, damageEnemy, killEnemy, explodeAt, zap,
@@ -236,7 +245,7 @@ const Game = (() => {
 
   function announceBoss(name, title) {
     G.bossName = name; G.bossTitle = title || ''; G.bossBanner = 3.5;
-    G.shakeAmt = 10;
+    G.shakeAmt = 10; G.flashAmt = 0.6; // boss intro punch
     Snd.play('boss');
   }
 
@@ -311,6 +320,12 @@ const Game = (() => {
       Particles.burst(G.player.x, G.player.y, '#9be8ff', 16, { speed: 150, life: 0.6 });
       Snd.play('elite');
     }
+    // low-HP heartbeat audio
+    if (G.player.hp / G.player.maxHp < 0.25) {
+      G._hbT = (G._hbT || 0) - dt;
+      if (G._hbT <= 0) { G._hbT = 0.85; Snd.heartbeat(); }
+    }
+    if (G.hurtDirT > 0) G.hurtDirT -= dt; // damage-direction indicator fade
     G.totem = null; // re-claimed each tick by an active totem projectile
     // music follows the danger: horde density, bosses, and your own blood
     if ((G.time | 0) !== G._musT) {
@@ -443,6 +458,15 @@ const Game = (() => {
       hf.addColorStop(0, 'transparent'); hf.addColorStop(1, `rgba(220,20,40,${Math.min(0.6, G.hurtFlash * 0.6)})`);
       c.fillStyle = hf; c.fillRect(0, 0, G.w, G.h);
     }
+    // damage-direction indicator: a red arc at the screen edge points at what hit you
+    if (G.hurtDirT > 0) {
+      c.save(); c.translate(G.w / 2, G.h / 2); c.rotate(G.hurtDir);
+      c.globalAlpha = (G.hurtDirT / 0.8) * 0.85;
+      c.strokeStyle = '#ff3a5c'; c.lineWidth = 6; c.shadowColor = '#ff3a5c'; c.shadowBlur = 12;
+      const rad = Math.min(G.w, G.h) * 0.42;
+      c.beginPath(); c.arc(0, 0, rad, -0.32, 0.32); c.stroke();
+      c.restore(); c.globalAlpha = 1; c.shadowBlur = 0;
+    }
     // vignette
     const vg = c.createRadialGradient(G.w / 2, G.h / 2, G.h * 0.45, G.w / 2, G.h / 2, G.h * 0.85);
     vg.addColorStop(0, 'transparent'); vg.addColorStop(1, 'rgba(26,8,46,0.5)');
@@ -478,6 +502,8 @@ const Game = (() => {
       c.fillText('THE LOOM HOLDS ITS BREATH', G.w / 2, G.h / 2 - 10);
       c.font = 'bold 15px monospace'; c.fillStyle = '#a8b8d6';
       c.fillText('— PAUSED · press P to resume —', G.w / 2, G.h / 2 + 26);
+      c.font = 'italic 14px monospace'; c.fillStyle = '#9be8ff';
+      c.fillText('✦ ' + TIPS[(G.time / 6 | 0) % TIPS.length], G.w / 2, G.h / 2 + 64);
     }
   }
 

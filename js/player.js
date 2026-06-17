@@ -134,6 +134,7 @@ const Player = (() => {
     p.hp -= d;
     G.shake(6);
     G.hurtFlash = Math.min(1, (G.hurtFlash || 0) + 0.5 + d / p.maxHp); // red screen flash scaled by the bite
+    if (attacker) { G.hurtDir = Math.atan2(attacker.y - p.y, attacker.x - p.x); G.hurtDirT = 0.8; } // direction tell
     Snd.play('hurt');
     Particles.burst(p.x, p.y, '#ff4d4d', 10, { speed: 160 });
     if (p.hp <= 0) { p.hp = 0; G.gameOver(); }
