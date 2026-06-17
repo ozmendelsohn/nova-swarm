@@ -158,6 +158,7 @@ const Player = (() => {
     const hpFrac0 = p.hp / p.maxHp;
     p.hurtT = 0.5;
     p.hp -= d;
+    G.dmgTaken = (G.dmgTaken || 0) + d; // run stat
     // clutch survival: a hit that drops you into the red triggers a dramatic hit-stop
     if (p.hp > 0 && p.hp / p.maxHp < 0.2 && hpFrac0 >= 0.2) {
       G.freezeT = 0.22; G.flashAmt = Math.max(G.flashAmt, 0.7);

@@ -328,6 +328,7 @@ const UI = (() => {
        ${formLine}
        ${mvpLine}
        WEAVER'S COINS EARNED: <b>⛀ ${G.coinsRun}</b> (bank: ⛀ ${Meta.coins})<br>
+       BEST COMBO: <b>${G.bestCombo || 0}</b> · DAMAGE TAKEN: <b>${Math.round(G.dmgTaken || 0)}</b><br>
        WEAPONS DISCOVERED: <b>${WeaponManager.discovered.size}/252</b><br>
        <span style="color:#8a9ab8;font-size:12px">ARSENAL: ${arsenal}</span>`;
 

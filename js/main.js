@@ -54,7 +54,7 @@ const Game = (() => {
     G = {
       state: 'play', time: 0, w: cv.width, h: cv.height,
       player: Player.create(Characters.selected), kills: 0, combo: 0, comboT: 0, coinsRun: 0, dmgLog: {},
-      shakeAmt: 0, flashAmt: 0, hurtFlash: 0, lvlFlash: 0, _minMark: 0, _hbT: 0, hurtDir: 0, hurtDirT: 0, freezeT: 0, levelUpQueue: 0,
+      shakeAmt: 0, flashAmt: 0, hurtFlash: 0, lvlFlash: 0, _minMark: 0, _hbT: 0, hurtDir: 0, hurtDirT: 0, dmgTaken: 0, bestCombo: 0, freezeT: 0, levelUpQueue: 0,
       bossBanner: 0, bossName: '', bossTitle: '', won: false,
       // API used by weapons/enemies:
       nearestEnemy, enemiesInRange, damageEnemy, killEnemy, explodeAt, zap,
@@ -165,6 +165,7 @@ const Game = (() => {
     if (i < 0) return;
     Enemies.list.splice(i, 1);
     G.kills++; G.combo++; G.comboT = 2.5;
+    if (G.combo > G.bestCombo) G.bestCombo = G.combo; // track best streak
     if (G.kills === 1) Particles.text(G.player.x, G.player.y - 40, 'FIRST BLOOD', '#ff3a5c', 18); // first kill of the run
     // kill-rank milestones: the Weaver earns escalating titles as the bodies pile up
     const rank = KILL_RANKS[G.kills];
