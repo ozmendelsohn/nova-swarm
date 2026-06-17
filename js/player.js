@@ -68,7 +68,9 @@ const Player = (() => {
     const wantDash = keys.Space || touch.dash;
     touch.dash = false;
 
+    const dashWasCD = p.dashCd > 0;
     p.dashCd -= dt; p.dashT -= dt; p.hurtT -= dt;
+    if (dashWasCD && p.dashCd <= 0) Particles.spawn(p.x, p.y, '#3ae0ff', { ring: p.r + 14, life: 0.3, speed: 0 }); // dash ready
     if (wantDash && p.dashCd <= 0 && (dx || dy)) {
       p.dashT = 0.18; p.dashCd = 2.2 * p.mods.dashCd;
       Snd.play('dash');
@@ -130,6 +132,7 @@ const Player = (() => {
     p.hurtT = 0.5;
     p.hp -= d;
     G.shake(6);
+    G.hurtFlash = Math.min(1, (G.hurtFlash || 0) + 0.5 + d / p.maxHp); // red screen flash scaled by the bite
     Snd.play('hurt');
     Particles.burst(p.x, p.y, '#ff4d4d', 10, { speed: 160 });
     if (p.hp <= 0) { p.hp = 0; G.gameOver(); }

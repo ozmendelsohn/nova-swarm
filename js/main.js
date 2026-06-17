@@ -45,7 +45,7 @@ const Game = (() => {
     G = {
       state: 'play', time: 0, w: cv.width, h: cv.height,
       player: Player.create(Characters.selected), kills: 0, combo: 0, comboT: 0, coinsRun: 0, dmgLog: {},
-      shakeAmt: 0, flashAmt: 0, freezeT: 0, levelUpQueue: 0,
+      shakeAmt: 0, flashAmt: 0, hurtFlash: 0, freezeT: 0, levelUpQueue: 0,
       bossBanner: 0, bossName: '', bossTitle: '', won: false,
       // API used by weapons/enemies:
       nearestEnemy, enemiesInRange, damageEnemy, killEnemy, explodeAt, zap,
@@ -301,7 +301,7 @@ const Game = (() => {
     G.time += dt;
     G.bossBanner -= dt;
     G.comboT -= dt; if (G.comboT <= 0) G.combo = 0;
-    G.shakeAmt *= 0.88; G.flashAmt *= 0.92;
+    G.shakeAmt *= 0.88; G.flashAmt *= 0.92; if (G.hurtFlash) G.hurtFlash *= 0.86;
     G.totem = null; // re-claimed each tick by an active totem projectile
     // music follows the danger: horde density, bosses, and your own blood
     if ((G.time | 0) !== G._musT) {
@@ -427,6 +427,12 @@ const Game = (() => {
     if (G.flashAmt > 0.02) {
       c.fillStyle = `rgba(255,255,255,${G.flashAmt * 0.5})`;
       c.fillRect(0, 0, G.w, G.h);
+    }
+    // player-hurt red flash: edges bleed crimson when you take a hit
+    if (G.hurtFlash > 0.02) {
+      const hf = c.createRadialGradient(G.w / 2, G.h / 2, G.h * 0.3, G.w / 2, G.h / 2, G.h * 0.75);
+      hf.addColorStop(0, 'transparent'); hf.addColorStop(1, `rgba(220,20,40,${Math.min(0.6, G.hurtFlash * 0.6)})`);
+      c.fillStyle = hf; c.fillRect(0, 0, G.w, G.h);
     }
     // vignette
     const vg = c.createRadialGradient(G.w / 2, G.h / 2, G.h * 0.45, G.w / 2, G.h / 2, G.h * 0.85);

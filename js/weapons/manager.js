@@ -123,11 +123,16 @@ const WeaponManager = (() => {
 
   function applyCard(G, card) {
     switch (card.type) {
-      case 'new': addWeapon(card.def.id); break;
+      case 'new':
+        addWeapon(card.def.id);
+        Particles.text(G.player.x, G.player.y - 44, `✚ ${card.def.name}`, card.def.color || '#5cffb0', 16);
+        break;
       case 'upgrade': card.w.lvl++; break;
       case 'branch':
         card.w.def = card.def; card.w.lvl = MAX_LVL;
         discover(card.def.id);
+        Particles.text(G.player.x, G.player.y - 44, `↟ EVOLVED: ${card.def.name}`, '#ffd23e', 17);
+        Particles.burst(G.player.x, G.player.y, '#ffd23e', 18, { speed: 160, life: 0.5 });
         break;
       case 'fusion': {
         const idx = weapons.indexOf(card.wb);
