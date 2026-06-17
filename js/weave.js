@@ -103,6 +103,14 @@ const Weave = (() => {
   }
 
   function draw(G, c) {
+    // hint: which element your next weave will carry, under the player (only on charged fields)
+    const el = dyeElement(G.player.x, G.player.y);
+    if (el.id !== 'plain') {
+      c.globalAlpha = 0.6; c.fillStyle = el.col;
+      c.font = 'bold 10px monospace'; c.textAlign = 'center';
+      c.fillText(el.label.replace(' WEAVE', ''), G.player.x, G.player.y + 34);
+      c.globalAlpha = 1; c.textAlign = 'left';
+    }
     if (trail.length > 1) { // the live thread
       c.strokeStyle = '#ff9cf0'; c.lineWidth = 2; c.globalAlpha = 0.45;
       c.beginPath(); c.moveTo(trail[0].x, trail[0].y);
