@@ -155,8 +155,14 @@ const Player = (() => {
     const d = Math.max(1, dmg - armor);
     if (p.hurtT > 0) return;
     if (attacker && p.mods.thorns) G.damageEnemy(attacker, p.mods.thorns, { color: '#5ce86b' });
+    const hpFrac0 = p.hp / p.maxHp;
     p.hurtT = 0.5;
     p.hp -= d;
+    // clutch survival: a hit that drops you into the red triggers a dramatic hit-stop
+    if (p.hp > 0 && p.hp / p.maxHp < 0.2 && hpFrac0 >= 0.2) {
+      G.freezeT = 0.22; G.flashAmt = Math.max(G.flashAmt, 0.7);
+      Particles.text(p.x, p.y - 34, 'CLUTCH!', '#ff3a5c', 18); Snd.heartbeat();
+    }
     G.shake(6);
     G.hurtFlash = Math.min(1, (G.hurtFlash || 0) + 0.5 + d / p.maxHp); // red screen flash scaled by the bite
     if (attacker) { G.hurtDir = Math.atan2(attacker.y - p.y, attacker.x - p.x); G.hurtDirT = 0.8; } // direction tell

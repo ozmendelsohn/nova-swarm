@@ -494,6 +494,13 @@ const Game = (() => {
       c.fillStyle = hv; c.fillRect(0, 0, G.w, G.h);
     }
 
+    // high-combo border glow: the loom hums when you're on a tear
+    if (G.combo > 30) {
+      const a = 0.1 + 0.08 * Math.sin(G.time * 8);
+      c.strokeStyle = `hsla(${(G.time * 120) % 360},90%,60%,${a})`;
+      c.lineWidth = 8; c.strokeRect(4, 4, G.w - 8, G.h - 8);
+    }
+
     UI.drawHUD(G, c);
 
     if (G.state === 'pause') {
