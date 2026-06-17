@@ -60,24 +60,39 @@ const Weave = (() => {
     for (let i = bursts.length - 1; i >= 0; i--) { bursts[i].life -= dt; if (bursts[i].life <= 0) bursts.splice(i, 1); }
   }
 
+  // dye-charged weaves: the dye field you close the loop over imbues the snap
+  function dyeElement(x, y) {
+    const h = World.dyeAt(x, y)[0];
+    if (h < 40)  return { id: 'ember',   col: '#ff6b2e', label: 'EMBER WEAVE' };   // burn
+    if (h < 90)  return { id: 'volt',    col: '#ffe93e', label: 'VOLT WEAVE' };    // +50% tear
+    if (h < 160) return { id: 'verdant', col: '#5ce86b', label: 'VERDANT WEAVE' }; // poison
+    if (h < 215) return { id: 'frost',   col: '#bfeaff', label: 'FROST WEAVE' };   // longer ensnare
+    return { id: 'plain', col: '#ff5cd6', label: 'WEAVE' };
+  }
+
   function snap(G, loop) {
     cooldown = COOLDOWN;
     let cx = 0, cy = 0;
     for (const pt of loop) { cx += pt.x; cy += pt.y; }
     cx /= loop.length; cy /= loop.length;
-    const dmg = 24 + G.player.lvl * 5;
+    const el = dyeElement(cx, cy);
+    const dmg = (24 + G.player.lvl * 5) * (el.id === 'volt' ? 1.5 : 1);
     let caught = 0;
     for (const e of Enemies.list) {
       if (e.hp <= 0 || !inside(loop, e.x, e.y)) continue;
-      G.damageEnemy(e, e.boss ? dmg * 3 : dmg, { color: '#ff5cd6' });
-      if (!e.boss) { e.freeze = Math.max(e.freeze || 0, 0.8); caught++; } // ensnared in the cloth
+      G.damageEnemy(e, e.boss ? dmg * 3 : dmg, { color: el.col });
+      if (e.boss) continue; // bosses resist the cloth — heavy chip only
+      e.freeze = Math.max(e.freeze || 0, el.id === 'frost' ? 1.6 : 0.8); // ensnared (frost: longer)
+      if (el.id === 'ember') e.burn = Math.max(e.burn || 0, 3);
+      if (el.id === 'verdant') e.poison = Math.max(e.poison || 0, 4);
+      caught++;
     }
-    bursts.push({ pts: loop, life: 0.45 });
-    Particles.burst(cx, cy, '#ff5cd6', Math.min(40, 10 + caught * 2), { speed: 220, life: 0.5 });
+    bursts.push({ pts: loop, life: 0.45, col: el.col });
+    Particles.burst(cx, cy, el.col, Math.min(40, 10 + caught * 2), { speed: 220, life: 0.5 });
     if (caught > 0) {
       G.shake(Math.min(10, 3 + caught * 0.3));
       Snd.play('fusion');
-      Particles.text(cx, cy - 10, caught >= 6 ? `WEAVE ×${caught}!` : 'WEAVE', '#ffe93e', caught >= 6 ? 18 : 14);
+      Particles.text(cx, cy - 10, caught >= 6 ? `${el.label} ×${caught}!` : el.label, '#ffe93e', caught >= 6 ? 18 : 14);
       G.combo += caught; G.comboT = 3; // the weave feeds the combo streak
     }
     trail = []; // the thread is spent
@@ -92,7 +107,7 @@ const Weave = (() => {
     }
     for (const b of bursts) { // the snap: a bright filled loop fading out
       const a = b.life / 0.45;
-      c.globalAlpha = a * 0.5; c.fillStyle = '#ff5cd6';
+      c.globalAlpha = a * 0.5; c.fillStyle = b.col || '#ff5cd6';
       c.beginPath(); c.moveTo(b.pts[0].x, b.pts[0].y);
       for (let i = 1; i < b.pts.length; i++) c.lineTo(b.pts[i].x, b.pts[i].y);
       c.closePath(); c.fill();
