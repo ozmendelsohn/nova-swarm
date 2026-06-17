@@ -161,6 +161,7 @@ const Player = (() => {
     c.beginPath();
     c.ellipse(p.x, p.y + 16, 13, 5, 0, 0, Math.PI * 2);
     c.fill();
+    const mut = mutationData();
     c.save();
     c.translate(p.x, p.y);
     if (p.hurtT > 0.3) c.globalAlpha = 0.5 + 0.5 * Math.sin(G.time * 40);
@@ -168,50 +169,121 @@ const Player = (() => {
     const bob = Math.sin(p.anim) * 2;
     c.rotate(p.faceAng + Math.PI / 2);
     c.drawImage(spr, -spr.width / 2, -spr.height / 2 + bob * 0.3);
+    // body tint: the flesh itself takes on your dominant elemental nature
+    if (mut.domCol && mut.domK >= 2) {
+      const a0 = c.globalAlpha;
+      c.globalAlpha = a0 * Math.min(0.55, 0.1 + mut.domK * 0.05);
+      c.drawImage(Sprites.tinted(spr, mut.domCol), -spr.width / 2, -spr.height / 2 + bob * 0.3);
+      c.globalAlpha = a0;
+    }
     c.restore();
     c.globalAlpha = 1;
-    drawAdornments(G, c, p);
+    drawMutations(G, c, p, mut);
   }
 
-  // ---- weapon-driven character evolution: your arsenal orbits and crowns you ----
-  // Each weapon becomes an orbiting charm coloured by that weapon and sized by its
-  // level; evolved/branched weapons sparkle; fusions are glowing gold charms; and an
-  // aura swells as your build matures. The character visibly grows with the run.
-  function drawAdornments(G, c, p) {
+  // ---- weapon-driven MUTATION: the character's body changes with your arsenal ----
+  // Each weapon's elemental family (Fire/Frost/Volt/Void/Nature/Steel/Arcane) grows
+  // a physical feature — horns, ice shards, vines, runes... — and stacking the SAME
+  // family compounds it (weighted by weapon level). Your dominant nature also tints
+  // the body. Lore: the Weaver's champion is rewoven by the threads they wield.
+  const FAM_COL = { Fire: '#ff6b2e', Frost: '#5cc9ff', Volt: '#ffe93e', Void: '#b05cff', Nature: '#5ce86b', Steel: '#c9ccd6', Arcane: '#ff5cd6' };
+  function famOf(def) {
+    if (def.family) return def.family;
+    if (def.parent && typeof WEAPONS !== 'undefined' && WEAPONS.defs[def.parent]) return WEAPONS.defs[def.parent].family;
+    return null;
+  }
+  function mutationData() {
     const ws = WeaponManager.weapons;
-    const n = ws.length;
-    if (!n) return;
-    let fusions = 0, evolved = 0;
-    for (const w of ws) { if (w.def.tier === 'fusion') fusions++; if (w.lvl >= WeaponManager.MAX_LVL) evolved++; }
-    // power aura — gold once you have a fusion, else green; grows with your build
-    if (fusions + evolved > 0) {
-      const auraR = 18 + (fusions * 3 + evolved) * 1.4;
-      const pulse = 0.12 + 0.06 * Math.sin(G.time * 4);
-      const col = fusions > 0 ? '255,210,62' : '90,255,176';
+    const nat = {}; let fusions = 0;
+    for (const w of ws) {
+      if (w.def.tier === 'fusion') fusions++;
+      const fam = famOf(w.def);
+      if (fam) nat[fam] = (nat[fam] || 0) + 1 + (w.lvl - 1) * 0.5; // same-family compounds, scaled by level
+    }
+    let domFam = null, domK = 0, totalK = 0;
+    for (const f in nat) { totalK += nat[f]; if (nat[f] > domK) { domK = nat[f]; domFam = f; } }
+    return { nat, fusions, domFam, domK, totalK, domCol: domFam ? FAM_COL[domFam] : null };
+  }
+  function hexRgb(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
+  function drawMutations(G, c, p, mut) {
+    const t = G.time;
+    if (mut.totalK > 0 || mut.fusions) { // power aura — gold once fused, else your nature's hue
+      const auraR = 16 + Math.min(22, mut.totalK * 1.6) + mut.fusions * 3;
+      const pulse = 0.1 + 0.05 * Math.sin(t * 4);
+      const ac = mut.fusions > 0 ? [255, 210, 62] : hexRgb(mut.domCol || '#ffffff');
       const ag = c.createRadialGradient(p.x, p.y, 4, p.x, p.y, auraR);
-      ag.addColorStop(0, `rgba(${col},${pulse})`); ag.addColorStop(1, 'transparent');
+      ag.addColorStop(0, `rgba(${ac[0]},${ac[1]},${ac[2]},${pulse})`); ag.addColorStop(1, 'transparent');
       c.fillStyle = ag; c.beginPath(); c.arc(p.x, p.y, auraR, 0, Math.PI * 2); c.fill();
     }
-    // orbiting charms, one per weapon (elliptical orbit reads as depth)
-    for (let i = 0; i < n; i++) {
-      const w = ws[i];
-      const isFus = w.def.tier === 'fusion';
-      const isEvo = w.lvl >= WeaponManager.MAX_LVL;
-      const R = 22 + (isFus ? 4 : 0);
-      const a = G.time * (isFus ? 1.4 : 1.0) + i * (Math.PI * 2 / n);
-      const cx = p.x + Math.cos(a) * R, cy = p.y + Math.sin(a) * R * 0.55 - 2;
-      const sz = 2 + Math.min(3, w.lvl * 0.5) + (isFus ? 2.5 : 0);
-      if (isFus) { c.shadowColor = '#ffd23e'; c.shadowBlur = 8; }
-      c.fillStyle = isFus ? '#ffe93e' : (w.def.color || '#fff');
-      c.save(); c.translate(cx, cy); c.rotate(a);
-      c.fillRect(-sz / 2, -sz / 2, sz, sz); // diamond charm
-      c.restore();
-      c.shadowBlur = 0;
-      if (isEvo && !isFus && Math.sin(G.time * 6 + i) > 0.7) { // evolved sparkle
-        c.fillStyle = '#fff'; c.fillRect(cx - 0.5, cy - 0.5, 1.5, 1.5);
-      }
+    for (const fam in mut.nat) { const fn = MUTATE[fam]; if (fn) fn(c, p, mut.nat[fam], t); }
+    for (let i = 0; i < mut.fusions; i++) { // fusion crown of gold diamonds
+      const a = t * 1.2 + i * (Math.PI * 2 / Math.max(1, mut.fusions));
+      const cx = p.x + Math.cos(a) * 12, cy = p.y - 16 + Math.sin(a) * 4;
+      c.fillStyle = '#ffe93e'; c.shadowColor = '#ffd23e'; c.shadowBlur = 8;
+      c.save(); c.translate(cx, cy); c.rotate(a); c.fillRect(-2.5, -2.5, 5, 5); c.restore(); c.shadowBlur = 0;
     }
   }
+  const MUTATE = {
+    Fire(c, p, k, t) { // horns + rising embers
+      const h = 5 + Math.min(11, k * 2.2);
+      c.fillStyle = '#ff6b2e';
+      for (const s of [-1, 1]) {
+        c.beginPath(); c.moveTo(p.x + s * 4, p.y - 9);
+        c.quadraticCurveTo(p.x + s * 9, p.y - 9 - h * 0.6, p.x + s * 5, p.y - 9 - h);
+        c.lineTo(p.x + s * 2, p.y - 10); c.closePath(); c.fill();
+      }
+      if (Math.random() < Math.min(0.6, k * 0.12)) Particles.spawn(p.x + Util.rand(-5, 5), p.y - 12, '#ff8c42', { speed: 24, life: 0.4, size: 2, grav: -60 });
+    },
+    Frost(c, p, k, t) { // ice shards from the shoulders
+      const n = Math.min(6, 2 + Math.floor(k)); c.fillStyle = '#bfeaff';
+      for (let i = 0; i < n; i++) {
+        const s = i % 2 ? 1 : -1, len = 5 + Math.min(9, k * 1.6), ang = -Math.PI / 2 + s * (0.5 + i * 0.12);
+        const bx = p.x + s * 7, by = p.y - 2;
+        c.beginPath(); c.moveTo(bx, by);
+        c.lineTo(bx + Math.cos(ang) * len - 2, by + Math.sin(ang) * len);
+        c.lineTo(bx + Math.cos(ang) * len + 2, by + Math.sin(ang) * len); c.closePath(); c.fill();
+      }
+    },
+    Volt(c, p, k, t) { // crackling antennae
+      c.strokeStyle = '#ffe93e'; c.lineWidth = 1.5; const h = 6 + Math.min(10, k * 2);
+      for (const s of [-1, 1]) {
+        c.beginPath(); let x = p.x + s * 3, y = p.y - 10; c.moveTo(x, y);
+        for (let j = 0; j < 3; j++) { x += s * (j % 2 ? 2 : -1); y -= h / 3; c.lineTo(x + Util.rand(-1, 1), y); }
+        c.stroke();
+      }
+      if (Math.random() < Math.min(0.5, k * 0.1)) Particles.spawn(p.x + Util.rand(-6, 6), p.y - 14, '#fff59c', { speed: 120, life: 0.1, size: 2, thread: true });
+    },
+    Nature(c, p, k, t) { // vines climbing the body, leaf tips
+      c.strokeStyle = '#5ce86b'; c.lineWidth = 2; const h = 8 + Math.min(14, k * 2.4);
+      for (const s of [-1, 1]) {
+        c.beginPath(); c.moveTo(p.x + s * 6, p.y + 8);
+        c.quadraticCurveTo(p.x + s * (10 + Math.sin(t * 2) * 2), p.y, p.x + s * 5, p.y - h); c.stroke();
+        c.fillStyle = '#5ce86b'; c.beginPath(); c.ellipse(p.x + s * 5, p.y - h, 2.5, 1.5, s, 0, Math.PI * 2); c.fill();
+      }
+    },
+    Void(c, p, k, t) { // shadow tendrils spiralling inward
+      c.strokeStyle = '#b05cff'; c.globalAlpha = 0.6; c.lineWidth = 1.5; const R = 12 + Math.min(10, k * 1.5);
+      const n = Math.min(7, 3 + Math.floor(k));
+      for (let i = 0; i < n; i++) {
+        const a = t * -0.8 + i * (Math.PI * 2 / n);
+        c.beginPath(); c.moveTo(p.x + Math.cos(a) * R, p.y + Math.sin(a) * R * 0.6);
+        c.lineTo(p.x + Math.cos(a) * R * 0.4, p.y + Math.sin(a) * R * 0.3); c.stroke();
+      }
+      c.globalAlpha = 1;
+    },
+    Steel(c, p, k, t) { // bolted armor plates
+      c.fillStyle = '#c9ccd6'; const n = Math.min(5, 1 + Math.floor(k));
+      for (let i = 0; i < n; i++) { const s = i % 2 ? 1 : -1; c.fillRect(p.x + s * 6 - 2, p.y - 6 + i * 3, 4, 3); }
+    },
+    Arcane(c, p, k, t) { // floating rune halo
+      c.fillStyle = '#ff5cd6'; c.shadowColor = '#ff5cd6'; c.shadowBlur = 6; const n = Math.min(8, 3 + Math.floor(k));
+      for (let i = 0; i < n; i++) {
+        const a = t * 1.1 + i * (Math.PI * 2 / n); const x = p.x + Math.cos(a) * 11, y = p.y - 13 + Math.sin(a) * 3;
+        c.save(); c.translate(x, y); c.rotate(a); c.fillRect(-1.5, -1.5, 3, 3); c.restore();
+      }
+      c.shadowBlur = 0;
+    },
+  };
 
   return { create, update, gainXp, hurt, draw, keys, touch };
 })();
