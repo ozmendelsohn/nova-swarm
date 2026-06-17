@@ -55,6 +55,7 @@ const Player = (() => {
 
   function update(G, dt) {
     const p = G.player;
+    const mut = mutationData();
     let dx = 0, dy = 0;
     if (keys.KeyW || keys.ArrowUp) dy -= 1;
     if (keys.KeyS || keys.ArrowDown) dy += 1;
@@ -99,11 +100,26 @@ const Player = (() => {
         Particles.spawn(p.x - (dx / m) * 14, p.y - (dy / m) * 14, Math.random() < 0.3 ? '#fff' : p.char.pal.a,
           { speed: 50, life: 0.3, size: 2, ang: Math.atan2(-dy, -dx) + Util.rand(-0.4, 0.4), drag: 0.9 });
       }
+      // elemental wake: your dominant nature sheds themed motes as you move
+      if (mut.domFam && TRAIL_STYLE[mut.domFam] && Math.random() < 0.45) TRAIL_STYLE[mut.domFam](p);
     }
 
     // regen
     const rg = 0.6 * (WeaponManager.passives.regen || 0) + p.mods.regen;
     if (rg) p.hp = Math.min(p.maxHp, p.hp + rg * dt);
+
+    // transformation burst: when a nature first appears or crosses a tier, the body reweaves
+    const sig = Object.keys(mut.nat).sort().map(f => f + (mut.nat[f] >= 6 ? '!' : mut.nat[f] >= 3 ? '+' : '')).join(',') + '|' + mut.fusions;
+    if (p._mutSig === undefined) { p._mutSig = sig; }
+    else if (sig !== p._mutSig) {
+      if (mut.domFam) {
+        const col = FAM_COL[mut.domFam];
+        Particles.text(p.x, p.y - 48, `✦ ${mut.domFam.toUpperCase()} ${mut.domK >= 6 ? 'ASCENDANT' : 'WOVEN'} ✦`, col, 16);
+        Particles.burst(p.x, p.y, col, 28, { speed: 240, life: 0.7 });
+        G.shake(5); G.flashAmt = Math.max(G.flashAmt, 0.3);
+      }
+      p._mutSig = sig;
+    }
   }
 
   function gainXp(G, amount) {
@@ -187,6 +203,16 @@ const Player = (() => {
   // family compounds it (weighted by weapon level). Your dominant nature also tints
   // the body. Lore: the Weaver's champion is rewoven by the threads they wield.
   const FAM_COL = { Fire: '#ff6b2e', Frost: '#5cc9ff', Volt: '#ffe93e', Void: '#b05cff', Nature: '#5ce86b', Steel: '#c9ccd6', Arcane: '#ff5cd6' };
+  // element-themed movement wake particles per dominant nature
+  const TRAIL_STYLE = {
+    Fire:   p => Particles.spawn(p.x + Util.rand(-5, 5), p.y + 2, '#ff8c42', { speed: 18, life: 0.4, size: 2, grav: -55 }),
+    Frost:  p => Particles.spawn(p.x + Util.rand(-7, 7), p.y, '#dff3ff', { speed: 8, life: 0.7, size: 2, grav: 18, drag: 0.99 }),
+    Volt:   p => Particles.spawn(p.x + Util.rand(-6, 6), p.y, '#fff59c', { speed: 110, life: 0.1, size: 2, thread: true }),
+    Nature: p => Particles.spawn(p.x + Util.rand(-7, 7), p.y, '#5ce86b', { speed: 12, life: 0.9, size: 2, grav: 16, drag: 0.98 }),
+    Void:   p => Particles.spawn(p.x + Util.rand(-5, 5), p.y, '#b05cff', { speed: 14, life: 0.5, size: 2, drag: 1.01 }),
+    Steel:  p => Particles.spawn(p.x + Util.rand(-5, 5), p.y, '#c9ccd6', { speed: 32, life: 0.2, size: 1 }),
+    Arcane: p => Particles.spawn(p.x + Util.rand(-6, 6), p.y, Math.random() < 0.4 ? '#fff' : '#ff5cd6', { speed: 16, life: 0.5, size: 2 }),
+  };
   function famOf(def) {
     if (def.family) return def.family;
     if (def.parent && typeof WEAPONS !== 'undefined' && WEAPONS.defs[def.parent]) return WEAPONS.defs[def.parent].family;
@@ -207,6 +233,17 @@ const Player = (() => {
   function hexRgb(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
   function drawMutations(G, c, p, mut) {
     const t = G.time;
+    // fusion WINGS: ascended champions sprout flapping gold wings behind them
+    if (mut.fusions > 0) {
+      const span = 12 + Math.min(16, mut.fusions * 4), flap = Math.sin(t * 5) * 4;
+      c.save(); c.globalAlpha = 0.8; c.fillStyle = '#ffd23e'; c.shadowColor = '#ffe93e'; c.shadowBlur = 10;
+      for (const s of [-1, 1]) {
+        c.beginPath(); c.moveTo(p.x, p.y - 2);
+        c.quadraticCurveTo(p.x + s * span, p.y - 12 - flap, p.x + s * (span + 4), p.y + 2 + flap);
+        c.quadraticCurveTo(p.x + s * span * 0.5, p.y + 2, p.x, p.y + 4); c.closePath(); c.fill();
+      }
+      c.restore(); c.shadowBlur = 0; c.globalAlpha = 1;
+    }
     if (mut.totalK > 0 || mut.fusions) { // power aura — gold once fused, else your nature's hue
       const auraR = 16 + Math.min(22, mut.totalK * 1.6) + mut.fusions * 3;
       const pulse = 0.1 + 0.05 * Math.sin(t * 4);
@@ -216,6 +253,13 @@ const Player = (() => {
       c.fillStyle = ag; c.beginPath(); c.arc(p.x, p.y, auraR, 0, Math.PI * 2); c.fill();
     }
     for (const fam in mut.nat) { const fn = MUTATE[fam]; if (fn) fn(c, p, mut.nat[fam], t); }
+    // eye-glow: the champion's gaze burns with their dominant nature
+    if (mut.domCol && mut.domK >= 2) {
+      const gl = 0.5 + 0.5 * Math.sin(t * 6);
+      c.globalAlpha = 0.5 + gl * 0.4; c.fillStyle = mut.domCol; c.shadowColor = mut.domCol; c.shadowBlur = 6;
+      c.fillRect(p.x - 3, p.y - 4, 2, 2); c.fillRect(p.x + 1, p.y - 4, 2, 2);
+      c.shadowBlur = 0; c.globalAlpha = 1;
+    }
     for (let i = 0; i < mut.fusions; i++) { // fusion crown of gold diamonds
       const a = t * 1.2 + i * (Math.PI * 2 / Math.max(1, mut.fusions));
       const cx = p.x + Math.cos(a) * 12, cy = p.y - 16 + Math.sin(a) * 4;
@@ -223,65 +267,90 @@ const Player = (() => {
       c.save(); c.translate(cx, cy); c.rotate(a); c.fillRect(-2.5, -2.5, 5, 5); c.restore(); c.shadowBlur = 0;
     }
   }
+  // each mutation animates with time and gains an APEX flourish at high stack (k>=6)
   const MUTATE = {
-    Fire(c, p, k, t) { // horns + rising embers
-      const h = 5 + Math.min(11, k * 2.2);
-      c.fillStyle = '#ff6b2e';
+    Fire(c, p, k, t) { // horns that flicker, embers, apex flame-crown
+      const apex = k >= 6, h = (5 + Math.min(12, k * 2.2)) * (1 + Math.sin(t * 6) * 0.07);
+      c.fillStyle = apex ? '#ffd23e' : '#ff6b2e';
       for (const s of [-1, 1]) {
+        const sway = Math.sin(t * 4 + s) * 1.2;
         c.beginPath(); c.moveTo(p.x + s * 4, p.y - 9);
-        c.quadraticCurveTo(p.x + s * 9, p.y - 9 - h * 0.6, p.x + s * 5, p.y - 9 - h);
+        c.quadraticCurveTo(p.x + s * 9 + sway, p.y - 9 - h * 0.6, p.x + s * 5 + sway, p.y - 9 - h);
         c.lineTo(p.x + s * 2, p.y - 10); c.closePath(); c.fill();
       }
-      if (Math.random() < Math.min(0.6, k * 0.12)) Particles.spawn(p.x + Util.rand(-5, 5), p.y - 12, '#ff8c42', { speed: 24, life: 0.4, size: 2, grav: -60 });
+      if (apex) { // a central crown tongue of flame
+        const fh = h * 0.8 * (1 + Math.sin(t * 9) * 0.15);
+        c.fillStyle = '#ffe93e'; c.beginPath(); c.moveTo(p.x - 2, p.y - 10);
+        c.quadraticCurveTo(p.x + Math.sin(t * 7) * 2, p.y - 10 - fh, p.x + 2, p.y - 10); c.closePath(); c.fill();
+      }
+      if (Math.random() < Math.min(0.7, k * 0.12)) Particles.spawn(p.x + Util.rand(-5, 5), p.y - 12, apex ? '#ffe93e' : '#ff8c42', { speed: 24, life: 0.4, size: 2, grav: -60 });
     },
-    Frost(c, p, k, t) { // ice shards from the shoulders
-      const n = Math.min(6, 2 + Math.floor(k)); c.fillStyle = '#bfeaff';
+    Frost(c, p, k, t) { // shoulder shards that shimmer; apex mantle
+      const n = Math.min(7, 2 + Math.floor(k)), shimmer = 0.7 + 0.3 * Math.sin(t * 5);
+      c.fillStyle = '#bfeaff'; c.globalAlpha = shimmer;
       for (let i = 0; i < n; i++) {
-        const s = i % 2 ? 1 : -1, len = 5 + Math.min(9, k * 1.6), ang = -Math.PI / 2 + s * (0.5 + i * 0.12);
+        const s = i % 2 ? 1 : -1, len = (5 + Math.min(10, k * 1.6)) * (1 + Math.sin(t * 3 + i) * 0.08), ang = -Math.PI / 2 + s * (0.4 + i * 0.14);
         const bx = p.x + s * 7, by = p.y - 2;
         c.beginPath(); c.moveTo(bx, by);
         c.lineTo(bx + Math.cos(ang) * len - 2, by + Math.sin(ang) * len);
         c.lineTo(bx + Math.cos(ang) * len + 2, by + Math.sin(ang) * len); c.closePath(); c.fill();
       }
+      if (k >= 6) { c.strokeStyle = '#dff3ff'; c.lineWidth = 1; c.beginPath(); c.arc(p.x, p.y, 14, Math.PI * 0.1, Math.PI * 0.9); c.stroke(); }
+      c.globalAlpha = 1;
     },
-    Volt(c, p, k, t) { // crackling antennae
-      c.strokeStyle = '#ffe93e'; c.lineWidth = 1.5; const h = 6 + Math.min(10, k * 2);
+    Volt(c, p, k, t) { // crackling antennae + arc; apex halo of sparks
+      c.strokeStyle = '#ffe93e'; c.lineWidth = 1.5; const h = 6 + Math.min(11, k * 2);
+      const tips = [];
       for (const s of [-1, 1]) {
         c.beginPath(); let x = p.x + s * 3, y = p.y - 10; c.moveTo(x, y);
         for (let j = 0; j < 3; j++) { x += s * (j % 2 ? 2 : -1); y -= h / 3; c.lineTo(x + Util.rand(-1, 1), y); }
-        c.stroke();
+        c.stroke(); tips.push([x, y]);
       }
+      if (Math.sin(t * 20) > 0.6) { c.beginPath(); c.moveTo(tips[0][0], tips[0][1]); c.lineTo(p.x + Util.rand(-2, 2), p.y - 14); c.lineTo(tips[1][0], tips[1][1]); c.stroke(); }
+      if (k >= 6 && Math.sin(t * 30) > 0.4) Particles.spawn(p.x, p.y, '#fff59c', { speed: 0, life: 0.18, ring: 16 });
       if (Math.random() < Math.min(0.5, k * 0.1)) Particles.spawn(p.x + Util.rand(-6, 6), p.y - 14, '#fff59c', { speed: 120, life: 0.1, size: 2, thread: true });
     },
-    Nature(c, p, k, t) { // vines climbing the body, leaf tips
-      c.strokeStyle = '#5ce86b'; c.lineWidth = 2; const h = 8 + Math.min(14, k * 2.4);
+    Nature(c, p, k, t) { // swaying vines + leaves; apex flower bloom
+      c.strokeStyle = '#5ce86b'; c.lineWidth = 2; const h = 8 + Math.min(15, k * 2.4);
       for (const s of [-1, 1]) {
         c.beginPath(); c.moveTo(p.x + s * 6, p.y + 8);
-        c.quadraticCurveTo(p.x + s * (10 + Math.sin(t * 2) * 2), p.y, p.x + s * 5, p.y - h); c.stroke();
-        c.fillStyle = '#5ce86b'; c.beginPath(); c.ellipse(p.x + s * 5, p.y - h, 2.5, 1.5, s, 0, Math.PI * 2); c.fill();
+        c.quadraticCurveTo(p.x + s * (10 + Math.sin(t * 2 + s) * 3), p.y, p.x + s * 5, p.y - h); c.stroke();
+        c.fillStyle = '#5ce86b'; c.save(); c.translate(p.x + s * 5, p.y - h); c.rotate(Math.sin(t * 3) * 0.3);
+        c.beginPath(); c.ellipse(0, 0, 2.6, 1.6, s, 0, Math.PI * 2); c.fill(); c.restore();
+      }
+      if (k >= 6) { // crown flower
+        const pet = 6, r = 3 + Math.sin(t * 3) * 0.5; c.fillStyle = '#ff5cd6';
+        for (let i = 0; i < pet; i++) { const a = t + i * (Math.PI * 2 / pet); c.beginPath(); c.ellipse(p.x + Math.cos(a) * r, p.y - h - 3 + Math.sin(a) * r, 1.6, 1.6, 0, 0, Math.PI * 2); c.fill(); }
+        c.fillStyle = '#ffe93e'; c.beginPath(); c.arc(p.x, p.y - h - 3, 1.6, 0, Math.PI * 2); c.fill();
       }
     },
-    Void(c, p, k, t) { // shadow tendrils spiralling inward
-      c.strokeStyle = '#b05cff'; c.globalAlpha = 0.6; c.lineWidth = 1.5; const R = 12 + Math.min(10, k * 1.5);
-      const n = Math.min(7, 3 + Math.floor(k));
+    Void(c, p, k, t) { // inward-spiralling tendrils; apex dark halo
+      c.strokeStyle = '#b05cff'; c.globalAlpha = 0.5 + 0.2 * Math.sin(t * 3); c.lineWidth = 1.5;
+      const R = 12 + Math.min(11, k * 1.5), n = Math.min(8, 3 + Math.floor(k));
       for (let i = 0; i < n; i++) {
-        const a = t * -0.8 + i * (Math.PI * 2 / n);
-        c.beginPath(); c.moveTo(p.x + Math.cos(a) * R, p.y + Math.sin(a) * R * 0.6);
-        c.lineTo(p.x + Math.cos(a) * R * 0.4, p.y + Math.sin(a) * R * 0.3); c.stroke();
+        const a = t * -0.8 + i * (Math.PI * 2 / n), rr = R * (0.85 + 0.15 * Math.sin(t * 4 + i));
+        c.beginPath(); c.moveTo(p.x + Math.cos(a) * rr, p.y + Math.sin(a) * rr * 0.6);
+        c.lineTo(p.x + Math.cos(a) * rr * 0.4, p.y + Math.sin(a) * rr * 0.3); c.stroke();
       }
+      if (k >= 6) { c.globalAlpha = 0.5; c.strokeStyle = '#1a0b2e'; c.lineWidth = 3; c.beginPath(); c.arc(p.x, p.y - 14, 7, 0, Math.PI * 2); c.stroke(); }
       c.globalAlpha = 1;
     },
-    Steel(c, p, k, t) { // bolted armor plates
-      c.fillStyle = '#c9ccd6'; const n = Math.min(5, 1 + Math.floor(k));
+    Steel(c, p, k, t) { // plates with a shine sweep; apex pauldrons
+      c.fillStyle = '#c9ccd6'; const n = Math.min(6, 1 + Math.floor(k));
       for (let i = 0; i < n; i++) { const s = i % 2 ? 1 : -1; c.fillRect(p.x + s * 6 - 2, p.y - 6 + i * 3, 4, 3); }
+      const sw = (t * 30) % 24 - 12; c.globalAlpha = 0.6; c.fillStyle = '#fff'; c.fillRect(p.x + sw, p.y - 6, 1, n * 3); c.globalAlpha = 1;
+      if (k >= 6) { c.fillStyle = '#9fa3ad'; for (const s of [-1, 1]) c.fillRect(p.x + s * 9 - 2, p.y - 7, 4, 5); }
     },
-    Arcane(c, p, k, t) { // floating rune halo
+    Arcane(c, p, k, t) { // rotating rune halo; apex counter-ring
       c.fillStyle = '#ff5cd6'; c.shadowColor = '#ff5cd6'; c.shadowBlur = 6; const n = Math.min(8, 3 + Math.floor(k));
+      const pulse = 0.7 + 0.3 * Math.sin(t * 5);
+      c.globalAlpha = pulse;
       for (let i = 0; i < n; i++) {
         const a = t * 1.1 + i * (Math.PI * 2 / n); const x = p.x + Math.cos(a) * 11, y = p.y - 13 + Math.sin(a) * 3;
         c.save(); c.translate(x, y); c.rotate(a); c.fillRect(-1.5, -1.5, 3, 3); c.restore();
       }
-      c.shadowBlur = 0;
+      if (k >= 6) { c.fillStyle = '#fff'; for (let i = 0; i < n; i++) { const a = -t * 1.5 + i * (Math.PI * 2 / n); c.fillRect(p.x + Math.cos(a) * 16 - 1, p.y - 13 + Math.sin(a) * 4 - 1, 2, 2); } }
+      c.shadowBlur = 0; c.globalAlpha = 1;
     },
   };
 
