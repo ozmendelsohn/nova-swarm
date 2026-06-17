@@ -165,6 +165,47 @@ const Player = (() => {
     c.drawImage(spr, -spr.width / 2, -spr.height / 2 + bob * 0.3);
     c.restore();
     c.globalAlpha = 1;
+    drawAdornments(G, c, p);
+  }
+
+  // ---- weapon-driven character evolution: your arsenal orbits and crowns you ----
+  // Each weapon becomes an orbiting charm coloured by that weapon and sized by its
+  // level; evolved/branched weapons sparkle; fusions are glowing gold charms; and an
+  // aura swells as your build matures. The character visibly grows with the run.
+  function drawAdornments(G, c, p) {
+    const ws = WeaponManager.weapons;
+    const n = ws.length;
+    if (!n) return;
+    let fusions = 0, evolved = 0;
+    for (const w of ws) { if (w.def.tier === 'fusion') fusions++; if (w.lvl >= WeaponManager.MAX_LVL) evolved++; }
+    // power aura — gold once you have a fusion, else green; grows with your build
+    if (fusions + evolved > 0) {
+      const auraR = 18 + (fusions * 3 + evolved) * 1.4;
+      const pulse = 0.12 + 0.06 * Math.sin(G.time * 4);
+      const col = fusions > 0 ? '255,210,62' : '90,255,176';
+      const ag = c.createRadialGradient(p.x, p.y, 4, p.x, p.y, auraR);
+      ag.addColorStop(0, `rgba(${col},${pulse})`); ag.addColorStop(1, 'transparent');
+      c.fillStyle = ag; c.beginPath(); c.arc(p.x, p.y, auraR, 0, Math.PI * 2); c.fill();
+    }
+    // orbiting charms, one per weapon (elliptical orbit reads as depth)
+    for (let i = 0; i < n; i++) {
+      const w = ws[i];
+      const isFus = w.def.tier === 'fusion';
+      const isEvo = w.lvl >= WeaponManager.MAX_LVL;
+      const R = 22 + (isFus ? 4 : 0);
+      const a = G.time * (isFus ? 1.4 : 1.0) + i * (Math.PI * 2 / n);
+      const cx = p.x + Math.cos(a) * R, cy = p.y + Math.sin(a) * R * 0.55 - 2;
+      const sz = 2 + Math.min(3, w.lvl * 0.5) + (isFus ? 2.5 : 0);
+      if (isFus) { c.shadowColor = '#ffd23e'; c.shadowBlur = 8; }
+      c.fillStyle = isFus ? '#ffe93e' : (w.def.color || '#fff');
+      c.save(); c.translate(cx, cy); c.rotate(a);
+      c.fillRect(-sz / 2, -sz / 2, sz, sz); // diamond charm
+      c.restore();
+      c.shadowBlur = 0;
+      if (isEvo && !isFus && Math.sin(G.time * 6 + i) > 0.7) { // evolved sparkle
+        c.fillStyle = '#fff'; c.fillRect(cx - 0.5, cy - 0.5, 1.5, 1.5);
+      }
+    }
   }
 
   return { create, update, gainXp, hurt, draw, keys, touch };
