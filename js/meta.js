@@ -19,6 +19,8 @@ const Meta = (() => {
       desc: r => `-${(r * 0.8).toFixed(1)} damage taken`, per: '-0.8 dmg taken / rank' },
     { id: 'magnet', name: 'Lodestone Charm', icon: '◈', max: 5, base: 25,
       desc: r => `+${r * 15}% pickup range`, per: '+15% pickup range / rank' },
+    { id: 'loomcraft', name: 'Loomcraft', icon: '🧵', max: 6, base: 40,
+      desc: r => `+${r * 20}% weave damage`, per: '+20% Thread Weaving damage / rank' },
     { id: 'arsenal', name: 'Second Talisman', icon: '⬢', max: 1, base: 400,
       desc: r => r ? 'Start every run with a 2nd weapon' : '', per: 'Start with a 2nd random weapon' },
   ];
@@ -46,6 +48,7 @@ const Meta = (() => {
     greed: () => 1 + rank('greed') * 0.12,
     armor: () => rank('plating') * 0.8,
     magnet: () => 1 + rank('magnet') * 0.15,
+    weave: () => 1 + rank('loomcraft') * 0.2,
     arsenal: () => rank('arsenal'),
   };
 

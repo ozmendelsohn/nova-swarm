@@ -76,7 +76,7 @@ const Weave = (() => {
     for (const pt of loop) { cx += pt.x; cy += pt.y; }
     cx /= loop.length; cy /= loop.length;
     const el = dyeElement(cx, cy);
-    const dmg = (24 + G.player.lvl * 5) * (el.id === 'volt' ? 1.5 : 1);
+    const dmg = (24 + G.player.lvl * 5) * (el.id === 'volt' ? 1.5 : 1) * Meta.fx.weave();
     let caught = 0;
     for (const e of Enemies.list) {
       if (e.hp <= 0 || !inside(loop, e.x, e.y)) continue;
