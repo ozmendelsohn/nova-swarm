@@ -120,6 +120,8 @@ const Player = (() => {
       }
       p._mutSig = sig;
     }
+    // apex builds radiate their element even at rest
+    if (mut.domK >= 6 && mut.domFam && TRAIL_STYLE[mut.domFam] && Math.random() < 0.16) TRAIL_STYLE[mut.domFam](p);
   }
 
   function gainXp(G, amount) {
@@ -201,6 +203,8 @@ const Player = (() => {
     if (p.dashT > 0) { c.globalAlpha = 0.7; c.shadowColor = '#3ae0ff'; c.shadowBlur = 20; }
     const bob = Math.sin(p.anim) * 2;
     c.rotate(p.faceAng + Math.PI / 2);
+    const breathe = 1 + Math.sin(G.time * 2.2) * 0.025 * Math.min(1, mut.totalK / 6); // the body breathes harder as it powers up
+    if (breathe !== 1) c.scale(breathe, breathe);
     c.drawImage(spr, -spr.width / 2, -spr.height / 2 + bob * 0.3);
     c.restore();
     c.globalAlpha = 1;
@@ -215,8 +219,8 @@ const Player = (() => {
   }
   function resolveMutSprite(p, mut) {
     if (!mut.domFam || mut.domK < 2) { p._mutKey = null; p._mutSpr = null; return null; }
-    const key = p.char.id + ':' + mut.domFam + ':' + Math.min(12, Math.round(mut.domK)) + ':' + (mut.fusions > 0 ? 'F' : '');
-    if (p._mutKey !== key) { p._mutKey = key; p._mutSpr = buildMutatedSprite(p.char, mut.domFam, mut.domK, mut.fusions); }
+    const key = p.char.id + ':' + mut.domFam + ':' + Math.min(12, Math.round(mut.domK)) + ':' + (mut.fusions > 0 ? 'F' : '') + ':' + (mut.domK2 >= 2 ? mut.domFam2 : '');
+    if (p._mutKey !== key) { p._mutKey = key; p._mutSpr = buildMutatedSprite(p.char, mut.domFam, mut.domK, mut.fusions, mut.domFam2, mut.domK2); }
     return p._mutSpr;
   }
   // Scale2x (EPX): doubles grid resolution and smooths diagonals — higher-detail body
@@ -239,12 +243,13 @@ const Player = (() => {
     }
     return out;
   }
-  function buildMutatedSprite(char, domFam, domK, fusions) {
+  function buildMutatedSprite(char, domFam, domK, fusions, domFam2, domK2) {
     const col = FAM_COL[domFam];
     const tint = Math.min(0.7, 0.18 + domK * 0.07); // body recolour strength grows with the stack
     const pal = {};
     for (const k in char.pal) pal[k] = (k === 'a' || k === 'b') ? blendHex(char.pal[k], col, tint) : char.pal[k];
     pal.H = col; pal.D = blendHex(col, '#000000', 0.4); pal.L = blendHex(col, '#ffffff', 0.4);
+    pal.S = domFam2 ? FAM_COL[domFam2] : col; // secondary-nature accent colour
     const hg = hires(char.grid);                 // work at 2x resolution — room for detailed features
     const half = hg[0].length, empty = '.'.repeat(half);
     const TOP = 6, BOT = 5;                       // generous padding for big appendages
@@ -271,6 +276,16 @@ const Player = (() => {
         break;
     }
     if (fusions > 0) { for (let i = 0; i < 3; i++) set(head - 1 - i, hx, 'L'); } // ascended crown
+    // secondary nature leaves a visible accent — a mixed build wears both
+    if (domFam2 && domK2 >= 2) {
+      const a = Math.min(3, 1 + Math.floor(domK2 / 2));
+      switch (domFam2) {
+        case 'Fire': case 'Volt': case 'Arcane': for (let i = 0; i < a; i++) set(head - 1 - i, 1 + i, 'S'); break;          // small side spikes
+        case 'Frost': case 'Steel': for (let i = 0; i < a; i++) set(head + 6 + i, half - 1, 'S'); break;                     // accent on far shoulder
+        case 'Nature': for (let i = 0; i < a; i++) set(baseN - 1 + (i % BOT), hx - 1, 'S'); break;                            // accent roots
+        case 'Void': for (let r = head + 2; r < baseN - 2; r += 3) set(r, half - 1, 'S'); break;                              // fringe other edge
+      }
+    }
     return Sprites.render(g.map(r => r.join('')), pal, PLAYER_SCALE, true);
   }
 
@@ -304,9 +319,13 @@ const Player = (() => {
       const fam = famOf(w.def);
       if (fam) nat[fam] = (nat[fam] || 0) + 1 + (w.lvl - 1) * 0.5; // same-family compounds, scaled by level
     }
-    let domFam = null, domK = 0, totalK = 0;
-    for (const f in nat) { totalK += nat[f]; if (nat[f] > domK) { domK = nat[f]; domFam = f; } }
-    return { nat, fusions, domFam, domK, totalK, domCol: domFam ? FAM_COL[domFam] : null };
+    let domFam = null, domK = 0, domFam2 = null, domK2 = 0, totalK = 0;
+    for (const f in nat) {
+      totalK += nat[f];
+      if (nat[f] > domK) { domFam2 = domFam; domK2 = domK; domFam = f; domK = nat[f]; }
+      else if (nat[f] > domK2) { domFam2 = f; domK2 = nat[f]; }
+    }
+    return { nat, fusions, domFam, domK, domFam2, domK2, totalK, domCol: domFam ? FAM_COL[domFam] : null };
   }
   function hexRgb(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
   function drawMutations(G, c, p, mut) {
