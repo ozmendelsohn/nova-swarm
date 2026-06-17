@@ -32,6 +32,8 @@ const Game = (() => {
   const grid = new Util.Grid(96);
   const qbuf = [], qbuf2 = [];
   const zaps = []; // lightning visuals
+  // kill-count milestone titles (feature: escalating Weaver ranks)
+  const KILL_RANKS = { 25: 'THREAD NOVICE', 100: 'WEAVER ADEPT', 250: 'LOOM KNIGHT', 500: 'PATTERN MASTER', 1000: 'GRAND WEAVER', 2500: 'THE TAPESTRY ITSELF' };
 
   function newGame() {
     WeaponManager.reset();
@@ -101,9 +103,13 @@ const Game = (() => {
     e.hp -= d;
     if (opts.w) { const n = opts.w.def.name; G.dmgLog[n] = (G.dmgLog[n] || 0) + d; } // run damage tally
     e.flash = 0.08;
-    if (Math.random() < 0.4 || crit) Particles.text(e.x + Util.rand(-8, 8), e.y - e.r, Math.round(d), crit ? '#ffe93e' : '#fff', crit ? 16 : 12);
+    // damage numbers scale with the size of the hit — big hits really pop
+    if (Math.random() < 0.4 || crit) {
+      const fs = Math.min(26, 11 + d * 0.06) + (crit ? 4 : 0);
+      Particles.text(e.x + Util.rand(-8, 8), e.y - e.r, Math.round(d), crit ? '#ffe93e' : '#fff', fs);
+    }
     Particles.burst(e.x, e.y, opts.color || '#fff', 3, { speed: 80, life: 0.3 });
-    if (crit) Particles.spawn(e.x, e.y, opts.color || '#ffe93e', { speed: 0, life: 0.3, ring: e.r + 22 });
+    if (crit) { Particles.spawn(e.x, e.y, opts.color || '#ffe93e', { speed: 0, life: 0.3, ring: e.r + 22 }); G.shake(2); }
     Snd.play('hit');
     // on-hit effects
     for (const f of fx) {
@@ -150,6 +156,13 @@ const Game = (() => {
     if (i < 0) return;
     Enemies.list.splice(i, 1);
     G.kills++; G.combo++; G.comboT = 2.5;
+    // kill-rank milestones: the Weaver earns escalating titles as the bodies pile up
+    const rank = KILL_RANKS[G.kills];
+    if (rank) {
+      Particles.text(G.player.x, G.player.y - 42, `✦ ${rank} ✦`, '#ffd23e', 20);
+      Particles.burst(G.player.x, G.player.y, '#ffd23e', 20, { speed: 180, life: 0.6 });
+      Snd.play('levelup'); G.shake(6);
+    }
     if (e.elite || e.boss) World.addStain(e); // spilled dye stains the cloth forever
     Enemies.quirkDeath(G, e); // per-monster death behavior
     Enemies.recordKill(e); // bestiary discovery
