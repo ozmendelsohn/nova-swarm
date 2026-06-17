@@ -889,6 +889,8 @@ const Enemies = (() => {
       const nE = 1 + (minute / 5 | 0);
       for (let i = 0; i < nE; i++) spawnAt(G, avail[avail.length - 1 - (i % 2)], true);
       Snd.play('elite');
+      Particles.text(P.x, P.y - 58, nE > 1 ? `⚠ ${nE} ELITES INCOMING ⚠` : '⚠ ELITE INCOMING ⚠', '#ff8c42', 16); // elite spawn announce
+      G.flashAmt = Math.max(G.flashAmt, 0.25);
     }
     // spider silk: patches age out; standing in one slows the player
     G.playerWebbed = false;

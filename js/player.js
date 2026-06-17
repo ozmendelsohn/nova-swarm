@@ -135,6 +135,15 @@ const Player = (() => {
         Particles.text(p.x, p.y - 60, '+1 WEAPON SLOT!', '#3ae0ff', 18);
         Particles.burst(p.x, p.y, '#3ae0ff', 20, { speed: 220 });
       }
+      // level-up gem vacuum: your XP trail rushes in
+      World.magnetizeAll();
+      // every 10th level unleashes a NOVA PULSE that clears the space around you
+      if (p.lvl % 10 === 0) {
+        G.explodeAt(p.x, p.y, 220, 60 + p.lvl * 4, { color: '#5cffb0' });
+        G.shake(10); G.flashAmt = Math.max(G.flashAmt, 0.5);
+        Particles.text(p.x, p.y - 72, '⚡ NOVA PULSE ⚡', '#5cffb0', 20);
+        Particles.spawn(p.x, p.y, '#5cffb0', { ring: 220, life: 0.5, speed: 0 });
+      }
       G.queueLevelUp();
     }
   }
