@@ -169,7 +169,9 @@ const Player = (() => {
   function draw(G, c) {
     const p = G.player;
     if (!p._spr) p._spr = Characters.sprite(p.char);
-    const spr = p._spr;
+    const mut = mutationData();
+    // the BODY ITSELF is rebuilt from your mutations — recoloured + regrown silhouette
+    const spr = resolveMutSprite(p, mut) || p._spr;
     // dash afterimages: drop a ghost every frame while dashing
     if (p.dashT > 0) ghosts.push({ x: p.x, y: p.y, ang: p.faceAng, life: 0.3 });
     for (let i = ghosts.length - 1; i >= 0; i--) {
@@ -186,7 +188,6 @@ const Player = (() => {
     c.beginPath();
     c.ellipse(p.x, p.y + 16, 13, 5, 0, 0, Math.PI * 2);
     c.fill();
-    const mut = mutationData();
     c.save();
     c.translate(p.x, p.y);
     if (p.hurtT > 0.3) c.globalAlpha = 0.5 + 0.5 * Math.sin(G.time * 40);
@@ -194,16 +195,57 @@ const Player = (() => {
     const bob = Math.sin(p.anim) * 2;
     c.rotate(p.faceAng + Math.PI / 2);
     c.drawImage(spr, -spr.width / 2, -spr.height / 2 + bob * 0.3);
-    // body tint: the flesh itself takes on your dominant elemental nature
-    if (mut.domCol && mut.domK >= 2) {
-      const a0 = c.globalAlpha;
-      c.globalAlpha = a0 * Math.min(0.55, 0.1 + mut.domK * 0.05);
-      c.drawImage(Sprites.tinted(spr, mut.domCol), -spr.width / 2, -spr.height / 2 + bob * 0.3);
-      c.globalAlpha = a0;
-    }
     c.restore();
     c.globalAlpha = 1;
     drawMutations(G, c, p, mut);
+  }
+
+  // ---- bake the mutation into the actual character sprite (cached, rebuilt on change) ----
+  function blendHex(h1, h2, t) {
+    const a = hexRgb(h1), b = hexRgb(h2);
+    const m = i => Math.round(a[i] + (b[i] - a[i]) * t).toString(16).padStart(2, '0');
+    return '#' + m(0) + m(1) + m(2);
+  }
+  function resolveMutSprite(p, mut) {
+    if (!mut.domFam || mut.domK < 2) { p._mutKey = null; p._mutSpr = null; return null; }
+    const key = p.char.id + ':' + mut.domFam + ':' + Math.min(12, Math.round(mut.domK)) + ':' + (mut.fusions > 0 ? 'F' : '');
+    if (p._mutKey !== key) { p._mutKey = key; p._mutSpr = buildMutatedSprite(p.char, mut.domFam, mut.domK, mut.fusions); }
+    return p._mutSpr;
+  }
+  function buildMutatedSprite(char, domFam, domK, fusions) {
+    const col = FAM_COL[domFam];
+    const tint = Math.min(0.7, 0.18 + domK * 0.07); // body recolour strength grows with the stack
+    const pal = {};
+    for (const k in char.pal) pal[k] = (k === 'a' || k === 'b') ? blendHex(char.pal[k], col, tint) : char.pal[k];
+    pal.H = col; pal.D = blendHex(col, '#000000', 0.4); pal.L = blendHex(col, '#ffffff', 0.4);
+    const half = char.grid[0].length, empty = '.'.repeat(half);
+    const g = [empty, empty, empty, ...char.grid, empty, empty].map(r => r.split(''));
+    const TOP = 3, baseN = TOP + char.grid.length;
+    const set = (row, cc, ch) => { if (row >= 0 && row < g.length && cc >= 0 && cc < half) g[row][cc] = ch; };
+    const grow = Math.min(3, 1 + Math.floor(domK / 2));
+    switch (domFam) {
+      case 'Fire': // horns sweeping up-and-out from the head
+        for (let i = 0; i < grow; i++) { set(TOP - 1 - i, Math.max(0, 2 - i), i === grow - 1 ? 'L' : 'H'); }
+        break;
+      case 'Volt': case 'Arcane': // a crown of spikes above the head
+        set(TOP - 1, 4, 'H'); set(TOP - 2, 4, 'L');
+        if (grow > 1) { set(TOP - 1, 2, 'H'); set(TOP - 2, 3, 'H'); }
+        if (grow > 2) { set(TOP - 3, 4, 'L'); }
+        break;
+      case 'Frost': case 'Steel': // shards / plates jutting from the shoulders
+        for (let i = 0; i < grow; i++) { const row = TOP + 3 + i; set(row, 0, i ? 'D' : 'H'); if (domFam === 'Steel') set(row, 1, 'H'); }
+        break;
+      case 'Nature': // overgrowth: roots below + a sprout crown
+        for (let i = 0; i < grow; i++) { set(baseN - 1 + i, Math.max(0, 3 - i), 'H'); set(baseN - 1 + i, 4, 'D'); }
+        set(TOP - 1, 4, 'L');
+        break;
+      case 'Void': // a jagged void-fringe eats the left edge
+        for (let r = TOP + 1; r < baseN - 1; r += 2) set(r, 0, 'D');
+        if (grow > 1) set(TOP - 1, 4, 'D');
+        break;
+    }
+    if (fusions > 0) { set(TOP - 1, 4, 'L'); set(TOP - 2, 4, 'L'); } // ascended halo nub
+    return Sprites.render(g.map(r => r.join('')), pal, 3, true);
   }
 
   // ---- weapon-driven MUTATION: the character's body changes with your arsenal ----
