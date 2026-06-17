@@ -140,7 +140,7 @@ const World = (() => {
           Snd.play('levelup');
         }
         else Player.gainXp(G, g.v);
-        Snd.play('gem');
+        Snd.pickup(G.combo);
       }
     }
   }

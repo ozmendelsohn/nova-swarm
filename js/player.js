@@ -112,6 +112,7 @@ const Player = (() => {
     while (p.xp >= p.nextXp) {
       p.xp -= p.nextXp;
       p.lvl++;
+      G.lvlFlash = 1; // gold pulse on the XP bar
       p.nextXp = Math.floor(10 + p.lvl * 5.5 + p.lvl * p.lvl * 0.4);
       Characters.onLevel(G);
       if (p.lvl % WeaponManager.SLOT_EVERY === 0) {

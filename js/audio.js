@@ -47,6 +47,8 @@ const Snd = (() => {
   };
 
   function play(name) { if (ctx && SFX[name]) SFX[name](); }
+  // pickup chime whose pitch rises with your kill streak — collecting feels better at high combo
+  function pickup(streak) { blip(660 + Math.min(16, streak | 0) * 36, 0.06, 'sine', 0.07, 220); }
 
   // --- chiptune loop with danger-reactive intensity (0 calm … 3 boss) ---
   const BASS = [110, 110, 130.8, 98, 110, 110, 87.3, 98];
@@ -89,5 +91,5 @@ const Snd = (() => {
 
   function toggleMute() { muted = !muted; return muted; }
 
-  return { init, play, startMusic, toggleMute, setIntensity };
+  return { init, play, pickup, startMusic, toggleMute, setIntensity };
 })();

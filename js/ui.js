@@ -33,9 +33,11 @@ const UI = (() => {
     c.fillRect(20, 18, 200 * Math.max(0, p.hp / p.maxHp), 14);
     c.fillStyle = '#fff'; c.font = 'bold 11px monospace'; c.textAlign = 'left';
     c.fillText(`HP ${Math.ceil(p.hp)}/${p.maxHp}`, 24, 29);
-    // XP bar (top edge)
+    // XP bar (top edge) — flashes gold on level up
     c.fillStyle = '#0a2a1a'; c.fillRect(0, 0, G.w, 6);
-    c.fillStyle = '#5cffb0'; c.fillRect(0, 0, G.w * (p.xp / p.nextXp), 6);
+    c.fillStyle = G.lvlFlash > 0.05 ? '#ffd23e' : '#5cffb0';
+    c.fillRect(0, 0, G.w * (p.xp / p.nextXp), 6);
+    if (G.lvlFlash > 0.05) { c.fillStyle = `rgba(255,210,62,${G.lvlFlash * 0.5})`; c.fillRect(0, 0, G.w, 6); }
     // timer + level + kills + combo
     c.textAlign = 'center'; c.font = 'bold 26px monospace';
     c.fillStyle = '#000'; c.fillText(fmtTime(G.time), G.w / 2 + 2, 42);

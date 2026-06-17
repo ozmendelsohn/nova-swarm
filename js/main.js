@@ -45,7 +45,7 @@ const Game = (() => {
     G = {
       state: 'play', time: 0, w: cv.width, h: cv.height,
       player: Player.create(Characters.selected), kills: 0, combo: 0, comboT: 0, coinsRun: 0, dmgLog: {},
-      shakeAmt: 0, flashAmt: 0, hurtFlash: 0, freezeT: 0, levelUpQueue: 0,
+      shakeAmt: 0, flashAmt: 0, hurtFlash: 0, lvlFlash: 0, _minMark: 0, freezeT: 0, levelUpQueue: 0,
       bossBanner: 0, bossName: '', bossTitle: '', won: false,
       // API used by weapons/enemies:
       nearestEnemy, enemiesInRange, damageEnemy, killEnemy, explodeAt, zap,
@@ -301,7 +301,15 @@ const Game = (() => {
     G.time += dt;
     G.bossBanner -= dt;
     G.comboT -= dt; if (G.comboT <= 0) G.combo = 0;
-    G.shakeAmt *= 0.88; G.flashAmt *= 0.92; if (G.hurtFlash) G.hurtFlash *= 0.86;
+    G.shakeAmt *= 0.88; G.flashAmt *= 0.92; if (G.hurtFlash) G.hurtFlash *= 0.86; if (G.lvlFlash) G.lvlFlash *= 0.9;
+    // minute-survived milestones
+    const minute = (G.time / 60) | 0;
+    if (minute > 0 && minute !== G._minMark) {
+      G._minMark = minute;
+      Particles.text(G.player.x, G.player.y - 50, `✦ ${minute} MINUTE${minute > 1 ? 'S' : ''} SURVIVED ✦`, '#9be8ff', 18);
+      Particles.burst(G.player.x, G.player.y, '#9be8ff', 16, { speed: 150, life: 0.6 });
+      Snd.play('elite');
+    }
     G.totem = null; // re-claimed each tick by an active totem projectile
     // music follows the danger: horde density, bosses, and your own blood
     if ((G.time | 0) !== G._musT) {
