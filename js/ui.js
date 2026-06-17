@@ -304,12 +304,32 @@ const UI = (() => {
     const mvpLine = mvp
       ? `DEADLIEST CHARM: <b style="color:#ff5cd6">${mvp}</b> (${Math.round(mvpPct / total * 100)}% of all damage)<br>`
       : '';
+    // final mutation form: your dominant elemental nature
+    const FAM_COL = { Fire: '#ff6b2e', Frost: '#5cc9ff', Volt: '#ffe93e', Void: '#b05cff', Nature: '#5ce86b', Steel: '#c9ccd6', Arcane: '#ff5cd6' };
+    const nat = {}; let fused = 0;
+    for (const w of WeaponManager.weapons) {
+      if (w.def.tier === 'fusion') fused++;
+      const fam = w.def.family || (w.def.parent && WEAPONS.defs[w.def.parent] && WEAPONS.defs[w.def.parent].family);
+      if (fam) nat[fam] = (nat[fam] || 0) + 1 + (w.lvl - 1) * 0.5;
+    }
+    let domFam = '', domK = 0;
+    for (const f in nat) if (nat[f] > domK) { domK = nat[f]; domFam = f; }
+    const formLine = domFam
+      ? `FINAL FORM: <b style="color:${FAM_COL[domFam]}">${domFam.toUpperCase()} ${domK >= 6 ? 'ASCENDANT' : 'WOVEN'}</b>${fused ? ' <b style="color:#ffd23e">· WINGED</b>' : ''}<br>`
+      : '';
+    // run score
+    const score = G.kills * 10 + Math.floor(G.time) * 5 + G.player.lvl * 100 + G.coinsRun + (won ? 5000 : 0);
+    // final arsenal
+    const arsenal = WeaponManager.weapons.map(w => w.def.name).join(' · ') || '—';
     $('go-stats').innerHTML =
       `SURVIVED <b>${fmtTime(G.time)}</b> · LEVEL <b>${G.player.lvl}</b> · KILLS <b>${G.kills}</b><br>
+       <span style="color:#ffd23e;font-size:18px">SCORE <b>${score.toLocaleString()}</b></span><br>
        ${broke.length ? `<span class="new-best">★ NEW BEST: ${broke.join(' · ')} ★</span><br>` : ''}
+       ${formLine}
        ${mvpLine}
        WEAVER'S COINS EARNED: <b>⛀ ${G.coinsRun}</b> (bank: ⛀ ${Meta.coins})<br>
-       WEAPONS DISCOVERED: <b>${WeaponManager.discovered.size}/252</b>`;
+       WEAPONS DISCOVERED: <b>${WeaponManager.discovered.size}/252</b><br>
+       <span style="color:#8a9ab8;font-size:12px">ARSENAL: ${arsenal}</span>`;
 
     // run summary captured for leaderboard submission
     const run = {
