@@ -358,6 +358,20 @@ const Game = (() => {
     }
   }
 
+  // dominant weapon hue for the build-identity vignette (gold once you've fused)
+  function buildColor() {
+    const ws = WeaponManager.weapons; if (!ws.length) return null;
+    let hex = null, best = -1, fused = false;
+    for (const w of ws) {
+      if (w.def.tier === 'fusion') fused = true;
+      if (w.lvl > best && w.def.color) { best = w.lvl; hex = w.def.color; }
+    }
+    if (fused) hex = '#ffd23e';
+    if (!hex || hex.length < 7) return null;
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},0.16)`;
+  }
+
   function render() {
     const P = G.player;
     c.setTransform(1, 0, 0, 1, 0, 0);
@@ -405,6 +419,13 @@ const Game = (() => {
     const vg = c.createRadialGradient(G.w / 2, G.h / 2, G.h * 0.45, G.w / 2, G.h / 2, G.h * 0.85);
     vg.addColorStop(0, 'transparent'); vg.addColorStop(1, 'rgba(26,8,46,0.5)');
     c.fillStyle = vg; c.fillRect(0, 0, G.w, G.h);
+    // build identity: the screen edges take on your dominant weapon's hue
+    const bc = buildColor();
+    if (bc) {
+      const bv = c.createRadialGradient(G.w / 2, G.h / 2, G.h * 0.55, G.w / 2, G.h / 2, G.h * 0.92);
+      bv.addColorStop(0, 'transparent'); bv.addColorStop(1, bc);
+      c.fillStyle = bv; c.fillRect(0, 0, G.w, G.h);
+    }
     // dread: a stalker is close — the cloth dims around you
     if (G.dreadT > G.time) {
       const dv = c.createRadialGradient(G.w / 2, G.h / 2, G.h * 0.2, G.w / 2, G.h / 2, G.h * 0.7);
