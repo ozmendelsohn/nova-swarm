@@ -72,6 +72,16 @@ const UI = (() => {
       c.fillStyle = '#0008'; c.fillRect(G.w / 2 - bw / 2, comboY + 5, bw, 3);
       c.fillStyle = `hsl(${(G.time * 120) % 360},90%,65%)`; c.fillRect(G.w / 2 - bw / 2, comboY + 5, bw * frac, 3);
     }
+    // boss health bar across the top when a boss stalks the field
+    const boss = Enemies.list.find(e => e.boss);
+    if (boss) {
+      const bw = Math.min(G.w * 0.6, 440), bx = (G.w - bw) / 2, by = narrow ? 112 : 96;
+      c.fillStyle = '#000a'; c.fillRect(bx - 2, by - 2, bw + 4, 11);
+      c.fillStyle = '#3a0a14'; c.fillRect(bx, by, bw, 7);
+      c.fillStyle = boss.enraged ? '#ff3a5c' : '#ff5c8a'; c.fillRect(bx, by, bw * Math.max(0, boss.hp / boss.maxHp), 7);
+      c.fillStyle = '#fff'; c.font = 'bold 11px monospace'; c.textAlign = 'center';
+      c.fillText((boss.bdef && boss.bdef.name ? boss.bdef.name : 'BOSS') + (boss.enraged ? ' · ENRAGED' : ''), G.w / 2, by - 4);
+    }
     if (Snd.isMuted && Snd.isMuted()) { // mute indicator
       c.textAlign = 'right'; c.font = 'bold 12px monospace'; c.fillStyle = '#ff8c42';
       c.fillText('🔇 MUTED', G.w - 20, narrow ? 92 : 76);

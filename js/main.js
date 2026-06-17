@@ -310,7 +310,9 @@ const Game = (() => {
     if (G.freezeT > 0) { G.freezeT -= dt; return; } // hit-stop
     G.time += dt;
     G.bossBanner -= dt;
+    const _preCombo = G.combo;
     G.comboT -= dt; if (G.comboT <= 0) G.combo = 0;
+    if (_preCombo > 20 && G.combo === 0) Particles.text(G.player.x, G.player.y - 30, `COMBO LOST · ${_preCombo}`, '#ff8c42', 14); // combo break
     G.shakeAmt *= 0.88; G.flashAmt *= 0.92; if (G.hurtFlash) G.hurtFlash *= 0.86; if (G.lvlFlash) G.lvlFlash *= 0.9;
     // minute-survived milestones
     const minute = (G.time / 60) | 0;
