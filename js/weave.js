@@ -88,6 +88,10 @@ const Weave = (() => {
       caught++;
     }
     bursts.push({ pts: loop, life: 0.45, col: el.col });
+    // expanding shockwave ring sized to the loop, for snap impact
+    let ringR = 0;
+    for (const pt of loop) ringR = Math.max(ringR, Math.hypot(pt.x - cx, pt.y - cy));
+    Particles.spawn(cx, cy, el.col, { ring: ringR + 12, life: 0.5, size: 3, speed: 0 });
     Particles.burst(cx, cy, el.col, Math.min(40, 10 + caught * 2), { speed: 220, life: 0.5 });
     if (caught > 0) {
       G.shake(Math.min(10, 3 + caught * 0.3));
