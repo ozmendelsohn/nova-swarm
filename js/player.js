@@ -175,7 +175,7 @@ const Player = (() => {
   const ghosts = []; // dash afterimages
   function draw(G, c) {
     const p = G.player;
-    if (!p._spr) p._spr = Characters.sprite(p.char);
+    if (!p._spr) p._spr = Sprites.render(hires(p.char.grid), p.char.pal, PLAYER_SCALE, true); // hi-res, larger base body
     const mut = mutationData();
     // the BODY ITSELF is rebuilt from your mutations — recoloured + regrown silhouette
     const spr = resolveMutSprite(p, mut) || p._spr;
@@ -219,40 +219,59 @@ const Player = (() => {
     if (p._mutKey !== key) { p._mutKey = key; p._mutSpr = buildMutatedSprite(p.char, mut.domFam, mut.domK, mut.fusions); }
     return p._mutSpr;
   }
+  // Scale2x (EPX): doubles grid resolution and smooths diagonals — higher-detail body
+  function hires(grid) {
+    const rows = grid.length, cols = grid[0].length;
+    const at = (y, x) => (y >= 0 && y < rows && x >= 0 && x < cols) ? grid[y][x] : '.';
+    const out = [];
+    for (let y = 0; y < rows; y++) {
+      let r0 = '', r1 = '';
+      for (let x = 0; x < cols; x++) {
+        const P = at(y, x), A = at(y - 1, x), B = at(y, x + 1), C = at(y, x - 1), D = at(y + 1, x);
+        let e0 = P, e1 = P, e2 = P, e3 = P;
+        if (C === A && C !== D && A !== B) e0 = A;
+        if (A === B && A !== C && B !== D) e1 = B;
+        if (D === C && D !== B && C !== A) e2 = C;
+        if (B === D && B !== A && D !== C) e3 = D;
+        r0 += e0 + e1; r1 += e2 + e3;
+      }
+      out.push(r0, r1);
+    }
+    return out;
+  }
   function buildMutatedSprite(char, domFam, domK, fusions) {
     const col = FAM_COL[domFam];
     const tint = Math.min(0.7, 0.18 + domK * 0.07); // body recolour strength grows with the stack
     const pal = {};
     for (const k in char.pal) pal[k] = (k === 'a' || k === 'b') ? blendHex(char.pal[k], col, tint) : char.pal[k];
     pal.H = col; pal.D = blendHex(col, '#000000', 0.4); pal.L = blendHex(col, '#ffffff', 0.4);
-    const half = char.grid[0].length, empty = '.'.repeat(half);
-    const g = [empty, empty, empty, ...char.grid, empty, empty].map(r => r.split(''));
-    const TOP = 3, baseN = TOP + char.grid.length;
+    const hg = hires(char.grid);                 // work at 2x resolution — room for detailed features
+    const half = hg[0].length, empty = '.'.repeat(half);
+    const TOP = 6, BOT = 5;                       // generous padding for big appendages
+    const g = [...Array(TOP).fill(empty), ...hg, ...Array(BOT).fill(empty)].map(r => r.split(''));
+    const baseN = TOP + hg.length, head = TOP, hx = half - 1; // head top row, centre col
     const set = (row, cc, ch) => { if (row >= 0 && row < g.length && cc >= 0 && cc < half) g[row][cc] = ch; };
-    const grow = Math.min(3, 1 + Math.floor(domK / 2));
+    const grow = Math.min(6, 2 + Math.floor(domK)); // far more detail headroom at 2x
     switch (domFam) {
-      case 'Fire': // horns sweeping up-and-out from the head
-        for (let i = 0; i < grow; i++) { set(TOP - 1 - i, Math.max(0, 2 - i), i === grow - 1 ? 'L' : 'H'); }
+      case 'Fire': // tall multi-segment horns sweeping up-and-out, bright tips
+        for (let i = 0; i < grow; i++) { const cc = Math.max(0, hx - 3 - Math.floor(i / 2)); set(head - 1 - i, cc, i >= grow - 2 ? 'L' : 'H'); set(head - 1 - i, cc + 1, 'H'); }
         break;
-      case 'Volt': case 'Arcane': // a crown of spikes above the head
-        set(TOP - 1, 4, 'H'); set(TOP - 2, 4, 'L');
-        if (grow > 1) { set(TOP - 1, 2, 'H'); set(TOP - 2, 3, 'H'); }
-        if (grow > 2) { set(TOP - 3, 4, 'L'); }
+      case 'Volt': case 'Arcane': // a spiky crown across the whole head
+        for (let i = 0; i < grow; i++) { const cc = hx - i * 2; set(head - 1 - (i % 3), cc, i % 2 ? 'L' : 'H'); }
         break;
-      case 'Frost': case 'Steel': // shards / plates jutting from the shoulders
-        for (let i = 0; i < grow; i++) { const row = TOP + 3 + i; set(row, 0, i ? 'D' : 'H'); if (domFam === 'Steel') set(row, 1, 'H'); }
+      case 'Frost': case 'Steel': // layered shards / plates down the shoulders
+        for (let i = 0; i < grow; i++) { const row = head + 5 + i; set(row, 0, i % 2 ? 'D' : 'H'); set(row, 1, 'H'); if (domFam === 'Steel') set(row, 2, 'D'); }
         break;
-      case 'Nature': // overgrowth: roots below + a sprout crown
-        for (let i = 0; i < grow; i++) { set(baseN - 1 + i, Math.max(0, 3 - i), 'H'); set(baseN - 1 + i, 4, 'D'); }
-        set(TOP - 1, 4, 'L');
+      case 'Nature': // thick roots below + a sprouting crown
+        for (let i = 0; i < grow; i++) { set(baseN - 1 + (i % BOT), Math.max(0, hx - 2 - i), 'H'); set(baseN - 1 + (i % BOT), hx, 'D'); }
+        set(head - 1, hx, 'L'); set(head - 2, hx, 'L');
         break;
-      case 'Void': // a jagged void-fringe eats the left edge
-        for (let r = TOP + 1; r < baseN - 1; r += 2) set(r, 0, 'D');
-        if (grow > 1) set(TOP - 1, 4, 'D');
+      case 'Void': // a jagged dark fringe consuming the edges
+        for (let r = head + 1; r < baseN - 1; r += 2) { set(r, 0, 'D'); if (grow > 3) set(r, 1, 'D'); }
         break;
     }
-    if (fusions > 0) { set(TOP - 1, 4, 'L'); set(TOP - 2, 4, 'L'); } // ascended halo nub
-    return Sprites.render(g.map(r => r.join('')), pal, 3, true);
+    if (fusions > 0) { for (let i = 0; i < 3; i++) set(head - 1 - i, hx, 'L'); } // ascended crown
+    return Sprites.render(g.map(r => r.join('')), pal, PLAYER_SCALE, true);
   }
 
   // ---- weapon-driven MUTATION: the character's body changes with your arsenal ----
@@ -261,6 +280,7 @@ const Player = (() => {
   // family compounds it (weighted by weapon level). Your dominant nature also tints
   // the body. Lore: the Weaver's champion is rewoven by the threads they wield.
   const FAM_COL = { Fire: '#ff6b2e', Frost: '#5cc9ff', Volt: '#ffe93e', Void: '#b05cff', Nature: '#5ce86b', Steel: '#c9ccd6', Arcane: '#ff5cd6' };
+  const PLAYER_SCALE = 2; // render scale for the hi-res (2x grid) player body — bigger + crisper
   // element-themed movement wake particles per dominant nature
   const TRAIL_STYLE = {
     Fire:   p => Particles.spawn(p.x + Util.rand(-5, 5), p.y + 2, '#ff8c42', { speed: 18, life: 0.4, size: 2, grav: -55 }),
