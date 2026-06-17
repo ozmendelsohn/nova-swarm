@@ -129,9 +129,14 @@ const World = (() => {
         if (g.heal) { P.hp = Math.min(P.maxHp, P.hp + g.heal); Particles.text(P.x, P.y - 20, '+' + g.heal, '#5cffb0'); }
         else if (g.coin) {
           const gained = Math.round(g.coin * Meta.fx.greed());
+          const mark0 = (G.coinsRun / 250) | 0;
           G.coinsRun += gained;
           Meta.addCoins(gained);
           Particles.text(g.x, g.y - 14, `+${gained}⛀`, '#ffd23e', 13);
+          if (((G.coinsRun / 250) | 0) > mark0) { // crossed a 250-coin milestone this run
+            Particles.text(P.x, P.y - 46, `✦ ${(((G.coinsRun / 250) | 0) * 250)} COINS ✦`, '#ffd23e', 16);
+            Particles.burst(P.x, P.y, '#ffd23e', 14, { speed: 150, life: 0.5 });
+          }
         }
         else if (g.magnet) { // every gem on the field rushes to you
           magnetizeAll();
@@ -298,6 +303,10 @@ const World = (() => {
     const P = G.player, mx = G.w / 2 + 40, my = G.h / 2 + 40;
     for (const g of gems) {
       if (Math.abs(g.x - P.x) > mx || Math.abs(g.y - P.y) > my) continue;
+      if (g.pull) { // magnet beam: a faint thread reels the pickup toward you
+        c.globalAlpha = 0.18; c.strokeStyle = g.coin ? '#ffd23e' : '#5cffb0'; c.lineWidth = 1;
+        c.beginPath(); c.moveTo(g.x, g.y); c.lineTo(P.x, P.y); c.stroke(); c.globalAlpha = 1;
+      }
       const bob = Math.sin(G.time * 5 + g.x) * 3;
       const spr = g.heal ? chestSpr : g.magnet ? magSpr : g.coin ? Sprites.get('coin')[0] : gemSpr;
       if (g.magnet) { c.shadowColor = '#3ae0ff'; c.shadowBlur = 12; }

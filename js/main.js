@@ -156,6 +156,7 @@ const Game = (() => {
     if (i < 0) return;
     Enemies.list.splice(i, 1);
     G.kills++; G.combo++; G.comboT = 2.5;
+    if (G.kills === 1) Particles.text(G.player.x, G.player.y - 40, 'FIRST BLOOD', '#ff3a5c', 18); // first kill of the run
     // kill-rank milestones: the Weaver earns escalating titles as the bodies pile up
     const rank = KILL_RANKS[G.kills];
     if (rank) {
