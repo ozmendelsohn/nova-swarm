@@ -136,7 +136,7 @@ const UI = (() => {
     // off-screen threat & treasure arrows: bosses (red) and the gilded moth (gold)
     const P2 = G.player, cx = G.w / 2, cy = G.h / 2, marg = 48;
     for (const e of Enemies.list) {
-      if (!e.boss && !e.gilded) continue;
+      if (!e.boss && !e.gilded && !e.emitter) continue;
       const sx = cx + (e.x - P2.x), sy = cy + (e.y - P2.y);
       if (sx >= marg && sx <= G.w - marg && sy >= marg && sy <= G.h - marg) continue; // on-screen
       const ang = Math.atan2(e.y - P2.y, e.x - P2.x);
@@ -144,7 +144,7 @@ const UI = (() => {
       const hw = G.w / 2 - marg, hh = G.h / 2 - marg;
       const t = Math.min(hw / Math.abs(Math.cos(ang) || 1e-6), hh / Math.abs(Math.sin(ang) || 1e-6));
       const ix = cx + Math.cos(ang) * t, iy = cy + Math.sin(ang) * t;
-      const col = e.boss ? '#ff3a5c' : '#ffd23e';
+      const col = e.boss ? '#ff3a5c' : e.emitter ? '#b05cff' : '#ffd23e';
       const pulse = 0.7 + 0.3 * Math.sin(G.time * 8);
       c.save();
       c.translate(ix, iy); c.rotate(ang);
