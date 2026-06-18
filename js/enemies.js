@@ -831,13 +831,15 @@ const Enemies = (() => {
   function spawnAt(G, type, elite = false) {
     const a = Math.random() * Math.PI * 2;
     const d = Math.max(G.w, G.h) * 0.62;
-    const hpScale = 1 + G.time / 75;
+    const hpScale = 1 + G.time / 60;           // tankier over time
+    const dmgScale = 1 + G.time / 110;         // and they hit HARDER over time (was flat — that's what made late game trivial)
+    const spdScale = 1 + G.time / 800;         // and creep faster
     const e = {
       type, x: G.player.x + Math.cos(a) * d, y: G.player.y + Math.sin(a) * d,
       hp: type.hp * hpScale * (elite ? 14 : 1),
       maxHp: type.hp * hpScale * (elite ? 14 : 1),
-      spd: type.spd * (elite ? 0.85 : Util.rand(0.9, 1.1)),
-      dmg: type.dmg * (elite ? 1.6 : 1),
+      spd: type.spd * spdScale * (elite ? 0.85 : Util.rand(0.9, 1.1)),
+      dmg: type.dmg * dmgScale * (elite ? 1.6 : 1),
       xp: type.xp * (elite ? 12 : 1),
       r: elite ? 24 : 13, elite, flash: 0, anim: Math.random() * 9,
       slow: 0, burn: 0, poison: 0, freeze: 0, shootT: Util.rand(1, 3),
