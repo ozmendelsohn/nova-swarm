@@ -871,15 +871,15 @@ const Enemies = (() => {
     const minute = G.time / 60;
     // spawn budget ramps with time
     spawnT -= dt;
-    const interval = Math.max(0.05, 0.38 - minute * 0.03);
+    const interval = Math.max(0.04, 0.34 - minute * 0.03); // spawns come a touch faster
     if (spawnT <= 0 && list.length < Settings.enemyCap) { // horde cap (menu setting)
       spawnT = interval;
       const avail = TYPES.filter(t => t.tier <= minute + 0.01);
       const t = avail[Math.max(0, avail.length - 1 - (Math.random() * Math.min(5, avail.length) | 0))];
-      const n = 3 + (minute / 2 | 0);
+      const n = 4 + (minute * 0.8 | 0); // denser waves
       for (let i = 0; i < n; i++) spawnAt(G, t);
-      // surge wave: a ring of enemies closing in from all sides
-      if (Math.random() < 0.03 + minute * 0.003) {
+      // surge wave: a ring of enemies closing in from all sides (more frequent)
+      if (Math.random() < 0.045 + minute * 0.004) {
         const st = avail[(Math.random() * avail.length) | 0];
         for (let i = 0; i < 20; i++) spawnAt(G, st);
       }

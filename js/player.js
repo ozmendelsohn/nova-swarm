@@ -143,7 +143,7 @@ const Player = (() => {
       p.xp -= p.nextXp;
       p.lvl++;
       G.lvlFlash = 1; // gold pulse on the XP bar
-      p.nextXp = Math.floor(10 + p.lvl * 5.5 + p.lvl * p.lvl * 0.4);
+      p.nextXp = Math.floor((10 + p.lvl * 5.5 + p.lvl * p.lvl * 0.4) * 1.35); // slower leveling — fewer power spikes
       Characters.onLevel(G);
       if (p.lvl % WeaponManager.SLOT_EVERY === 0) {
         Particles.text(p.x, p.y - 60, '+1 WEAPON SLOT!', '#3ae0ff', 18);
