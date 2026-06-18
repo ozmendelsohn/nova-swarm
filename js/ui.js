@@ -82,6 +82,15 @@ const UI = (() => {
       c.fillStyle = '#fff'; c.font = 'bold 11px monospace'; c.textAlign = 'center';
       c.fillText((boss.bdef && boss.bdef.name ? boss.bdef.name : 'BOSS') + (boss.enraged ? ' · ENRAGED' : ''), G.w / 2, by - 4);
     }
+    // FERVOR meter (left, under the stats) — fills with kills, flares red during a rampage
+    if (G.fervor > 0 || G.rampageT > 0) {
+      const fw = 120, fy = 60, ramp = G.rampageT > 0;
+      c.textAlign = 'left'; c.fillStyle = '#000a'; c.fillRect(20, fy, fw, 6);
+      c.fillStyle = ramp ? `hsl(${(G.time * 200) % 360},90%,60%)` : '#ff8c42';
+      c.fillRect(20, fy, fw * (ramp ? 1 : G.fervor / 100), 6);
+      c.fillStyle = '#fff'; c.font = 'bold 8px monospace';
+      c.fillText(ramp ? `RAMPAGE ${G.rampageT.toFixed(1)}s` : 'FERVOR', 22, fy + 5);
+    }
     if (Snd.isMuted && Snd.isMuted()) { // mute indicator
       c.textAlign = 'right'; c.font = 'bold 12px monospace'; c.fillStyle = '#ff8c42';
       c.fillText('🔇 MUTED', G.w - 20, narrow ? 92 : 76);

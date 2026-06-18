@@ -49,7 +49,7 @@ const Player = (() => {
       dashT: 0, dashCd: 0, anim: 0, char: ch,
       // perk-driven modifiers (see characters.js)
       mods: { dmg: ch.dmgMul, cd: ch.cdMul, count: 0, dashCd: 1, armor: 0, regen: 0, crit: 0, lifesteal: 0, thorns: 0, dashExplode: false, special: null },
-      specialT: 0,
+      specialT: 0, usedLastStand: false,
     };
   }
 
@@ -88,7 +88,7 @@ const Player = (() => {
       }
     }
 
-    const spd = p.speed * (1 + 0.1 * (WeaponManager.passives.speed || 0)) * (p.dashT > 0 ? 3.2 : 1) * (p.warpBlessed ? 1.12 : 1) * (G.playerWebbed || G.chillT > G.time ? 0.65 : 1);
+    const spd = p.speed * (1 + 0.1 * (WeaponManager.passives.speed || 0)) * (p.dashT > 0 ? 3.2 : 1) * (p.warpBlessed ? 1.12 : 1) * (G.rampageT > 0 ? 1.25 : 1) * (G.playerWebbed || G.chillT > G.time ? 0.65 : 1);
     if (dx || dy) {
       const m = Math.hypot(dx, dy);
       p.x += (dx / m) * spd * dt;
@@ -184,7 +184,15 @@ const Player = (() => {
     if (attacker) { G.hurtDir = Math.atan2(attacker.y - p.y, attacker.x - p.x); G.hurtDirT = 0.8; } // direction tell
     Snd.play('hurt');
     Particles.burst(p.x, p.y, '#ff4d4d', 10, { speed: 160 });
-    if (p.hp <= 0) { p.hp = 0; G.gameOver(); }
+    if (p.hp <= 0) {
+      if (!p.usedLastStand) { // LAST STAND: once per run, a fatal blow leaves you at 1 HP + a nova
+        p.usedLastStand = true; p.hp = 1; p.hurtT = 2; G.flashAmt = 1; G.shake(16);
+        Particles.text(p.x, p.y - 40, '✦ LAST STAND ✦', '#ffd23e', 22);
+        Particles.burst(p.x, p.y, '#ffd23e', 40, { speed: 300 });
+        G.explodeAt(p.x, p.y, 170, 60 + G.player.lvl * 4, { color: '#ffd23e' });
+        Snd.play('fusion');
+      } else { p.hp = 0; G.gameOver(); }
+    }
   }
 
   const ghosts = []; // dash afterimages

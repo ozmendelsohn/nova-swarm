@@ -54,7 +54,7 @@ const Game = (() => {
     G = {
       state: 'play', time: 0, w: cv.width, h: cv.height,
       player: Player.create(Characters.selected), kills: 0, combo: 0, comboT: 0, coinsRun: 0, dmgLog: {},
-      shakeAmt: 0, flashAmt: 0, hurtFlash: 0, lvlFlash: 0, _minMark: 0, _hbT: 0, hurtDir: 0, hurtDirT: 0, dmgTaken: 0, bestCombo: 0, freezeT: 0, levelUpQueue: 0,
+      shakeAmt: 0, flashAmt: 0, hurtFlash: 0, lvlFlash: 0, _minMark: 0, _hbT: 0, hurtDir: 0, hurtDirT: 0, dmgTaken: 0, bestCombo: 0, fervor: 0, rampageT: 0, freezeT: 0, levelUpQueue: 0,
       bossBanner: 0, bossName: '', bossTitle: '', won: false,
       // API used by weapons/enemies:
       nearestEnemy, enemiesInRange, damageEnemy, killEnemy, explodeAt, zap,
@@ -177,6 +177,15 @@ const Game = (() => {
     G.kills++; G.combo++; G.comboT = 2.5;
     if (G.combo > G.bestCombo) G.bestCombo = G.combo; // track best streak
     if (G.player.dashT > 0) G.player.dashCd = 0; // DASH CHAIN: a kill mid-dash refunds the dash
+    // FERVOR: kills charge a meter; full meter unleashes a RAMPAGE (+dmg & speed)
+    if (G.rampageT <= 0) {
+      G.fervor = Math.min(100, G.fervor + 3.5);
+      if (G.fervor >= 100) {
+        G.fervor = 0; G.rampageT = 6; G.flashAmt = Math.max(G.flashAmt, 0.6); G.shake(10);
+        Particles.text(G.player.x, G.player.y - 64, '⚔ RAMPAGE! ⚔', '#ff3a5c', 22);
+        Particles.burst(G.player.x, G.player.y, '#ff3a5c', 30, { speed: 260 });
+      }
+    }
     if (G.kills === 1) Particles.text(G.player.x, G.player.y - 40, 'FIRST BLOOD', '#ff3a5c', 18); // first kill of the run
     // kill-rank milestones: the Weaver earns escalating titles as the bodies pile up
     const rank = KILL_RANKS[G.kills];
@@ -287,6 +296,7 @@ const Game = (() => {
       b.x += b.vx * dt; b.y += b.vy * dt;
       if (Util.dist2(b.x, b.y, P.x, P.y) < (b.r + P.r) * (b.r + P.r)) {
         b.active = false;
+        if (P.guarding) { Particles.burst(b.x, b.y, '#9be8ff', 5, { speed: 120, life: 0.25 }); continue; } // GUARD BLOCK: braced = projectiles shatter harmlessly
         Player.hurt(G, b.dmg);
         if (b.chill) { G.chillT = G.time + 1.2; Particles.text(P.x, P.y - 26, 'CHILLED', '#c9b8e8', 13); }
       }
@@ -326,6 +336,7 @@ const Game = (() => {
     G.comboT -= dt; if (G.comboT <= 0) G.combo = 0;
     if (_preCombo > 20 && G.combo === 0) Particles.text(G.player.x, G.player.y - 30, `COMBO LOST · ${_preCombo}`, '#ff8c42', 14); // combo break
     G.shakeAmt *= 0.88; G.flashAmt *= 0.92; if (G.hurtFlash) G.hurtFlash *= 0.86; if (G.lvlFlash) G.lvlFlash *= 0.9;
+    if (G.rampageT > 0) G.rampageT -= dt; else if (G.fervor > 0) G.fervor = Math.max(0, G.fervor - dt * 5); // fervor bleeds off out of combat
     // minute-survived milestones
     const minute = (G.time / 60) | 0;
     if (minute > 0 && minute !== G._minMark) {
