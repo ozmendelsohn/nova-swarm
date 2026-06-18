@@ -104,6 +104,18 @@ const Player = (() => {
       if (mut.domFam && TRAIL_STYLE[mut.domFam] && Math.random() < 0.45) TRAIL_STYLE[mut.domFam](p);
     }
 
+    // OFFENSIVE DASH: carve through enemies for damage + knockback (dash is a weapon)
+    if (p.dashT > 0) {
+      if (!p._dashHits) p._dashHits = new Set();
+      for (const e of G.enemiesInRange(p.x, p.y, p.r + 20, [])) {
+        if (!p._dashHits.has(e)) { p._dashHits.add(e); G.damageEnemy(e, 16 * p.mods.dmg, { color: '#3ae0ff', effects: ['knock'] }); }
+      }
+    } else if (p._dashHits) p._dashHits = null;
+
+    // MOMENTUM GUARD: stand still ~0.8s to brace — incoming damage is halved (turtle option)
+    if (dx || dy) { p._stillT = 0; p.guarding = false; }
+    else { p._stillT = (p._stillT || 0) + dt; if (p._stillT > 0.8) p.guarding = true; }
+
     // regen
     const rg = 0.6 * (WeaponManager.passives.regen || 0) + p.mods.regen;
     if (rg) p.hp = Math.min(p.maxHp, p.hp + rg * dt);
@@ -154,7 +166,8 @@ const Player = (() => {
     const p = G.player;
     if (p.dashT > 0) return; // i-frames while dashing
     const armor = 1.5 * (WeaponManager.passives.armor || 0) + 1.5 * p.mods.armor + Meta.fx.armor();
-    const d = Math.max(1, dmg - armor);
+    let d = Math.max(1, dmg - armor);
+    if (p.guarding) { d *= 0.5; Particles.text(p.x, p.y - 20, 'GUARD', '#9be8ff', 12); } // braced
     if (p.hurtT > 0) return;
     if (attacker && p.mods.thorns) G.damageEnemy(attacker, p.mods.thorns, { color: '#5ce86b' });
     const hpFrac0 = p.hp / p.maxHp;
@@ -193,6 +206,10 @@ const Player = (() => {
       c.restore();
     }
     c.globalAlpha = 1;
+    if (p.guarding) { // momentum-guard shield ring
+      c.globalAlpha = 0.35 + 0.15 * Math.sin(G.time * 6); c.strokeStyle = '#9be8ff'; c.lineWidth = 2;
+      c.beginPath(); c.arc(p.x, p.y, p.r + 10, 0, Math.PI * 2); c.stroke(); c.globalAlpha = 1;
+    }
     c.fillStyle = 'rgba(20,8,40,0.35)';
     c.beginPath();
     c.ellipse(p.x, p.y + 16, 13, 5, 0, 0, Math.PI * 2);

@@ -166,6 +166,7 @@ const Game = (() => {
     Enemies.list.splice(i, 1);
     G.kills++; G.combo++; G.comboT = 2.5;
     if (G.combo > G.bestCombo) G.bestCombo = G.combo; // track best streak
+    if (G.player.dashT > 0) G.player.dashCd = 0; // DASH CHAIN: a kill mid-dash refunds the dash
     if (G.kills === 1) Particles.text(G.player.x, G.player.y - 40, 'FIRST BLOOD', '#ff3a5c', 18); // first kill of the run
     // kill-rank milestones: the Weaver earns escalating titles as the bodies pile up
     const rank = KILL_RANKS[G.kills];
