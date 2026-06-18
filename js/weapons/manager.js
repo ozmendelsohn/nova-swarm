@@ -50,7 +50,25 @@ const WeaponManager = (() => {
       speed: d.speed, area, dur: d.dur, pierce: d.pierce,
     };
     for (const q of Quirks.list(d)) if (q.mod) q.mod(s, w);
+    // ---- unique gameplay modifiers (live, positional, risk/reward) ----
+    const G = (typeof Game !== 'undefined') ? Game.G : null;
+    if (G && G.player) {
+      // BERSERK: the closer to death, the harder you hit (up to +60%)
+      s.dmg *= 1 + (1 - G.player.hp / G.player.maxHp) * 0.6;
+      // COMBO OVERDRIVE: a hot streak quickens every weapon
+      if (G.combo > 40) s.cd *= 0.7; else if (G.combo > 20) s.cd *= 0.85;
+      // DYE RESONANCE: standing on a dye field of your weapon's element empowers it +45%
+      const fam = d.family || (d.parent && WEAPONS.defs[d.parent] && WEAPONS.defs[d.parent].family);
+      if (fam && typeof World !== 'undefined' && World.dyeAt) {
+        if (dyeFamily(World.dyeAt(G.player.x, G.player.y)[0]) === fam) s.dmg *= 1.45;
+      }
+    }
     return s;
+  }
+  // dye-field hue -> elemental family (mirrors the weave/dye system)
+  function dyeFamily(h) {
+    if (h < 40) return 'Fire'; if (h < 90) return 'Volt'; if (h < 160) return 'Nature';
+    if (h < 215) return 'Frost'; if (h < 250) return 'Steel'; if (h < 300) return 'Void'; return 'Arcane';
   }
 
   function fireWeapon(G, w, s) {
