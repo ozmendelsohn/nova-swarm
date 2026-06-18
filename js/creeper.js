@@ -68,6 +68,11 @@ const Creeper = (() => {
       const nd = Math.min(MAXD, (field.get(k) || 0) + v);
       if (nd <= 0.02) field.delete(k); else field.set(k, nd);
     }
+    // ambient surface bubbling from deep pools in view (life/atmosphere)
+    if (Math.random() < 0.5) {
+      const bx = P.x + Util.rand(-G.w / 2, G.w / 2), by = P.y + Util.rand(-G.h / 2, G.h / 2);
+      if (depthAt(bx, by) > 1) Particles.spawn(bx, by, Math.random() < 0.5 ? '#b05cff' : '#8a4ad0', { speed: 14, life: 0.6, size: 2, grav: -30, drag: 0.96 });
+    }
     // slow global evaporation so it can recede when sources die; cull tiny cells
     for (const [k, d] of field) {
       const nd = d * (1 - 0.02 * dt);
