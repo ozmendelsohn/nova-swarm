@@ -5,11 +5,12 @@
 const Creeper = (() => {
   const CELL = 46, MAXD = 8;          // cell size px, max depth per cell
   let field = new Map();              // "cx,cy" -> depth
-  let emitT = 0, dmgT = 0, breedT = 0;
+  let emitT = 0, dmgT = 0, breedT = 0, strikeT = 0;
+  let strikes = [];                   // telegraphed spore bombardments {x,y,r,t,maxT}
   const key = (cx, cy) => cx + ',' + cy;
   const cellX = x => Math.floor(x / CELL);
 
-  function reset() { field = new Map(); emitT = 18; dmgT = 0; breedT = 4; }
+  function reset() { field = new Map(); emitT = 18; dmgT = 0; breedT = 4; strikeT = 12; strikes = []; }
   function emitterCount() { return Enemies.list.filter(e => e.emitter).length; }
   function inTide(x, y) { return depthAt(x, y) > 0.4; }
 
@@ -73,6 +74,26 @@ const Creeper = (() => {
       if (nd <= 0.03) field.delete(k); else field.set(k, nd);
     }
 
+    // SPORE STRIKES: emitters bombard near you — telegraphed circles that seed creeper + hurt
+    strikeT -= dt;
+    if (strikeT <= 0 && liveEmitters.length) {
+      strikeT = Math.max(3.5, 9 - G.time / 90);
+      const ang = Math.random() * Math.PI * 2, dist = 60 + Math.random() * 220;
+      strikes.push({ x: P.x + Math.cos(ang) * dist, y: P.y + Math.sin(ang) * dist, r: 56 + Math.random() * 30, t: 1.3, maxT: 1.3 });
+    }
+    for (let i = strikes.length - 1; i >= 0; i--) {
+      const s = strikes[i]; s.t -= dt;
+      if (s.t <= 0) { // IMPACT: splash creeper + damage anything caught
+        const cells = (s.r / CELL) | 0;
+        for (let cx = cellX(s.x - s.r); cx <= cellX(s.x + s.r); cx++) for (let cy = cellX(s.y - s.r); cy <= cellX(s.y + s.r); cy++) {
+          if (Util.dist2(cx * CELL + CELL / 2, cy * CELL + CELL / 2, s.x, s.y) < s.r * s.r) add(cx * CELL, cy * CELL, 3);
+        }
+        Particles.burst(s.x, s.y, '#b05cff', 24, { speed: 240, life: 0.6 });
+        if (Util.dist2(P.x, P.y, s.x, s.y) < (s.r + P.r) * (s.r + P.r) && P.dashT <= 0) { P.hurtT = 0; Player.hurt(G, 30 + G.time / 8); }
+        strikes.splice(i, 1);
+      }
+    }
+
     // THE TIDE BREEDS: deep creeper near you occasionally spawns a creeper-spawn (escalation)
     breedT -= dt;
     if (breedT <= 0 && liveEmitters.length) {
@@ -116,6 +137,14 @@ const Creeper = (() => {
       c.fillStyle = `rgba(120,60,180,${a})`;
       c.fillRect(cx * CELL, cy * CELL + wob, CELL + 1, CELL + 1);
       if (d > 2) { c.fillStyle = `rgba(180,120,255,${a * 0.5})`; c.fillRect(cx * CELL + 6, cy * CELL + 6 + wob, CELL - 12, CELL - 12); } // brighter deep core
+    }
+    // spore-strike telegraphs: a warning ring that fills as impact nears
+    for (const s of strikes) {
+      const k = 1 - s.t / s.maxT;
+      c.globalAlpha = 0.5 + 0.3 * Math.sin(G.time * 16);
+      c.strokeStyle = '#ff5cd6'; c.lineWidth = 2; c.beginPath(); c.arc(s.x, s.y, s.r, 0, Math.PI * 2); c.stroke();
+      c.globalAlpha = 0.18; c.fillStyle = '#b05cff'; c.beginPath(); c.arc(s.x, s.y, s.r * k, 0, Math.PI * 2); c.fill();
+      c.globalAlpha = 1;
     }
     // spore-tower overlay on emitters
     for (const e of Enemies.list) {
