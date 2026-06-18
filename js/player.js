@@ -110,6 +110,7 @@ const Player = (() => {
       for (const e of G.enemiesInRange(p.x, p.y, p.r + 20, [])) {
         if (!p._dashHits.has(e)) { p._dashHits.add(e); G.damageEnemy(e, 16 * p.mods.dmg, { color: '#3ae0ff', effects: ['knock'] }); }
       }
+      if (typeof Creeper !== 'undefined') Creeper.clear(p.x, p.y, p.r + 22, 2); // dash plows a channel through the creeper
     } else if (p._dashHits) p._dashHits = null;
 
     // MOMENTUM GUARD: stand still ~0.8s to brace — incoming damage is halved (turtle option)

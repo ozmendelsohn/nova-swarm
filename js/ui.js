@@ -91,6 +91,17 @@ const UI = (() => {
       c.fillStyle = '#fff'; c.font = 'bold 8px monospace';
       c.fillText(ramp ? `RAMPAGE ${G.rampageT.toFixed(1)}s` : 'FERVOR', 22, fy + 5);
     }
+    // creeper threat: emitter count + "IN TIDE" warning
+    if (typeof Creeper !== 'undefined') {
+      const ec = Creeper.emitterCount();
+      if (ec > 0) {
+        c.textAlign = 'left'; c.font = 'bold 11px monospace'; c.fillStyle = '#b05cff';
+        c.fillText(`☣ EMITTERS: ${ec}`, 20, narrow ? 104 : 70);
+        if (Creeper.inTide(G.player.x, G.player.y)) {
+          c.fillStyle = `rgba(180,92,255,${0.6 + 0.4 * Math.sin(G.time * 8)})`; c.fillText('IN TIDE', 130, narrow ? 104 : 70);
+        }
+      }
+    }
     if (Snd.isMuted && Snd.isMuted()) { // mute indicator
       c.textAlign = 'right'; c.font = 'bold 12px monospace'; c.fillStyle = '#ff8c42';
       c.fillText('🔇 MUTED', G.w - 20, narrow ? 92 : 76);

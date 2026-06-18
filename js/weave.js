@@ -93,6 +93,7 @@ const Weave = (() => {
     for (const pt of loop) ringR = Math.max(ringR, Math.hypot(pt.x - cx, pt.y - cy));
     Particles.spawn(cx, cy, el.col, { ring: ringR + 12, life: 0.5, size: 3, speed: 0 });
     Particles.burst(cx, cy, el.col, Math.min(40, 10 + caught * 2), { speed: 220, life: 0.5 });
+    if (typeof Creeper !== 'undefined') Creeper.clear(cx, cy, ringR + 20, 99); // the weave purges the creeper tide inside the loop
     if (caught > 0) {
       G.shake(Math.min(10, 3 + caught * 0.3));
       Snd.play('fusion');

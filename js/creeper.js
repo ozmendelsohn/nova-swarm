@@ -5,11 +5,13 @@
 const Creeper = (() => {
   const CELL = 46, MAXD = 8;          // cell size px, max depth per cell
   let field = new Map();              // "cx,cy" -> depth
-  let emitT = 0, dmgT = 0;
+  let emitT = 0, dmgT = 0, breedT = 0;
   const key = (cx, cy) => cx + ',' + cy;
   const cellX = x => Math.floor(x / CELL);
 
-  function reset() { field = new Map(); emitT = 18; dmgT = 0; }
+  function reset() { field = new Map(); emitT = 18; dmgT = 0; breedT = 4; }
+  function emitterCount() { return Enemies.list.filter(e => e.emitter).length; }
+  function inTide(x, y) { return depthAt(x, y) > 0.4; }
 
   function depthAt(x, y) { return field.get(key(cellX(x), cellX(y))) || 0; }
   function add(x, y, amt) {
@@ -71,6 +73,22 @@ const Creeper = (() => {
       if (nd <= 0.03) field.delete(k); else field.set(k, nd);
     }
 
+    // THE TIDE BREEDS: deep creeper near you occasionally spawns a creeper-spawn (escalation)
+    breedT -= dt;
+    if (breedT <= 0 && liveEmitters.length) {
+      breedT = Math.max(1.5, 4 - G.time / 200);
+      // find a deep cell near the player and hatch an enemy from it
+      for (let tries = 0; tries < 6; tries++) {
+        const ang = Math.random() * Math.PI * 2, dist = 120 + Math.random() * 260;
+        const sx = P.x + Math.cos(ang) * dist, sy = P.y + Math.sin(ang) * dist;
+        if (depthAt(sx, sy) > 1.5) {
+          const proto = Enemies.list.find(en => !en.boss && !en.emitter);
+          if (proto) { const m = Enemies.spawnAt(G, proto.type); m.x = sx; m.y = sy; Particles.burst(sx, sy, '#b05cff', 8, { speed: 90, life: 0.4 }); }
+          break;
+        }
+      }
+    }
+
     // player wades + takes damage in deep creeper (steady drain, deeper = deadlier)
     const here = depthAt(P.x, P.y);
     if (here > 0.4 && P.dashT <= 0) {
@@ -112,5 +130,5 @@ const Creeper = (() => {
     }
   }
 
-  return { reset, update, draw, clear, depthAt };
+  return { reset, update, draw, clear, depthAt, emitterCount, inTide };
 })();

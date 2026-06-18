@@ -168,6 +168,13 @@ const Game = (() => {
     const i = idx !== undefined ? idx : Enemies.list.indexOf(e);
     if (i < 0) return;
     Enemies.list.splice(i, 1);
+    if (e.emitter) { // CREEPER EMITTER destroyed: the tide recedes here + a coin payout
+      if (typeof Creeper !== 'undefined') Creeper.clear(e.x, e.y, 170, 99);
+      Particles.text(e.x, e.y - 30, '✦ EMITTER DESTROYED ✦', '#b05cff', 16);
+      Particles.burst(e.x, e.y, '#b05cff', 40, { speed: 280, life: 0.7 });
+      G.shake(12); G.flashAmt = Math.max(G.flashAmt, 0.5);
+      for (let k = 0; k < 10; k++) World.gems.push({ x: e.x + Util.rand(-30, 30), y: e.y + Util.rand(-30, 30), v: 0, coin: 2, t: 0 });
+    }
     // ELEMENTAL CHAIN REACTIONS — a death carries its element to the horde
     if (G.combo > 30) G.player.hp = Math.min(G.player.maxHp, G.player.hp + G.player.maxHp * 0.004); // BLOODLUST: high-streak kills sustain you
     if (e.freeze > 0) { // FROZEN SHATTER: a frozen corpse bursts into icy shrapnel
