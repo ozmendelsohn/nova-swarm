@@ -110,6 +110,8 @@ const Game = (() => {
     if (e.dr) d *= e.dr; // BULWARK elite affix
     if (e.vulnT > G.time) d *= 1.2; // hoarfrost-style vulnerability marks
     e.hp -= d;
+    // EXECUTE: a wounded foe left under 10% HP is finished outright (non-boss)
+    if (!e.boss && e.hp > 0 && e.hp < e.maxHp * 0.1) { e.hp = 0; Particles.text(e.x, e.y - e.r, 'EXECUTE', '#ff3a5c', 11); }
     if (opts.w) { const n = opts.w.def.name; G.dmgLog[n] = (G.dmgLog[n] || 0) + d; } // run damage tally
     e.flash = 0.08;
     // damage numbers scale with the size of the hit — big hits really pop
@@ -164,6 +166,14 @@ const Game = (() => {
     const i = idx !== undefined ? idx : Enemies.list.indexOf(e);
     if (i < 0) return;
     Enemies.list.splice(i, 1);
+    // ELEMENTAL CHAIN REACTIONS — a death carries its element to the horde
+    if (e.freeze > 0) { // FROZEN SHATTER: a frozen corpse bursts into icy shrapnel
+      explodeAt(e.x, e.y, 52, 18 + G.player.lvl * 2, { color: '#bfeaff' });
+      Particles.burst(e.x, e.y, '#bfeaff', 10, { speed: 220, life: 0.4 });
+    }
+    if (e.burn > 0) { // BURNING SPREAD: the flames leap to nearby foes
+      for (const o of enemiesInRange(e.x, e.y, 60, [])) if (o !== e && !o.boss) o.burn = Math.max(o.burn || 0, 2);
+    }
     G.kills++; G.combo++; G.comboT = 2.5;
     if (G.combo > G.bestCombo) G.bestCombo = G.combo; // track best streak
     if (G.player.dashT > 0) G.player.dashCd = 0; // DASH CHAIN: a kill mid-dash refunds the dash
