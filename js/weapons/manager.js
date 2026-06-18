@@ -1,6 +1,6 @@
 // ---- manager.js : weapon slots, leveling, branching, fusion, passives ----
 const WeaponManager = (() => {
-  const BASE_WEAPONS = 6, MAX_PASSIVES = 6, MAX_LVL = 5;
+  const BASE_WEAPONS = 6, MAX_PASSIVES = 6, MAX_LVL = 10; // 10 levels per weapon (slower, harder curve)
   const SLOT_EVERY = 8; // +1 weapon slot every 8 player levels — endgame holds everything
   const maxWeapons = G => BASE_WEAPONS + ((G.player.lvl / SLOT_EVERY) | 0);
 
@@ -40,13 +40,14 @@ const WeaponManager = (() => {
   function stats(w) {
     const d = w.def, lvl = w.lvl;
     const mods = (typeof Game !== 'undefined' && Game.G) ? Game.G.player.mods : { dmg: 1, cd: 1, count: 0 };
-    const might = (1 + 0.12 * (passives.might || 0) + 0.18 * (lvl - 1)) * mods.dmg * Meta.fx.dmg();
-    const haste = Math.max(0.3, (1 - 0.08 * (passives.haste || 0)) * (1 - 0.05 * (lvl - 1)) * mods.cd);
-    const area = (1 + 0.1 * (passives.area || 0)) * d.area * (1 + 0.06 * (lvl - 1));
+    // per-level gains are HALVED (with 10 levels the max is similar, but the climb is twice as slow)
+    const might = (1 + 0.12 * (passives.might || 0) + 0.09 * (lvl - 1)) * mods.dmg * Meta.fx.dmg();
+    const haste = Math.max(0.3, (1 - 0.08 * (passives.haste || 0)) * (1 - 0.025 * (lvl - 1)) * mods.cd);
+    const area = (1 + 0.1 * (passives.area || 0)) * d.area * (1 + 0.03 * (lvl - 1));
     const s = {
       dmg: d.dmg * might,
       cd: d.cd * haste,
-      count: Math.round(d.count + Math.floor((lvl - 1) / 2)) + mods.count,
+      count: Math.round(d.count + Math.floor((lvl - 1) / 4)) + mods.count,
       speed: d.speed, area, dur: d.dur, pierce: d.pierce,
     };
     for (const q of Quirks.list(d)) if (q.mod) q.mod(s, w);
