@@ -167,6 +167,7 @@ const Game = (() => {
     if (i < 0) return;
     Enemies.list.splice(i, 1);
     // ELEMENTAL CHAIN REACTIONS — a death carries its element to the horde
+    if (G.combo > 30) G.player.hp = Math.min(G.player.maxHp, G.player.hp + G.player.maxHp * 0.004); // BLOODLUST: high-streak kills sustain you
     if (e.freeze > 0) { // FROZEN SHATTER: a frozen corpse bursts into icy shrapnel
       explodeAt(e.x, e.y, 52, 18 + G.player.lvl * 2, { color: '#bfeaff' });
       Particles.burst(e.x, e.y, '#bfeaff', 10, { speed: 220, life: 0.4 });
@@ -294,7 +295,14 @@ const Game = (() => {
       b.life -= dt;
       if (b.life <= 0) { b.active = false; continue; }
       b.x += b.vx * dt; b.y += b.vy * dt;
-      if (Util.dist2(b.x, b.y, P.x, P.y) < (b.r + P.r) * (b.r + P.r)) {
+      const d2 = Util.dist2(b.x, b.y, P.x, P.y), hitR = b.r + P.r;
+      // GRAZE: a near-miss you survive rewards skill with fervor (and a touch of bullet-time at high streak)
+      if (d2 >= hitR * hitR && d2 < (hitR + 13) * (hitR + 13) && !b._grazed) {
+        b._grazed = true; G.fervor = Math.min(100, G.fervor + 2);
+        if (G.combo > 15) G.freezeT = Math.max(G.freezeT, 0.04);
+        Particles.text(P.x + Util.rand(-6, 6), P.y - 24, 'GRAZE', '#9be8ff', 10);
+      }
+      if (d2 < hitR * hitR) {
         b.active = false;
         if (P.guarding) { Particles.burst(b.x, b.y, '#9be8ff', 5, { speed: 120, life: 0.25 }); continue; } // GUARD BLOCK: braced = projectiles shatter harmlessly
         Player.hurt(G, b.dmg);

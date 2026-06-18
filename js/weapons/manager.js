@@ -59,6 +59,10 @@ const WeaponManager = (() => {
       if (G.combo > 40) s.cd *= 0.7; else if (G.combo > 20) s.cd *= 0.85;
       // RAMPAGE: full-fervor frenzy hits +50% harder
       if (G.rampageT > 0) s.dmg *= 1.5;
+      // PRISMATIC: wielding 3+ distinct elemental families empowers the whole arsenal +18%
+      const fams = new Set();
+      for (const ww of weapons) { const f = ww.def.family || (ww.def.parent && WEAPONS.defs[ww.def.parent] && WEAPONS.defs[ww.def.parent].family); if (f) fams.add(f); }
+      if (fams.size >= 3) s.dmg *= 1.18;
       // DYE RESONANCE: standing on a dye field of your weapon's element empowers it +45%
       const fam = d.family || (d.parent && WEAPONS.defs[d.parent] && WEAPONS.defs[d.parent].family);
       if (fam && typeof World !== 'undefined' && World.dyeAt) {
