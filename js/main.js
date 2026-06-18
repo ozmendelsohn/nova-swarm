@@ -50,6 +50,7 @@ const Game = (() => {
     Projectiles.clearAll();
     World.reset();
     Weave.reset();
+    Creeper.reset();
     zaps.length = 0;
     G = {
       state: 'play', time: 0, w: cv.width, h: cv.height,
@@ -121,6 +122,7 @@ const Game = (() => {
     }
     Particles.burst(e.x, e.y, opts.color || '#fff', 3, { speed: 80, life: 0.3 });
     if (crit) { Particles.spawn(e.x, e.y, opts.color || '#ffe93e', { speed: 0, life: 0.3, ring: e.r + 22 }); G.shake(2); }
+    if (typeof Creeper !== 'undefined') Creeper.clear(e.x, e.y, 28, 0.6); // weapons evaporate the creeper tide
     Snd.play('hit');
     // on-hit effects
     for (const f of fx) {
@@ -410,6 +412,7 @@ const Game = (() => {
     WeaponManager.update(G, dt);
     Archetypes.updateProjectiles(G, dt);
     Enemies.update(G, dt);
+    Creeper.update(G, dt); // the spreading fluid tide
     updateEnemyBullets(dt);
     World.updateProps(G, dt);
     World.updateGems(G, dt);
@@ -453,6 +456,7 @@ const Game = (() => {
     c.translate(G.w / 2 - P.x + sx, G.h / 2 - P.y + sy);
 
     World.drawGround(G, c);
+    Creeper.draw(G, c); // fluid tide sits on the ground, under everything
     World.drawPickups(G, c);
     Enemies.draw(G, c);
     Weave.draw(G, c); // the glowing thread + weave snaps, over enemies
