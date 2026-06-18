@@ -528,6 +528,12 @@ const Game = (() => {
       dv.addColorStop(0, 'transparent'); dv.addColorStop(1, 'rgba(8,2,16,0.45)');
       c.fillStyle = dv; c.fillRect(0, 0, G.w, G.h);
     }
+    // in-tide warning: the creeper closes in from the screen edges
+    if (typeof Creeper !== 'undefined' && Creeper.inTide(G.player.x, G.player.y)) {
+      const tv = c.createRadialGradient(G.w / 2, G.h / 2, G.h * 0.3, G.w / 2, G.h / 2, G.h * 0.8);
+      tv.addColorStop(0, 'transparent'); tv.addColorStop(1, `rgba(120,60,180,${0.35 + 0.12 * Math.sin(G.time * 5)})`);
+      c.fillStyle = tv; c.fillRect(0, 0, G.w, G.h);
+    }
     // low-HP heartbeat: the edges of the cloth bleed red
     if (G.player.hp / G.player.maxHp < 0.3 && G.state !== 'over') {
       const beat = 0.22 + 0.16 * Math.max(0, Math.sin(G.time * 5.5));

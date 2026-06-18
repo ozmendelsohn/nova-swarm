@@ -113,8 +113,8 @@ const Creeper = (() => {
     // player wades + takes damage in deep creeper (steady drain, deeper = deadlier)
     const here = depthAt(P.x, P.y);
     if (here > 0.4 && P.dashT <= 0) {
-      G.chillT = Math.max(G.chillT, G.time + 0.15); // wade: slowed
-      clear(P.x, P.y, 26, 0.5 * dt);                // you displace a little as you stand
+      G.chillT = Math.max(G.chillT, G.time + 0.15);        // wade: slowed
+      clear(P.x, P.y, 26 + (G.combo > 25 ? 14 : 0), 0.5 * dt * (G.combo > 25 ? 2.2 : 1)); // a hot streak melts the tide back faster
       dmgT -= dt;
       if (dmgT <= 0) {
         dmgT = 0.3;
@@ -155,6 +155,9 @@ const Creeper = (() => {
       c.fillStyle = '#b05cff'; c.shadowColor = '#b05cff'; c.shadowBlur = 14;
       c.beginPath(); c.arc(0, -6, 8 * pul, 0, Math.PI * 2); c.fill();
       c.shadowBlur = 0; c.fillStyle = '#fff'; c.beginPath(); c.arc(0, -6, 2.5, 0, Math.PI * 2); c.fill();
+      // emitter HP bar so you can gauge progress destroying it
+      c.fillStyle = '#000a'; c.fillRect(-14, -20, 28, 4);
+      c.fillStyle = '#b05cff'; c.fillRect(-14, -20, 28 * Math.max(0, e.hp / e.maxHp), 4);
       c.restore();
     }
   }
