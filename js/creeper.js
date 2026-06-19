@@ -167,6 +167,19 @@ const Creeper = (() => {
       c.strokeStyle = `rgba(214,158,255,${0.45 + 0.3 * Math.sin(G.time * 4 + cx + cy)})`; c.lineWidth = 2.5; c.lineCap = 'round';
       c.beginPath(); c.arc(ccx, ccy + 8, CELL * 0.6, Math.PI * 1.15, Math.PI * 1.85); c.stroke();
     }
+    // reaching tendrils at the frontier — the tide visibly "creeps" into open ground
+    for (let cx = cx0; cx <= cx1; cx++) for (let cy = cy0; cy <= cy1; cy++) {
+      const d = field.get(key(cx, cy)); if (!d || d < 0.8) continue;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        if ((field.get(key(cx + dx, cy + dy)) || 0) > 0.4) continue; // not a frontier in this direction
+        const reach = (7 + Math.sin(G.time * 3 + cx * 1.7 + cy * 1.1 + dx * 2 + dy) * 6) * Math.min(1, d / 2);
+        if (reach < 4) continue;
+        const bx = cx * CELL + CELL / 2 + dx * CELL * 0.5, by = cy * CELL + CELL / 2 + dy * CELL * 0.5;
+        c.fillStyle = `rgba(92,38,148,${Math.min(0.7, 0.3 + d * 0.08)})`;
+        c.beginPath(); c.ellipse(bx + dx * reach * 0.5, by + dy * reach * 0.5, dx ? reach : 5.5, dy ? reach : 5.5, 0, 0, Math.PI * 2); c.fill();
+        break; // one tendril per cell keeps it clean
+      }
+    }
     // purge totems: a cyan beacon with a protective clearing ring
     for (const tm of totems) {
       const a = Math.min(1, tm.t / 2);
