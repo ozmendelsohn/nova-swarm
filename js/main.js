@@ -55,7 +55,7 @@ const Game = (() => {
     G = {
       state: 'play', time: 0, w: cv.width, h: cv.height,
       player: Player.create(Characters.selected), kills: 0, combo: 0, comboT: 0, coinsRun: 0, dmgLog: {},
-      shakeAmt: 0, flashAmt: 0, hurtFlash: 0, lvlFlash: 0, _minMark: 0, _hbT: 0, hurtDir: 0, hurtDirT: 0, dmgTaken: 0, bestCombo: 0, fervor: 0, rampageT: 0, freezeT: 0, levelUpQueue: 0,
+      shakeAmt: 0, flashAmt: 0, hurtFlash: 0, lvlFlash: 0, _minMark: 0, _hbT: 0, hurtDir: 0, hurtDirT: 0, dmgTaken: 0, bestCombo: 0, fervor: 0, rampageT: 0, stormT: 70, ionStormT: 0, _boltT: 0, freezeT: 0, levelUpQueue: 0,
       bossBanner: 0, bossName: '', bossTitle: '', won: false,
       // API used by weapons/enemies:
       nearestEnemy, enemiesInRange, damageEnemy, killEnemy, explodeAt, zap,
@@ -354,6 +354,21 @@ const Game = (() => {
     if (_preCombo > 20 && G.combo === 0) Particles.text(G.player.x, G.player.y - 30, `COMBO LOST · ${_preCombo}`, '#ff8c42', 14); // combo break
     G.shakeAmt *= 0.88; G.flashAmt *= 0.92; if (G.hurtFlash) G.hurtFlash *= 0.86; if (G.lvlFlash) G.lvlFlash *= 0.9;
     if (G.rampageT > 0) G.rampageT -= dt; else if (G.fervor > 0) G.fervor = Math.max(0, G.fervor - dt * 5); // fervor bleeds off out of combat
+    // ION STORM: a periodic lightning tempest that chains through the horde (spectacle + reprieve)
+    G.stormT -= dt;
+    if (G.stormT <= 0) { G.stormT = 75 + Util.rand(-10, 20); G.ionStormT = 8; announceBoss('⚡ ION STORM ⚡', 'The Loom Crackles with Wild Charge'); }
+    if (G.ionStormT > 0) {
+      G.ionStormT -= dt; G._boltT -= dt;
+      if (G._boltT <= 0) {
+        G._boltT = 0.12;
+        const P = G.player, tx = P.x + Util.rand(-G.w / 2, G.w / 2), ty = P.y + Util.rand(-G.h / 2, G.h / 2);
+        const targ = nearestEnemy(tx, ty, 120, null);
+        const ex = targ ? targ.x : tx, ey = targ ? targ.y : ty;
+        zap(P.x, P.y - 200, ex, ey, '#cdfaff'); G.flashAmt = Math.max(G.flashAmt, 0.25);
+        if (targ) { damageEnemy(targ, 40 + G.player.lvl * 6, { color: '#cdfaff', effects: ['shock'] }); Particles.spawn(ex, ey, '#cdfaff', { speed: 0, life: 0.2, ring: 30 }); }
+        if (typeof Creeper !== 'undefined') Creeper.clear(ex, ey, 40, 2); // lightning scorches the tide too
+      }
+    }
     // minute-survived milestones
     const minute = (G.time / 60) | 0;
     if (minute > 0 && minute !== G._minMark) {
@@ -528,6 +543,8 @@ const Game = (() => {
       dv.addColorStop(0, 'transparent'); dv.addColorStop(1, 'rgba(8,2,16,0.45)');
       c.fillStyle = dv; c.fillRect(0, 0, G.w, G.h);
     }
+    // ion storm: a dim, charged sky
+    if (G.ionStormT > 0) { c.fillStyle = `rgba(30,40,90,${0.22 + 0.06 * Math.sin(G.time * 13)})`; c.fillRect(0, 0, G.w, G.h); }
     // in-tide warning: the creeper closes in from the screen edges
     if (typeof Creeper !== 'undefined' && Creeper.inTide(G.player.x, G.player.y)) {
       const tv = c.createRadialGradient(G.w / 2, G.h / 2, G.h * 0.3, G.w / 2, G.h / 2, G.h * 0.8);
