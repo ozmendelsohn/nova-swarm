@@ -5,12 +5,13 @@
 const Creeper = (() => {
   const CELL = 46, MAXD = 8;          // cell size px, max depth per cell
   let field = new Map();              // "cx,cy" -> depth
-  let emitT = 0, dmgT = 0, breedT = 0, strikeT = 0;
+  let emitT = 0, dmgT = 0, breedT = 0, strikeT = 0, totemT = 0, totemPulse = 0;
   let strikes = [];                   // telegraphed spore bombardments {x,y,r,t,maxT}
+  let totems = [];                    // player purge beacons {x,y,t}
   const key = (cx, cy) => cx + ',' + cy;
   const cellX = x => Math.floor(x / CELL);
 
-  function reset() { field = new Map(); emitT = 18; dmgT = 0; breedT = 4; strikeT = 12; strikes = []; }
+  function reset() { field = new Map(); emitT = 18; dmgT = 0; breedT = 4; strikeT = 12; strikes = []; totemT = 9; totemPulse = 0; totems = []; }
   function emitterCount() { return Enemies.list.filter(e => e.emitter).length; }
   function inTide(x, y) { return depthAt(x, y) > 0.4; }
 
@@ -115,6 +116,17 @@ const Creeper = (() => {
       }
     }
 
+    // PURGE TOTEMS: auto-deployed beacons reclaim ground — evaporate creeper + pulse damage
+    totemT -= dt;
+    if (totemT <= 0) { totemT = 11; totems.push({ x: P.x, y: P.y, t: 8 }); Particles.text(P.x, P.y - 30, '✦ PURGE TOTEM ✦', '#3ae0ff', 13); }
+    totemPulse -= dt; const pulse = totemPulse <= 0; if (pulse) totemPulse = 0.5;
+    for (let i = totems.length - 1; i >= 0; i--) {
+      const tm = totems[i]; tm.t -= dt;
+      clear(tm.x, tm.y, 78, 3.5 * dt); // hold back the tide around the beacon
+      if (pulse) for (const en of G.enemiesInRange(tm.x, tm.y, 85, [])) G.damageEnemy(en, 14 + G.player.lvl * 2, { color: '#3ae0ff' });
+      if (tm.t <= 0) totems.splice(i, 1);
+    }
+
     // player wades + takes damage in deep creeper (steady drain, deeper = deadlier)
     const here = depthAt(P.x, P.y);
     if (here > 0.4 && P.dashT <= 0) {
@@ -142,6 +154,17 @@ const Creeper = (() => {
       c.fillStyle = `rgba(120,60,180,${a})`;
       c.fillRect(cx * CELL, cy * CELL + wob, CELL + 1, CELL + 1);
       if (d > 2) { c.fillStyle = `rgba(180,120,255,${a * 0.5})`; c.fillRect(cx * CELL + 6, cy * CELL + 6 + wob, CELL - 12, CELL - 12); } // brighter deep core
+    }
+    // purge totems: a cyan beacon with a protective clearing ring
+    for (const tm of totems) {
+      const a = Math.min(1, tm.t / 2);
+      c.globalAlpha = 0.25 * a; c.fillStyle = '#3ae0ff';
+      c.beginPath(); c.arc(tm.x, tm.y, 78, 0, Math.PI * 2); c.fill();
+      c.globalAlpha = 0.6 + 0.4 * Math.sin(G.time * 8); c.strokeStyle = '#3ae0ff'; c.lineWidth = 2;
+      c.beginPath(); c.arc(tm.x, tm.y, 78, 0, Math.PI * 2); c.stroke();
+      c.globalAlpha = 1; c.fillStyle = '#cdfaff'; c.shadowColor = '#3ae0ff'; c.shadowBlur = 12;
+      c.fillRect(tm.x - 3, tm.y - 12, 6, 16); c.beginPath(); c.arc(tm.x, tm.y - 14, 4, 0, Math.PI * 2); c.fill();
+      c.shadowBlur = 0;
     }
     // spore-strike telegraphs: a warning ring that fills as impact nears
     for (const s of strikes) {
