@@ -367,6 +367,8 @@ const Game = (() => {
         zap(P.x, P.y - 200, ex, ey, '#cdfaff'); G.flashAmt = Math.max(G.flashAmt, 0.25);
         if (targ) { damageEnemy(targ, 40 + G.player.lvl * 6, { color: '#cdfaff', effects: ['shock'] }); Particles.spawn(ex, ey, '#cdfaff', { speed: 0, life: 0.2, ring: 30 }); }
         if (typeof Creeper !== 'undefined') Creeper.clear(ex, ey, 40, 2); // lightning scorches the tide too
+        // wild bolt: ~14% strike near the ground and can clip the player — the storm is double-edged
+        if (Math.random() < 0.14 && Util.dist2(ex, ey, P.x, P.y) < 70 * 70 && P.dashT <= 0) Player.hurt(G, 22 + G.time / 12, null);
       }
     }
     // minute-survived milestones
