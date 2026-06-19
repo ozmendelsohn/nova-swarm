@@ -147,13 +147,25 @@ const Creeper = (() => {
   function draw(G, c) {
     const P = G.player, cx0 = cellX(P.x - G.w / 2) - 1, cx1 = cellX(P.x + G.w / 2) + 1;
     const cy0 = cellX(P.y - G.h / 2) - 1, cy1 = cellX(P.y + G.h / 2) + 1;
+    // ---- creeper body: organic flowing fluid (overlapping blobs merge into a living mass) ----
+    const wobOf = (cx, cy, d) => Math.sin(G.time * 2.1 + cx * 0.9 + cy * 0.7) * (2 + d * 0.6);
     for (let cx = cx0; cx <= cx1; cx++) for (let cy = cy0; cy <= cy1; cy++) {
       const d = field.get(key(cx, cy)); if (!d) continue;
-      const a = Math.min(0.72, 0.18 + d * 0.12);
-      const wob = Math.sin(G.time * 3 + cx * 1.3 + cy) * 1.5;
-      c.fillStyle = `rgba(120,60,180,${a})`;
-      c.fillRect(cx * CELL, cy * CELL + wob, CELL + 1, CELL + 1);
-      if (d > 2) { c.fillStyle = `rgba(180,120,255,${a * 0.5})`; c.fillRect(cx * CELL + 6, cy * CELL + 6 + wob, CELL - 12, CELL - 12); } // brighter deep core
+      const ccx = cx * CELL + CELL / 2, ccy = cy * CELL + CELL / 2 + wobOf(cx, cy, d);
+      const R = CELL * 0.76 + Math.min(8, d * 1.7), a = Math.min(0.84, 0.32 + d * 0.12);
+      c.fillStyle = `rgba(64,22,98,${a})`;                              // dark body
+      c.beginPath(); c.arc(ccx, ccy, R, 0, Math.PI * 2); c.fill();
+      c.fillStyle = `rgba(126,58,192,${a * 0.7})`;                      // mid violet
+      c.beginPath(); c.arc(ccx, ccy, R * 0.6, 0, Math.PI * 2); c.fill();
+      if (d > 2.2) { c.fillStyle = `rgba(198,142,255,${Math.min(0.7, (d - 2) * 0.2)})`; c.beginPath(); c.arc(ccx, ccy, R * 0.3, 0, Math.PI * 2); c.fill(); } // glowing core
+    }
+    // surface sheen: a bright animated skin where the tide meets open ground above
+    for (let cx = cx0; cx <= cx1; cx++) for (let cy = cy0; cy <= cy1; cy++) {
+      const d = field.get(key(cx, cy)); if (!d || d < 0.5) continue;
+      if ((field.get(key(cx, cy - 1)) || 0) > 0.5) continue;           // covered — not a surface cell
+      const ccx = cx * CELL + CELL / 2, ccy = cy * CELL + 4 + wobOf(cx, cy, d);
+      c.strokeStyle = `rgba(214,158,255,${0.45 + 0.3 * Math.sin(G.time * 4 + cx + cy)})`; c.lineWidth = 2.5; c.lineCap = 'round';
+      c.beginPath(); c.arc(ccx, ccy + 8, CELL * 0.6, Math.PI * 1.15, Math.PI * 1.85); c.stroke();
     }
     // purge totems: a cyan beacon with a protective clearing ring
     for (const tm of totems) {
@@ -174,18 +186,29 @@ const Creeper = (() => {
       c.globalAlpha = 0.18; c.fillStyle = '#b05cff'; c.beginPath(); c.arc(s.x, s.y, s.r * k, 0, Math.PI * 2); c.fill();
       c.globalAlpha = 1;
     }
-    // spore-tower overlay on emitters
+    // spore-tower overlay on emitters: a writhing, pulsing organic structure
     for (const e of Enemies.list) {
       if (!e.emitter) continue;
       c.save(); c.translate(e.x, e.y);
-      const pul = 1 + Math.sin(G.time * 4) * 0.12;
-      c.fillStyle = '#3a1a5e'; c.fillRect(-12, -4, 24, 18);
-      c.fillStyle = '#b05cff'; c.shadowColor = '#b05cff'; c.shadowBlur = 14;
-      c.beginPath(); c.arc(0, -6, 8 * pul, 0, Math.PI * 2); c.fill();
-      c.shadowBlur = 0; c.fillStyle = '#fff'; c.beginPath(); c.arc(0, -6, 2.5, 0, Math.PI * 2); c.fill();
-      // emitter HP bar so you can gauge progress destroying it
-      c.fillStyle = '#000a'; c.fillRect(-14, -20, 28, 4);
-      c.fillStyle = '#b05cff'; c.fillRect(-14, -20, 28 * Math.max(0, e.hp / e.maxHp), 4);
+      const pul = 1 + Math.sin(G.time * 4) * 0.16, breath = Math.sin(G.time * 2);
+      // writhing root tendrils
+      c.strokeStyle = '#3a1a5e'; c.lineWidth = 3; c.lineCap = 'round';
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * Math.PI * 2 + G.time * 0.3, len = 16 + Math.sin(G.time * 3 + i) * 5;
+        c.beginPath(); c.moveTo(0, 6);
+        c.quadraticCurveTo(Math.cos(a) * len * 0.6, 10 + Math.sin(a) * 4, Math.cos(a) * len, 16 + Math.sin(G.time * 4 + i) * 3); c.stroke();
+      }
+      // bulbous base
+      c.fillStyle = '#2a1142'; c.beginPath(); c.ellipse(0, 2, 13, 11 + breath, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#4a2270'; c.beginPath(); c.ellipse(0, 0, 10, 9, 0, 0, Math.PI * 2); c.fill();
+      // glowing spore core
+      c.shadowColor = '#c98aff'; c.shadowBlur = 18;
+      c.fillStyle = '#b05cff'; c.beginPath(); c.arc(0, -4, 8 * pul, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#e6c8ff'; c.beginPath(); c.arc(0, -4, 4.5 * pul, 0, Math.PI * 2); c.fill();
+      c.shadowBlur = 0; c.fillStyle = '#fff'; c.beginPath(); c.arc(-1.5, -5.5, 1.8, 0, Math.PI * 2); c.fill();
+      // HP bar
+      c.fillStyle = '#000a'; c.fillRect(-15, -24, 30, 4);
+      c.fillStyle = '#c98aff'; c.fillRect(-15, -24, 30 * Math.max(0, e.hp / e.maxHp), 4);
       c.restore();
     }
   }
