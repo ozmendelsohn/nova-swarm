@@ -148,7 +148,7 @@ const Creeper = (() => {
     const P = G.player, cx0 = cellX(P.x - G.w / 2) - 1, cx1 = cellX(P.x + G.w / 2) + 1;
     const cy0 = cellX(P.y - G.h / 2) - 1, cy1 = cellX(P.y + G.h / 2) + 1;
     // ---- creeper body: organic flowing fluid (overlapping blobs merge into a living mass) ----
-    const wobOf = (cx, cy, d) => Math.sin(G.time * 2.1 + cx * 0.9 + cy * 0.7) * (2 + d * 0.6);
+    const wobOf = (cx, cy, d) => Math.sin(G.time * 2.1 + cx * 0.9 + cy * 0.7) * (2 + d * 0.6) + Math.sin(G.time * 1.3 - cx * 0.5 + cy * 1.1) * 1.6;
     for (let cx = cx0; cx <= cx1; cx++) for (let cy = cy0; cy <= cy1; cy++) {
       const d = field.get(key(cx, cy)); if (!d) continue;
       const ccx = cx * CELL + CELL / 2, ccy = cy * CELL + CELL / 2 + wobOf(cx, cy, d);
@@ -191,6 +191,13 @@ const Creeper = (() => {
       if (!e.emitter) continue;
       c.save(); c.translate(e.x, e.y);
       const pul = 1 + Math.sin(G.time * 4) * 0.16, breath = Math.sin(G.time * 2);
+      // pulsing source ripples — the emitter visibly pumps the tide outward
+      for (let r = 0; r < 3; r++) {
+        const ph = (G.time * 0.45 + r / 3) % 1;
+        c.globalAlpha = (1 - ph) * 0.28; c.strokeStyle = '#c98aff'; c.lineWidth = 2.5;
+        c.beginPath(); c.arc(0, 0, 12 + ph * 78, 0, Math.PI * 2); c.stroke();
+      }
+      c.globalAlpha = 1;
       // writhing root tendrils
       c.strokeStyle = '#3a1a5e'; c.lineWidth = 3; c.lineCap = 'round';
       for (let i = 0; i < 5; i++) {
