@@ -8,10 +8,14 @@ const Creeper = (() => {
   let emitT = 0, dmgT = 0, breedT = 0, strikeT = 0, totemT = 0, totemPulse = 0;
   let strikes = [];                   // telegraphed spore bombardments {x,y,r,t,maxT}
   let totems = [];                    // player purge beacons {x,y,t}
+  let emitterMeta = new Map();        // enemy -> {hp, flashT, puffT} for hit-flash + death-implode tracking
+  let shockwaves = [];                 // emitter death rings {x,y,t}
   const key = (cx, cy) => cx + ',' + cy;
   const cellX = x => Math.floor(x / CELL);
+  // deterministic per-cell pseudo-random in [0,1), stable across frames (no Math.random in draw)
+  const hash = (cx, cy) => { const s = Math.sin(cx * 127.1 + cy * 311.7) * 43758.5453; return s - Math.floor(s); };
 
-  function reset() { field = new Map(); emitT = 18; dmgT = 0; breedT = 4; strikeT = 12; strikes = []; totemT = 9; totemPulse = 0; totems = []; }
+  function reset() { field = new Map(); emitT = 18; dmgT = 0; breedT = 4; strikeT = 12; strikes = []; totemT = 9; totemPulse = 0; totems = []; emitterMeta = new Map(); shockwaves = []; }
   function emitterCount() { return Enemies.list.filter(e => e.emitter).length; }
   function inTide(x, y) { return depthAt(x, y) > 0.4; }
 
@@ -69,11 +73,32 @@ const Creeper = (() => {
       const nd = Math.min(MAXD, (field.get(k) || 0) + v);
       if (nd <= 0.02) field.delete(k); else field.set(k, nd);
     }
-    // ambient surface bubbling from deep pools in view (life/atmosphere)
-    if (Math.random() < 0.5) {
+    // ambient surface bubbling from deep pools in view (life/atmosphere) — bias toward actual deep cells
+    for (let tries = 0; tries < 3; tries++) {
       const bx = P.x + Util.rand(-G.w / 2, G.w / 2), by = P.y + Util.rand(-G.h / 2, G.h / 2);
-      if (depthAt(bx, by) > 1) Particles.spawn(bx, by, Math.random() < 0.5 ? '#b05cff' : '#8a4ad0', { speed: 14, life: 0.6, size: 2, grav: -30, drag: 0.96 });
+      const d = depthAt(bx, by);
+      if (d > 1 && Math.random() < 0.5) {
+        const t = Math.min(1, (d - 1) / (MAXD - 1));
+        Particles.spawn(bx, by, Math.random() < 0.5 ? '#b05cff' : '#8a4ad0', { speed: 14 + t * 10, life: 0.5 + t * 0.4, size: 2 + t * 1.5, grav: -30, drag: 0.96 });
+        break;
+      }
     }
+
+    // track emitter hp for hit-flash, and detect death for implode burst
+    const liveNow = new Set();
+    for (const e of liveEmitters) {
+      liveNow.add(e);
+      const m = emitterMeta.get(e) || { hp: e.hp, flashT: 0 };
+      if (e.hp < m.hp) m.flashT = 0.18;
+      m.hp = e.hp; m.flashT = Math.max(0, m.flashT - dt);
+      m.puffT = (m.puffT ?? 2.2) - dt;
+      if (m.puffT <= 0) { m.puffT = 2.2; Particles.burst(e.x, e.y - 6, '#c98aff', 6, { speed: 60, life: 0.5 }); } // spore puff synced with ripple cycle
+      emitterMeta.set(e, m);
+    }
+    for (const e of Array.from(emitterMeta.keys())) {
+      if (!liveNow.has(e)) { Particles.burst(e.x, e.y, '#e6c8ff', 34, { speed: 280, life: 0.75 }); G.shake(10); shockwaves.push({ x: e.x, y: e.y, t: 0.5 }); emitterMeta.delete(e); }
+    }
+    for (let i = shockwaves.length - 1; i >= 0; i--) { shockwaves[i].t -= dt; if (shockwaves[i].t <= 0) shockwaves.splice(i, 1); }
     // slow global evaporation so it can recede when sources die; cull tiny cells
     for (const [k, d] of field) {
       const nd = d * (1 - 0.02 * dt);
@@ -148,16 +173,44 @@ const Creeper = (() => {
     const P = G.player, cx0 = cellX(P.x - G.w / 2) - 1, cx1 = cellX(P.x + G.w / 2) + 1;
     const cy0 = cellX(P.y - G.h / 2) - 1, cy1 = cellX(P.y + G.h / 2) + 1;
     // ---- creeper body: organic flowing fluid (overlapping blobs merge into a living mass) ----
+    // flow bias: pool interiors drift toward their lowest-depth neighbour (echoes update()'s diffusion)
+    const flowOf = (cx, cy, d) => {
+      let lx = 0, ly = 0, low = d;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nd = field.get(key(cx + dx, cy + dy)) || 0;
+        if (nd < low) { low = nd; lx = dx; ly = dy; }
+      }
+      const pull = Math.min(1, (d - low) * 0.35);
+      return { fx: lx * pull * 3.5, fy: ly * pull * 3.5 };
+    };
     const wobOf = (cx, cy, d) => Math.sin(G.time * 2.1 + cx * 0.9 + cy * 0.7) * (2 + d * 0.6) + Math.sin(G.time * 1.3 - cx * 0.5 + cy * 1.1) * 1.6;
+    // the tide gets angrier the longer the run goes — body creeps from violet toward a hot red
+    const anger = Math.min(1, G.time / 900);
+    const bodyRGB = `${Math.round(64 + anger * 100)},${Math.round(22 - anger * 14)},${Math.round(98 - anger * 60)}`;
     for (let cx = cx0; cx <= cx1; cx++) for (let cy = cy0; cy <= cy1; cy++) {
       const d = field.get(key(cx, cy)); if (!d) continue;
-      const ccx = cx * CELL + CELL / 2, ccy = cy * CELL + CELL / 2 + wobOf(cx, cy, d);
+      const { fx, fy } = flowOf(cx, cy, d);
+      const ccx = cx * CELL + CELL / 2 + fx, ccy = cy * CELL + CELL / 2 + wobOf(cx, cy, d) + fy;
       const R = CELL * 0.76 + Math.min(8, d * 1.7), a = Math.min(0.84, 0.32 + d * 0.12);
-      c.fillStyle = `rgba(64,22,98,${a})`;                              // dark body
+      c.fillStyle = `rgba(${bodyRGB},${a})`;                            // dark body
       c.beginPath(); c.arc(ccx, ccy, R, 0, Math.PI * 2); c.fill();
+      // mottling: stable per-cell blotch breaks up the flat fill
+      const mh = hash(cx, cy);
+      c.fillStyle = mh > 0.5 ? `rgba(30,10,50,${a * 0.35})` : `rgba(150,90,210,${a * 0.25})`;
+      c.beginPath(); c.arc(ccx + (mh - 0.5) * R * 0.7, ccy + (hash(cy, cx) - 0.5) * R * 0.7, R * (0.22 + mh * 0.18), 0, Math.PI * 2); c.fill();
       c.fillStyle = `rgba(126,58,192,${a * 0.7})`;                      // mid violet
       c.beginPath(); c.arc(ccx, ccy, R * 0.6, 0, Math.PI * 2); c.fill();
       if (d > 2.2) { c.fillStyle = `rgba(198,142,255,${Math.min(0.7, (d - 2) * 0.2)})`; c.beginPath(); c.arc(ccx, ccy, R * 0.3, 0, Math.PI * 2); c.fill(); } // glowing core
+      if (d > 3) { // rim glint on deep pools — a living skin catching light
+        c.strokeStyle = `rgba(226,190,255,${0.15 + 0.1 * Math.sin(G.time * 3 + cx + cy)})`; c.lineWidth = 1.5;
+        c.beginPath(); c.arc(ccx, ccy, R * 0.95, -0.4, 1.1); c.stroke();
+      }
+      if (d > MAXD * 0.7 && mh > 0.8) { // a watching eye surfaces in the deepest, angriest pools
+        const blink = Math.sin(G.time * 0.6 + cx * 3 + cy) > 0.92 ? 0.15 : 1;
+        const ex = ccx + (hash(cx + 1, cy) - 0.5) * R * 0.5, ey = ccy + (hash(cx, cy + 1) - 0.5) * R * 0.3;
+        c.fillStyle = `rgba(20,4,30,${a})`; c.beginPath(); c.ellipse(ex, ey, 5, 5 * blink, 0, 0, Math.PI * 2); c.fill();
+        c.fillStyle = `rgba(255,90,220,${0.8 * a})`; c.beginPath(); c.arc(ex, ey, 2 * blink, 0, Math.PI * 2); c.fill();
+      }
     }
     // surface sheen: a bright animated skin where the tide meets open ground above
     for (let cx = cx0; cx <= cx1; cx++) for (let cy = cy0; cy <= cy1; cy++) {
@@ -175,10 +228,35 @@ const Creeper = (() => {
         const reach = (7 + Math.sin(G.time * 3 + cx * 1.7 + cy * 1.1 + dx * 2 + dy) * 6) * Math.min(1, d / 2);
         if (reach < 4) continue;
         const bx = cx * CELL + CELL / 2 + dx * CELL * 0.5, by = cy * CELL + CELL / 2 + dy * CELL * 0.5;
-        c.fillStyle = `rgba(92,38,148,${Math.min(0.7, 0.3 + d * 0.08)})`;
-        c.beginPath(); c.ellipse(bx + dx * reach * 0.5, by + dy * reach * 0.5, dx ? reach : 5.5, dy ? reach : 5.5, 0, 0, Math.PI * 2); c.fill();
+        const col = `rgba(92,38,148,${Math.min(0.7, 0.3 + d * 0.08)})`;
+        if (hash(cx, cy) > 0.55 && d > 1.4) {
+          // forking claw: two thinner sub-tips reaching past the main tendril
+          c.strokeStyle = col; c.lineCap = 'round';
+          for (const s of [-1, 1]) {
+            const perp = dx ? [0, s] : [s, 0];
+            c.lineWidth = 3.2;
+            c.beginPath(); c.moveTo(bx, by);
+            c.quadraticCurveTo(bx + dx * reach * 0.55 + perp[0] * reach * 0.3, by + dy * reach * 0.55 + perp[1] * reach * 0.3,
+              bx + dx * reach + perp[0] * reach * 0.5, by + dy * reach + perp[1] * reach * 0.5);
+            c.stroke();
+          }
+          c.fillStyle = col; c.beginPath(); c.arc(bx, by, 6, 0, Math.PI * 2); c.fill();
+        } else {
+          c.fillStyle = col;
+          c.beginPath(); c.ellipse(bx + dx * reach * 0.5, by + dy * reach * 0.5, dx ? reach : 5.5, dy ? reach : 5.5, 0, 0, Math.PI * 2); c.fill();
+        }
+        // tip glint: a small bright spark at the very tip so the reach reads at a glance
+        c.fillStyle = `rgba(226,190,255,${0.5 + 0.4 * Math.sin(G.time * 5 + cx + cy)})`;
+        c.beginPath(); c.arc(bx + dx * reach, by + dy * reach, 2, 0, Math.PI * 2); c.fill();
         break; // one tendril per cell keeps it clean
       }
+    }
+    // emitter death shockwaves: a fast-expanding fading ring
+    for (const sw of shockwaves) {
+      const k = 1 - sw.t / 0.5;
+      c.globalAlpha = 1 - k; c.strokeStyle = '#e6c8ff'; c.lineWidth = 4 * (1 - k) + 1;
+      c.beginPath(); c.arc(sw.x, sw.y, k * 90, 0, Math.PI * 2); c.stroke();
+      c.globalAlpha = 1;
     }
     // purge totems: a cyan beacon with a protective clearing ring
     for (const tm of totems) {
@@ -204,6 +282,7 @@ const Creeper = (() => {
       if (!e.emitter) continue;
       c.save(); c.translate(e.x, e.y);
       const pul = 1 + Math.sin(G.time * 4) * 0.16, breath = Math.sin(G.time * 2);
+      const squash = 1 + breath * 0.08; // squash/stretch: wider as it settles, taller as it rises
       // pulsing source ripples — the emitter visibly pumps the tide outward
       for (let r = 0; r < 3; r++) {
         const ph = (G.time * 0.45 + r / 3) % 1;
@@ -218,14 +297,27 @@ const Creeper = (() => {
         c.beginPath(); c.moveTo(0, 6);
         c.quadraticCurveTo(Math.cos(a) * len * 0.6, 10 + Math.sin(a) * 4, Math.cos(a) * len, 16 + Math.sin(G.time * 4 + i) * 3); c.stroke();
       }
-      // bulbous base
-      c.fillStyle = '#2a1142'; c.beginPath(); c.ellipse(0, 2, 13, 11 + breath, 0, 0, Math.PI * 2); c.fill();
-      c.fillStyle = '#4a2270'; c.beginPath(); c.ellipse(0, 0, 10, 9, 0, 0, Math.PI * 2); c.fill();
+      // orbiting spore nodules — a slow-rotating crown around the core
+      for (let i = 0; i < 4; i++) {
+        const a = (i / 4) * Math.PI * 2 + G.time * 0.8, orbR = 15 + Math.sin(G.time * 2 + i) * 1.5;
+        c.fillStyle = 'rgba(201,138,255,0.75)';
+        c.beginPath(); c.arc(Math.cos(a) * orbR, -4 + Math.sin(a) * orbR * 0.5, 2 * pul, 0, Math.PI * 2); c.fill();
+      }
+      // bulbous base — squash/stretch tied to breathing
+      c.fillStyle = '#2a1142'; c.beginPath(); c.ellipse(0, 2, 13 * squash, (11 + breath) / squash, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#4a2270'; c.beginPath(); c.ellipse(0, 0, 10 * squash, 9 / squash, 0, 0, Math.PI * 2); c.fill();
       // glowing spore core
       c.shadowColor = '#c98aff'; c.shadowBlur = 18;
       c.fillStyle = '#b05cff'; c.beginPath(); c.arc(0, -4, 8 * pul, 0, Math.PI * 2); c.fill();
       c.fillStyle = '#e6c8ff'; c.beginPath(); c.arc(0, -4, 4.5 * pul, 0, Math.PI * 2); c.fill();
       c.shadowBlur = 0; c.fillStyle = '#fff'; c.beginPath(); c.arc(-1.5, -5.5, 1.8, 0, Math.PI * 2); c.fill();
+      // hit-flash: brief white overlay when damaged
+      const meta = emitterMeta.get(e);
+      if (meta && meta.flashT > 0) {
+        c.globalAlpha = meta.flashT / 0.18 * 0.6; c.fillStyle = '#fff';
+        c.beginPath(); c.arc(0, -4, 9 * pul, 0, Math.PI * 2); c.fill();
+        c.globalAlpha = 1;
+      }
       // HP bar
       c.fillStyle = '#000a'; c.fillRect(-15, -24, 30, 4);
       c.fillStyle = '#c98aff'; c.fillRect(-15, -24, 30 * Math.max(0, e.hp / e.maxHp), 4);
