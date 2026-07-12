@@ -187,12 +187,28 @@ const Creeper = (() => {
     // the tide gets angrier the longer the run goes — body creeps from violet toward a hot red
     const anger = Math.min(1, G.time / 900);
     const bodyRGB = `${Math.round(64 + anger * 100)},${Math.round(22 - anger * 14)},${Math.round(98 - anger * 60)}`;
+    // ground shadow pass first — an unshifted dark ellipse anchors each blob to the floor so the
+    // raised mass above it (see hOff below) actually reads as sitting above ground, not floating flat
+    for (let cx = cx0; cx <= cx1; cx++) for (let cy = cy0; cy <= cy1; cy++) {
+      const d = field.get(key(cx, cy)); if (!d) continue;
+      const gx = cx * CELL + CELL / 2, gy = cy * CELL + CELL / 2;
+      const R = CELL * 0.76 + Math.min(8, d * 1.7);
+      c.fillStyle = `rgba(0,0,0,${Math.min(0.4, 0.14 + d * 0.03)})`;
+      c.beginPath(); c.ellipse(gx, gy + 3, R * 0.92, R * 0.5, 0, 0, Math.PI * 2); c.fill();
+    }
     for (let cx = cx0; cx <= cx1; cx++) for (let cy = cy0; cy <= cy1; cy++) {
       const d = field.get(key(cx, cy)); if (!d) continue;
       const { fx, fy } = flowOf(cx, cy, d);
-      const ccx = cx * CELL + CELL / 2 + fx, ccy = cy * CELL + CELL / 2 + wobOf(cx, cy, d) + fy;
+      // deeper pools rise higher off the ground — the shadow above stays put, the mass lifts off it
+      const hOff = Math.min(14, d * 2.4);
+      const ccx = cx * CELL + CELL / 2 + fx, ccy = cy * CELL + CELL / 2 + wobOf(cx, cy, d) + fy - hOff;
       const R = CELL * 0.76 + Math.min(8, d * 1.7), a = Math.min(0.84, 0.32 + d * 0.12);
-      c.fillStyle = `rgba(${bodyRGB},${a})`;                            // dark body
+      // radial light-from-top-left gradient instead of a flat fill — reads as a rounded raised blob
+      const grad = c.createRadialGradient(ccx - R * 0.35, ccy - R * 0.4, R * 0.1, ccx, ccy, R);
+      grad.addColorStop(0, `rgba(${bodyRGB.split(',').map((v, i) => Math.min(255, +v + (i === 0 ? 70 : 40))).join(',')},${a})`);
+      grad.addColorStop(0.6, `rgba(${bodyRGB},${a})`);
+      grad.addColorStop(1, `rgba(${bodyRGB.split(',').map(v => Math.max(0, +v - 30)).join(',')},${a})`);
+      c.fillStyle = grad;
       c.beginPath(); c.arc(ccx, ccy, R, 0, Math.PI * 2); c.fill();
       // mottling: stable per-cell blotch breaks up the flat fill
       const mh = hash(cx, cy);
@@ -205,6 +221,9 @@ const Creeper = (() => {
         c.strokeStyle = `rgba(226,190,255,${0.15 + 0.1 * Math.sin(G.time * 3 + cx + cy)})`; c.lineWidth = 1.5;
         c.beginPath(); c.arc(ccx, ccy, R * 0.95, -0.4, 1.1); c.stroke();
       }
+      // dark contact rim along the bottom edge — the underside catches less light, sells the height
+      c.strokeStyle = `rgba(20,4,34,${Math.min(0.5, 0.2 + d * 0.05)})`; c.lineWidth = 2.5;
+      c.beginPath(); c.arc(ccx, ccy, R * 0.9, Math.PI * 0.2, Math.PI * 0.8); c.stroke();
       if (d > MAXD * 0.7 && mh > 0.8) { // a watching eye surfaces in the deepest, angriest pools
         const blink = Math.sin(G.time * 0.6 + cx * 3 + cy) > 0.92 ? 0.15 : 1;
         const ex = ccx + (hash(cx + 1, cy) - 0.5) * R * 0.5, ey = ccy + (hash(cx, cy + 1) - 0.5) * R * 0.3;
