@@ -10,6 +10,7 @@ const Creeper = (() => {
   let totems = [];                    // player purge beacons {x,y,t}
   let emitterMeta = new Map();        // enemy -> {hp, flashT, puffT} for hit-flash + death-implode tracking
   let shockwaves = [];                 // emitter death rings {x,y,t}
+  let lastTierIdx = -1;                // player's last-known depth tier, for entry sound cues
   const key = (cx, cy) => cx + ',' + cy;
   const cellX = x => Math.floor(x / CELL);
   // deterministic per-cell pseudo-random in [0,1), stable across frames (no Math.random in draw)
@@ -27,7 +28,7 @@ const Creeper = (() => {
   ];
   function tierOf(d) { let t = TIERS[0], i = 0; for (let k = 0; k < TIERS.length; k++) if (d >= TIERS[k].min) { t = TIERS[k]; i = k; } return { ...t, idx: i }; }
 
-  function reset() { field = new Map(); emitT = 18; dmgT = 0; breedT = 4; strikeT = 12; strikes = []; totemT = 9; totemPulse = 0; totems = []; emitterMeta = new Map(); shockwaves = []; }
+  function reset() { field = new Map(); emitT = 18; dmgT = 0; breedT = 4; strikeT = 12; strikes = []; totemT = 9; totemPulse = 0; totems = []; emitterMeta = new Map(); shockwaves = []; lastTierIdx = -1; }
   function emitterCount() { return Enemies.list.filter(e => e.emitter).length; }
   function inTide(x, y) { return depthAt(x, y) > TRACE; }
 
@@ -166,6 +167,11 @@ const Creeper = (() => {
 
     // player wades + takes damage in deep creeper (steady drain; each tier is a distinct step up in danger)
     const here = depthAt(P.x, P.y), hereTier = tierOf(here);
+    if (here > TRACE && hereTier.idx !== lastTierIdx) {
+      // crossing into a deeper (or back to a shallower) tier gets its own cue — the escalation is audible, not just visual
+      if (hereTier.idx > lastTierIdx) { Snd.play(hereTier.idx >= 3 ? 'elite' : 'hurt'); Particles.text(P.x, P.y - 34, hereTier.name.toUpperCase(), hereTier.color, 13); }
+      lastTierIdx = hereTier.idx;
+    } else if (here <= TRACE) lastTierIdx = -1; // fully out of the tide — next entry re-announces
     if (here > TRACE && P.dashT <= 0) {
       G.chillT = Math.max(G.chillT, G.time + 0.15);        // wade: slowed
       clear(P.x, P.y, 26 + (G.combo > 25 ? 14 : 0), 0.5 * dt * (G.combo > 25 ? 2.2 : 1)); // a hot streak melts the tide back faster
