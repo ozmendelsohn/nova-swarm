@@ -98,7 +98,8 @@ const UI = (() => {
         c.textAlign = 'left'; c.font = 'bold 11px monospace'; c.fillStyle = '#b05cff';
         c.fillText(`☣ EMITTERS: ${ec}`, 20, narrow ? 104 : 70);
         if (Creeper.inTide(G.player.x, G.player.y)) {
-          c.fillStyle = `rgba(180,92,255,${0.6 + 0.4 * Math.sin(G.time * 8)})`; c.fillText('IN TIDE', 130, narrow ? 104 : 70);
+          const tier = Creeper.tierOf(Creeper.depthAt(G.player.x, G.player.y));
+          c.fillStyle = `rgba(180,92,255,${0.6 + 0.4 * Math.sin(G.time * 8)})`; c.fillText(`IN TIDE — ${tier.name.toUpperCase()}`, 130, narrow ? 104 : 70);
         }
       }
     }

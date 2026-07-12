@@ -15,9 +15,21 @@ const Creeper = (() => {
   // deterministic per-cell pseudo-random in [0,1), stable across frames (no Math.random in draw)
   const hash = (cx, cy) => { const s = Math.sin(cx * 127.1 + cy * 311.7) * 43758.5453; return s - Math.floor(s); };
 
+  // ---- depth tiers: the single source of truth for "how deep is this creeper" ----
+  // every gameplay/visual threshold in this file reads from here instead of ad-hoc magic numbers,
+  // so the tide's danger and look escalate in lockstep and in one obvious place.
+  const TRACE = 0.4; // any tide at all — below this it's just wet ground, not "in tide"
+  const TIERS = [
+    { name: 'Shallow', min: 0, dmgMult: 1, color: '#c68eff' },   // ankle-deep: surface sheen, safe-ish
+    { name: 'Wading', min: 1, dmgMult: 1.3, color: '#b05cff' },   // chest-deep: tendrils reach, breeds spawns
+    { name: 'Deep', min: 3, dmgMult: 1.6, color: '#8a3ad0' },   // glowing core, rim glint on the skin
+    { name: 'Abyssal', min: MAXD * 0.7, dmgMult: 2, color: '#6a1aa8' },   // deepest pools: eyes surface, max anger
+  ];
+  function tierOf(d) { let t = TIERS[0], i = 0; for (let k = 0; k < TIERS.length; k++) if (d >= TIERS[k].min) { t = TIERS[k]; i = k; } return { ...t, idx: i }; }
+
   function reset() { field = new Map(); emitT = 18; dmgT = 0; breedT = 4; strikeT = 12; strikes = []; totemT = 9; totemPulse = 0; totems = []; emitterMeta = new Map(); shockwaves = []; }
   function emitterCount() { return Enemies.list.filter(e => e.emitter).length; }
-  function inTide(x, y) { return depthAt(x, y) > 0.4; }
+  function inTide(x, y) { return depthAt(x, y) > TRACE; }
 
   function depthAt(x, y) { return field.get(key(cellX(x), cellX(y))) || 0; }
   function add(x, y, amt) {
@@ -77,7 +89,7 @@ const Creeper = (() => {
     for (let tries = 0; tries < 3; tries++) {
       const bx = P.x + Util.rand(-G.w / 2, G.w / 2), by = P.y + Util.rand(-G.h / 2, G.h / 2);
       const d = depthAt(bx, by);
-      if (d > 1 && Math.random() < 0.5) {
+      if (tierOf(d).idx >= 1 && Math.random() < 0.5) { // Wading tier or deeper
         const t = Math.min(1, (d - 1) / (MAXD - 1));
         Particles.spawn(bx, by, Math.random() < 0.5 ? '#b05cff' : '#8a4ad0', { speed: 14 + t * 10, life: 0.5 + t * 0.4, size: 2 + t * 1.5, grav: -30, drag: 0.96 });
         break;
@@ -133,7 +145,7 @@ const Creeper = (() => {
       for (let tries = 0; tries < 6; tries++) {
         const ang = Math.random() * Math.PI * 2, dist = 120 + Math.random() * 260;
         const sx = P.x + Math.cos(ang) * dist, sy = P.y + Math.sin(ang) * dist;
-        if (depthAt(sx, sy) > 1.5) {
+        if (tierOf(depthAt(sx, sy)).idx >= 1) { // Wading tier or deeper
           const proto = Enemies.list.find(en => !en.boss && !en.emitter);
           if (proto) { const m = Enemies.spawnAt(G, proto.type); m.x = sx; m.y = sy; Particles.burst(sx, sy, '#b05cff', 8, { speed: 90, life: 0.4 }); }
           break;
@@ -152,15 +164,15 @@ const Creeper = (() => {
       if (tm.t <= 0) totems.splice(i, 1);
     }
 
-    // player wades + takes damage in deep creeper (steady drain, deeper = deadlier)
-    const here = depthAt(P.x, P.y);
-    if (here > 0.4 && P.dashT <= 0) {
+    // player wades + takes damage in deep creeper (steady drain; each tier is a distinct step up in danger)
+    const here = depthAt(P.x, P.y), hereTier = tierOf(here);
+    if (here > TRACE && P.dashT <= 0) {
       G.chillT = Math.max(G.chillT, G.time + 0.15);        // wade: slowed
       clear(P.x, P.y, 26 + (G.combo > 25 ? 14 : 0), 0.5 * dt * (G.combo > 25 ? 2.2 : 1)); // a hot streak melts the tide back faster
       dmgT -= dt;
       if (dmgT <= 0) {
         dmgT = 0.3;
-        const dd = Math.min(MAXD, here) * 3 * (P.guarding ? 0.5 : 1);
+        const dd = Math.min(MAXD, here) * 3 * hereTier.dmgMult * (P.guarding ? 0.5 : 1);
         if (P.hp - dd <= 0) { P.hurtT = 0; Player.hurt(G, 99999); } // lethal -> proper death / Last Stand path
         else { P.hp -= dd; G.hurtFlash = Math.min(1, (G.hurtFlash || 0) + 0.25); }
         Particles.spawn(P.x + Util.rand(-8, 8), P.y, '#b05cff', { speed: 40, life: 0.4, size: 3 });
@@ -198,6 +210,7 @@ const Creeper = (() => {
     }
     for (let cx = cx0; cx <= cx1; cx++) for (let cy = cy0; cy <= cy1; cy++) {
       const d = field.get(key(cx, cy)); if (!d) continue;
+      const dTier = tierOf(d);
       const { fx, fy } = flowOf(cx, cy, d);
       // deeper pools rise higher off the ground — the shadow above stays put, the mass lifts off it
       const hOff = Math.min(14, d * 2.4);
@@ -216,15 +229,15 @@ const Creeper = (() => {
       c.beginPath(); c.arc(ccx + (mh - 0.5) * R * 0.7, ccy + (hash(cy, cx) - 0.5) * R * 0.7, R * (0.22 + mh * 0.18), 0, Math.PI * 2); c.fill();
       c.fillStyle = `rgba(126,58,192,${a * 0.7})`;                      // mid violet
       c.beginPath(); c.arc(ccx, ccy, R * 0.6, 0, Math.PI * 2); c.fill();
-      if (d > 2.2) { c.fillStyle = `rgba(198,142,255,${Math.min(0.7, (d - 2) * 0.2)})`; c.beginPath(); c.arc(ccx, ccy, R * 0.3, 0, Math.PI * 2); c.fill(); } // glowing core
-      if (d > 3) { // rim glint on deep pools — a living skin catching light
+      if (dTier.idx >= 2) { c.fillStyle = `rgba(198,142,255,${Math.min(0.7, (d - 2) * 0.2)})`; c.beginPath(); c.arc(ccx, ccy, R * 0.3, 0, Math.PI * 2); c.fill(); } // glowing core — Deep tier+
+      if (dTier.idx >= 2) { // rim glint on deep pools — a living skin catching light
         c.strokeStyle = `rgba(226,190,255,${0.15 + 0.1 * Math.sin(G.time * 3 + cx + cy)})`; c.lineWidth = 1.5;
         c.beginPath(); c.arc(ccx, ccy, R * 0.95, -0.4, 1.1); c.stroke();
       }
       // dark contact rim along the bottom edge — the underside catches less light, sells the height
       c.strokeStyle = `rgba(20,4,34,${Math.min(0.5, 0.2 + d * 0.05)})`; c.lineWidth = 2.5;
       c.beginPath(); c.arc(ccx, ccy, R * 0.9, Math.PI * 0.2, Math.PI * 0.8); c.stroke();
-      if (d > MAXD * 0.7 && mh > 0.8) { // a watching eye surfaces in the deepest, angriest pools
+      if (dTier.idx >= 3 && mh > 0.8) { // a watching eye surfaces only in Abyssal pools
         const blink = Math.sin(G.time * 0.6 + cx * 3 + cy) > 0.92 ? 0.15 : 1;
         const ex = ccx + (hash(cx + 1, cy) - 0.5) * R * 0.5, ey = ccy + (hash(cx, cy + 1) - 0.5) * R * 0.3;
         c.fillStyle = `rgba(20,4,30,${a})`; c.beginPath(); c.ellipse(ex, ey, 5, 5 * blink, 0, 0, Math.PI * 2); c.fill();
@@ -344,5 +357,5 @@ const Creeper = (() => {
     }
   }
 
-  return { reset, update, draw, clear, depthAt, emitterCount, inTide };
+  return { reset, update, draw, clear, depthAt, emitterCount, inTide, tierOf };
 })();
