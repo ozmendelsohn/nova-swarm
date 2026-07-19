@@ -50,12 +50,13 @@ const Creeper = (() => {
 
   function spawnEmitter(G) {
     const proto = Enemies.list.find(e => !e.boss && !e.emitter);
-    if (!proto) return; // need a live type to base it on
+    if (!proto) { emitT = 2; return; } // no live type to clone right now — retry soon instead of losing a full cycle
     const e = Enemies.spawnAt(G, proto.type);
     e.emitter = true; e.spd = 0; e.dmg = 0; e.r = 22;
     e.hp = e.maxHp = 500 + G.time * 4;   // tanky structure; scales with run
     e.creeperRate = 9 + G.time / 70;     // oozes faster the longer the run goes
     Particles.text(e.x, e.y - 30, '⚠ CREEPER EMITTER ⚠', '#b05cff', 14);
+    Snd.play('emitterSpawn');
   }
 
   function update(G, dt) {
@@ -109,7 +110,7 @@ const Creeper = (() => {
       emitterMeta.set(e, m);
     }
     for (const e of Array.from(emitterMeta.keys())) {
-      if (!liveNow.has(e)) { Particles.burst(e.x, e.y, '#e6c8ff', 34, { speed: 280, life: 0.75 }); G.shake(10); shockwaves.push({ x: e.x, y: e.y, t: 0.5 }); emitterMeta.delete(e); }
+      if (!liveNow.has(e)) { Particles.burst(e.x, e.y, '#e6c8ff', 34, { speed: 280, life: 0.75 }); G.shake(10); shockwaves.push({ x: e.x, y: e.y, t: 0.5 }); emitterMeta.delete(e); Snd.play('emitterDeath'); }
     }
     for (let i = shockwaves.length - 1; i >= 0; i--) { shockwaves[i].t -= dt; if (shockwaves[i].t <= 0) shockwaves.splice(i, 1); }
     // slow global evaporation so it can recede when sources die; cull tiny cells
@@ -124,6 +125,7 @@ const Creeper = (() => {
       strikeT = Math.max(3.5, 9 - G.time / 90);
       const ang = Math.random() * Math.PI * 2, dist = 60 + Math.random() * 220;
       strikes.push({ x: P.x + Math.cos(ang) * dist, y: P.y + Math.sin(ang) * dist, r: 56 + Math.random() * 30, t: 1.3, maxT: 1.3 });
+      Snd.play('sporeTelegraph');
     }
     for (let i = strikes.length - 1; i >= 0; i--) {
       const s = strikes[i]; s.t -= dt;
@@ -133,6 +135,7 @@ const Creeper = (() => {
           if (Util.dist2(cx * CELL + CELL / 2, cy * CELL + CELL / 2, s.x, s.y) < s.r * s.r) add(cx * CELL, cy * CELL, 3);
         }
         Particles.burst(s.x, s.y, '#b05cff', 24, { speed: 240, life: 0.6 });
+        Snd.play('sporeImpact');
         if (Util.dist2(P.x, P.y, s.x, s.y) < (s.r + P.r) * (s.r + P.r) && P.dashT <= 0) { P.hurtT = 0; Player.hurt(G, 30 + G.time / 8); }
         strikes.splice(i, 1);
       }
@@ -149,6 +152,7 @@ const Creeper = (() => {
         if (tierOf(depthAt(sx, sy)).idx >= 1) { // Wading tier or deeper
           const proto = Enemies.list.find(en => !en.boss && !en.emitter);
           if (proto) { const m = Enemies.spawnAt(G, proto.type); m.x = sx; m.y = sy; Particles.burst(sx, sy, '#b05cff', 8, { speed: 90, life: 0.4 }); }
+          else breedT = 1; // no live type to clone right now — retry soon instead of losing a full cycle
           break;
         }
       }
@@ -156,7 +160,7 @@ const Creeper = (() => {
 
     // PURGE TOTEMS: auto-deployed beacons reclaim ground — evaporate creeper + pulse damage
     totemT -= dt;
-    if (totemT <= 0) { totemT = 11; totems.push({ x: P.x, y: P.y, t: 8 }); Particles.text(P.x, P.y - 30, '✦ PURGE TOTEM ✦', '#3ae0ff', 13); }
+    if (totemT <= 0) { totemT = 11; totems.push({ x: P.x, y: P.y, t: 8 }); Particles.text(P.x, P.y - 30, '✦ PURGE TOTEM ✦', '#3ae0ff', 13); Snd.play('totemDeploy'); }
     totemPulse -= dt; const pulse = totemPulse <= 0; if (pulse) totemPulse = 0.5;
     for (let i = totems.length - 1; i >= 0; i--) {
       const tm = totems[i]; tm.t -= dt;
@@ -178,9 +182,11 @@ const Creeper = (() => {
       dmgT -= dt;
       if (dmgT <= 0) {
         dmgT = 0.3;
-        const dd = Math.min(MAXD, here) * 3 * hereTier.dmgMult * (P.guarding ? 0.5 : 1);
+        // route through the same armor mitigation every other hit gets, so plating upgrades aren't dead against the tide
+        const armor = 1.5 * (WeaponManager.passives.armor || 0) + 1.5 * P.mods.armor + Meta.fx.armor();
+        const dd = Math.max(0.4, Math.min(MAXD, here) * 3 * hereTier.dmgMult - armor) * (P.guarding ? 0.5 : 1);
         if (P.hp - dd <= 0) { P.hurtT = 0; Player.hurt(G, 99999); } // lethal -> proper death / Last Stand path
-        else { P.hp -= dd; G.hurtFlash = Math.min(1, (G.hurtFlash || 0) + 0.25); }
+        else { P.hp -= dd; G.dmgTaken = (G.dmgTaken || 0) + dd; G.hurtFlash = Math.min(1, (G.hurtFlash || 0) + 0.25); }
         Particles.spawn(P.x + Util.rand(-8, 8), P.y, '#b05cff', { speed: 40, life: 0.4, size: 3 });
         Particles.text(P.x, P.y - 22, '☣', '#c98aff', 12);
       }
@@ -363,5 +369,7 @@ const Creeper = (() => {
     }
   }
 
-  return { reset, update, draw, clear, depthAt, emitterCount, inTide, tierOf };
+  function totemCountdown() { return totemT; }
+  function activeStrikes() { return strikes; }
+  return { reset, update, draw, clear, depthAt, emitterCount, inTide, tierOf, totemCountdown, activeStrikes };
 })();

@@ -91,7 +91,7 @@ const UI = (() => {
       c.fillStyle = '#fff'; c.font = 'bold 8px monospace';
       c.fillText(ramp ? `RAMPAGE ${G.rampageT.toFixed(1)}s` : 'FERVOR', 22, fy + 5);
     }
-    // creeper threat: emitter count + "IN TIDE" warning
+    // creeper threat: emitter count + "IN TIDE" warning + next-totem countdown
     if (typeof Creeper !== 'undefined') {
       const ec = Creeper.emitterCount();
       if (ec > 0) {
@@ -101,7 +101,21 @@ const UI = (() => {
           const tier = Creeper.tierOf(Creeper.depthAt(G.player.x, G.player.y));
           c.fillStyle = `rgba(180,92,255,${0.6 + 0.4 * Math.sin(G.time * 8)})`; c.fillText(`IN TIDE — ${tier.name.toUpperCase()}`, 130, narrow ? 104 : 70);
         }
+        // purge totem: a small countdown bar so the player can anticipate the next beacon, mirrors the Fervor meter
+        const tc = Creeper.totemCountdown(), ty = narrow ? 118 : 84, tw = 90;
+        c.fillStyle = '#000a'; c.fillRect(20, ty, tw, 5);
+        c.fillStyle = tc < 2 ? '#cdfaff' : '#1f8a9e'; c.fillRect(20, ty, tw * (1 - Math.max(0, tc) / 11), 5);
+        c.fillStyle = '#9be8ff'; c.font = 'bold 8px monospace';
+        c.fillText(tc < 2 ? 'TOTEM READY' : `TOTEM ${Math.max(0, tc).toFixed(1)}s`, 22, ty + 12);
       }
+    }
+    // ION STORM: remaining duration, so the wild-bolt danger window is legible, not just a screen tint
+    if (G.ionStormT > 0) {
+      const sw = 140, sy = narrow ? 132 : 96;
+      c.textAlign = 'left'; c.fillStyle = '#000a'; c.fillRect(20, sy, sw, 6);
+      c.fillStyle = `hsl(${190 + 40 * Math.sin(G.time * 10)},90%,65%)`; c.fillRect(20, sy, sw * (G.ionStormT / 8), 6);
+      c.fillStyle = '#cdfaff'; c.font = 'bold 9px monospace';
+      c.fillText(`⚡ ION STORM ${G.ionStormT.toFixed(1)}s`, 22, sy + 15);
     }
     if (Snd.isMuted && Snd.isMuted()) { // mute indicator
       c.textAlign = 'right'; c.font = 'bold 12px monospace'; c.fillStyle = '#ff8c42';
@@ -134,31 +148,42 @@ const UI = (() => {
       c.beginPath(); c.arc(t.ox + t.dx, t.oy + t.dy, 26, 0, Math.PI * 2); c.fill();
       c.globalAlpha = 1;
     }
-    // off-screen threat & treasure arrows: bosses (red) and the gilded moth (gold)
+    // off-screen threat & treasure arrows: bosses (red), the gilded moth (gold), emitters (purple), imminent spore strikes (pink)
     const P2 = G.player, cx = G.w / 2, cy = G.h / 2, marg = 48;
-    for (const e of Enemies.list) {
-      if (!e.boss && !e.gilded && !e.emitter) continue;
-      const sx = cx + (e.x - P2.x), sy = cy + (e.y - P2.y);
-      if (sx >= marg && sx <= G.w - marg && sy >= marg && sy <= G.h - marg) continue; // on-screen
-      const ang = Math.atan2(e.y - P2.y, e.x - P2.x);
+    const hw = G.w / 2 - marg, hh = G.h / 2 - marg;
+    const edgeArrow = (ex, ey, col, pulse) => {
+      const sx = cx + (ex - P2.x), sy = cy + (ey - P2.y);
+      if (sx >= marg && sx <= G.w - marg && sy >= marg && sy <= G.h - marg) return null; // on-screen
+      const ang = Math.atan2(ey - P2.y, ex - P2.x);
       // clamp the indicator onto the screen-edge rectangle along that angle
-      const hw = G.w / 2 - marg, hh = G.h / 2 - marg;
       const t = Math.min(hw / Math.abs(Math.cos(ang) || 1e-6), hh / Math.abs(Math.sin(ang) || 1e-6));
       const ix = cx + Math.cos(ang) * t, iy = cy + Math.sin(ang) * t;
-      const col = e.boss ? '#ff3a5c' : e.emitter ? '#b05cff' : '#ffd23e';
-      const pulse = 0.7 + 0.3 * Math.sin(G.time * 8);
       c.save();
       c.translate(ix, iy); c.rotate(ang);
       c.globalAlpha = pulse;
       c.fillStyle = col; c.shadowColor = col; c.shadowBlur = 12;
       c.beginPath(); c.moveTo(16, 0); c.lineTo(-10, -11); c.lineTo(-4, 0); c.lineTo(-10, 11); c.closePath(); c.fill();
       c.restore();
+      return { ix, iy };
+    };
+    for (const e of Enemies.list) {
+      if (!e.boss && !e.gilded && !e.emitter) continue;
+      const col = e.boss ? '#ff3a5c' : e.emitter ? '#b05cff' : '#ffd23e';
+      const pulse = 0.7 + 0.3 * Math.sin(G.time * 8);
+      const hit = edgeArrow(e.x, e.y, col, pulse);
+      if (!hit) continue;
       // distance readout under the arrow (bosses only)
       if (e.boss) {
         const dist = Math.round(Math.sqrt(Util.dist2(e.x, e.y, P2.x, P2.y)) / 10);
         c.globalAlpha = pulse; c.fillStyle = col; c.font = 'bold 10px monospace'; c.textAlign = 'center';
-        const lx = Math.max(marg, Math.min(G.w - marg, ix)), ly = Math.max(marg + 14, Math.min(G.h - 6, iy + 22));
+        const lx = Math.max(marg, Math.min(G.w - marg, hit.ix)), ly = Math.max(marg + 14, Math.min(G.h - 6, hit.iy + 22));
         c.fillText(`${dist}m`, lx, ly);
+      }
+    }
+    if (typeof Creeper !== 'undefined') {
+      for (const s of Creeper.activeStrikes()) {
+        if (s.t > 0.6) continue; // only warn once impact is imminent
+        edgeArrow(s.x, s.y, '#ff5cd6', 0.5 + 0.5 * Math.sin(G.time * 16));
       }
     }
     c.globalAlpha = 1; c.shadowBlur = 0; c.textAlign = 'left';

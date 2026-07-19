@@ -356,7 +356,7 @@ const Game = (() => {
     if (G.rampageT > 0) G.rampageT -= dt; else if (G.fervor > 0) G.fervor = Math.max(0, G.fervor - dt * 5); // fervor bleeds off out of combat
     // ION STORM: a periodic lightning tempest that chains through the horde (spectacle + reprieve)
     G.stormT -= dt;
-    if (G.stormT <= 0) { G.stormT = 75 + Util.rand(-10, 20); G.ionStormT = 8; announceBoss('⚡ ION STORM ⚡', 'The Loom Crackles with Wild Charge'); }
+    if (G.stormT <= 0) { G.stormT = 75 + Util.rand(-10, 20); G.ionStormT = 8; announceBoss('⚡ ION STORM ⚡', 'The Loom Crackles with Wild Charge'); Snd.play('ionStormStart'); }
     if (G.ionStormT > 0) {
       G.ionStormT -= dt; G._boltT -= dt;
       if (G._boltT <= 0) {
@@ -365,7 +365,7 @@ const Game = (() => {
         const targ = nearestEnemy(tx, ty, 120, null);
         const ex = targ ? targ.x : tx, ey = targ ? targ.y : ty;
         zap(P.x, P.y - 200, ex, ey, '#cdfaff'); G.flashAmt = Math.max(G.flashAmt, 0.25);
-        if (targ) { damageEnemy(targ, 40 + G.player.lvl * 6, { color: '#cdfaff', effects: ['shock'] }); Particles.spawn(ex, ey, '#cdfaff', { speed: 0, life: 0.2, ring: 30 }); }
+        if (targ) { damageEnemy(targ, 40 + G.player.lvl * 6, { color: '#cdfaff', effects: ['shock'] }); Particles.spawn(ex, ey, '#cdfaff', { speed: 0, life: 0.2, ring: 30 }); Snd.play('ionBolt'); }
         if (typeof Creeper !== 'undefined') Creeper.clear(ex, ey, 40, 2); // lightning scorches the tide too
         // wild bolt: ~14% strike near the ground and can clip the player — the storm is double-edged
         if (Math.random() < 0.14 && Util.dist2(ex, ey, P.x, P.y) < 70 * 70 && P.dashT <= 0) Player.hurt(G, 22 + G.time / 12, null);

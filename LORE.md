@@ -81,6 +81,14 @@ The battlefield is the tapestry seen up close:
   Knot Cocoons (proto-enemies that never woke; burst with dye-gems).
 - **Unraveling deaths** — every slain knot spills literal thread strands.
 - **Dye-motes** — loose pigment drifts up from whichever province you cross.
+- **The Creeper Tide** — dye that was never fixed to the weave, pooling in
+  the low places and creeping toward warmth. **Emitters** are the spore-towers
+  that keep it fed; kill the tower and its pool starves. **Purge Totems** are
+  splinters of loom-frame the tapestry drives into the ground on a rhythm it
+  half-remembers, holding a circle of cloth dry. A **Spore Strike** is the
+  tide coughing — a wet, telegraphed cough, but a cough all the same.
+- **Ion Storm** — the seam where the Weaver once stitched with lightning
+  still arcs, unpredictably, threading the whole field with wild current.
 
 ## Tone
 Folk-tale told in an arcade cabinet: warm, a little strange, never grimdark.

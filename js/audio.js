@@ -44,6 +44,13 @@ const Snd = (() => {
     boss: () => { blip(110, 0.6, 'sawtooth', 0.25, -40); setTimeout(() => blip(98, 0.6, 'sawtooth', 0.25, -30), 300); },
     fusion: () => { for (let i = 0; i < 6; i++) setTimeout(() => blip(440 + i * 160, 0.15, 'square', 0.12), i * 70); noise(0.4, 0.12); },
     bosskill: () => { noise(0.6, 0.3); for (let i = 0; i < 5; i++) setTimeout(() => blip(220 + i * 110, 0.25, 'square', 0.15), i * 100); },
+    emitterSpawn: () => { blip(90, 0.4, 'sawtooth', 0.14, -20); setTimeout(() => blip(70, 0.3, 'sine', 0.1), 120); },
+    emitterDeath: () => { noise(0.35, 0.22); for (let i = 0; i < 3; i++) setTimeout(() => blip(260 - i * 60, 0.2, 'square', 0.14), i * 60); },
+    sporeTelegraph: () => blip(520, 0.09, 'triangle', 0.09, -160),
+    sporeImpact: () => { blip(160, 0.22, 'sawtooth', 0.18, -80); noise(0.18, 0.14); },
+    totemDeploy: () => { blip(660, 0.1, 'sine', 0.12, 260); setTimeout(() => blip(990, 0.12, 'sine', 0.1, 200), 70); },
+    ionStormStart: () => { blip(1400, 0.15, 'sawtooth', 0.16, -900); noise(0.25, 0.15); setTimeout(() => blip(90, 0.5, 'sawtooth', 0.22, -30), 120); },
+    ionBolt: () => blip(1600, 0.05, 'sawtooth', 0.08, -1100),
   };
 
   function play(name) { if (ctx && SFX[name]) SFX[name](); }
